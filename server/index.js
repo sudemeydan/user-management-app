@@ -59,6 +59,58 @@ app.post('/users', (req, res) => {
   });
 });
 
+// - GET Metodu ---
+app.get('/users', (req, res) => {
+  // SQL Sorgusu: Tüm kullanıcıları seç
+  const sql = "SELECT * FROM users";
+
+  // db.all: Birden fazla satır döneceği için 'all' kullanıyoruz
+  db.all(sql, [], (err, rows) => {
+    if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+    // Başarılı olursa satırları (rows) JSON olarak dön
+    res.status(200).json({
+      message: "Kullanıcı listesi getirildi",
+      data: rows
+    });
+  });
+});
+
+// --- 3. EMAIL İLE KULLANICI GETİRME - GET Metodu ---
+app.get('/users/:email', (req, res) => {
+  // URL'deki :email kısmını alıyoruz
+  const email = req.params.email;
+
+  const sql = "SELECT * FROM users WHERE email = ?";
+  
+  // db.get: Tek bir satır beklediğimiz için 'get' kullanıyoruz
+  db.get(sql, [email], (err, row) => {
+    if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+    // Eğer kullanıcı bulunamazsa row 'undefined' gelir
+    if (!row) {
+      return res.status(404).json({ message: "Kullanıcı bulunamadı" });
+    }
+    res.status(200).json({
+      message: "Kullanıcı bulundu",
+      data: row
+    });
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
 // Sunucuyu başlat
 app.listen(PORT, () => {
   console.log(`Sunucu http://localhost:${PORT} adresinde çalışıyor`);
