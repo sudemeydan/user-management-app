@@ -41,6 +41,7 @@ app.get('/', (req, res) => {
 
 //POST
 app.post('/users', (req, res) => {
+    console.log("Gelen Veri (Body):", req.body);
   const { name, username, age, password, email, address } = req.body;//Objeyi parçalama (Destructuring)
 
   const sql = `INSERT INTO users (name, username, age, password, email, address) VALUES (?, ?, ?, ?, ?, ?)`;
@@ -101,11 +102,49 @@ app.get('/users/:email', (req, res) => {
 });
 
 
+// --- 4. KULLANICI GÜNCELLEME (UPDATE) - PUT Metodu ---
+app.put('/users/:id', (req, res) => {
+  const id = req.params.id;
+  const { name, username, age, password, email, address } = req.body;
 
+  // SQL Sorgusu: ID'si eşleşen satırı güncelle
+  const sql = `UPDATE users SET name = ?, username = ?, age = ?, password = ?, email = ?, address = ? WHERE id = ?`;
+  const params = [name, username, age, password, email, address, id];
 
+  db.run(sql, params, function(err) {
+    if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+    // changes: kaç satırın etkilendiğini gösterir
+    if (this.changes === 0) {
+      return res.status(404).json({ message: "Güncellenecek kullanıcı bulunamadı" });
+    }
+    res.json({
+      message: "Kullanıcı başarıyla güncellendi",
+      data: req.body,
+      changes: this.changes
+    });
+  });
+});
 
+// --- 5. KULLANICI SİLME (DELETE) - DELETE Metodu ---
+app.delete('/users/:id', (req, res) => {
+  const id = req.params.id;
+  const sql = "DELETE FROM users WHERE id = ?";
 
-
+  db.run(sql, id, function(err) {
+    if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+    if (this.changes === 0) {
+      return res.status(404).json({ message: "Silinecek kullanıcı bulunamadı" });
+    }
+    res.json({
+      message: "Kullanıcı silindi",
+      changes: this.changes
+    });
+  });
+});
 
 
 
