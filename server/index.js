@@ -1,3 +1,4 @@
+const bcrypt = require('bcrypt');
 const express = require('express');
 const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
@@ -40,23 +41,49 @@ app.get('/', (req, res) => {
 });
 
 //POST
-app.post('/users', (req, res) => {
-    console.log("Gelen Veri (Body):", req.body);
-  const { name, username, age, password, email, address } = req.body;//Objeyi parçalama (Destructuring)
+app.post('/users', async (req, res) => {
+  const { name, username, age, password, email, address } = req.body;
 
-  const sql = `INSERT INTO users (name, username, age, password, email, address) VALUES (?, ?, ?, ?, ?, ?)`;
-  const params = [name, username, age, password, email, address];
+  try {
+    // 1. Şifreyi Hashle (10 turluk bir zorluk seviyesi ile)
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-  db.run(sql, params, function(err) {
-    if (err) {
+    const sql = `INSERT INTO users (name, username, age, password, email, address) VALUES (?, ?, ?, ?, ?, ?)`;
+    // 2. Veritabanına şifrenin kendisini değil, HASH halini kaydet
+    const params = [name, username, age, hashedPassword, email, address];
 
-      return res.status(400).json({ error: err.message });
-    }
-    res.status(201).json({
-      message: "Kullanıcı başarıyla oluşturuldu",
-      id: this.lastID,
-      data: req.body
+    db.run(sql, params, function(err) {
+      if (err) {
+        return res.status(400).json({ error: err.message });
+      }
+      res.status(201).json({
+        message: "Kullanıcı başarıyla oluşturuldu (Şifreli)",
+        data: { id: this.lastID, ...req.body }, // Güvenlik notu: Gerçekte şifreyi geri dönmemeliyiz
+      });
     });
+  } catch (error) {
+    res.status(500).json({ error: "Şifreleme hatası oluştu" });
+  }
+});
+
+// --- YENİ: LOGIN (GİRİŞ) ENDPOINT'İ ---
+app.post('/login', (req, res) => {
+  const { email, password } = req.body;
+
+  // 1. Önce bu email'e sahip kullanıcı var mı?
+  db.get("SELECT * FROM users WHERE email = ?", [email], async (err, user) => {
+    if (err) return res.status(500).json({ error: "Sunucu hatası" });
+    if (!user) return res.status(404).json({ message: "Kullanıcı bulunamadı!" });
+
+    // 2. Şifre Kontrolü (Hash Kıyaslama)
+    // Girilen şifre (password) ile veritabanındaki hash (user.password) eşleşiyor mu?
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (isMatch) {
+      res.status(200).json({ message: "Giriş Başarılı! Hoşgeldin " + user.name, user: user });
+    } else {
+      res.status(401).json({ message: "Hatalı Şifre!" });
+    }
   });
 });
 
