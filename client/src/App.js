@@ -27,11 +27,9 @@ function App() {
     }
   };
 
-  // Güncellenmiş Kayıt Ol Fonksiyonu
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      // Form verilerini düzenliyoruz: Yaşı sayıya çeviriyoruz!
       const formattedData = {
         ...formData,
         age: formData.age ? parseInt(formData.age) : null // <-- İŞTE ÇÖZÜM BURADA
@@ -43,7 +41,6 @@ function App() {
       setFormData({ name: '', username: '', email: '', age: '', address: '', password: '' });
       setIsRegisterMode(false); 
     } catch (error) {
-      // Hatanın detayını gösterelim (Sunucudan gelen mesajı oku)
       const errorMessage = error.response?.data?.message || error.message;
       alert("Kayıt Hatası: " + errorMessage);
     }
@@ -58,7 +55,6 @@ function App() {
 const handleDashboardSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Burada da yaşı sayıya çeviriyoruz
       const formattedData = {
         ...formData,
         age: formData.age ? parseInt(formData.age) : null
@@ -98,7 +94,6 @@ const handleDashboardSubmit = async (e) => {
     setFormData({ ...user, password: '' });
   };
 
-  // --- EKRAN 1: GİRİŞ / KAYIT ---
   if (!isLoggedIn) {
     return (
       <div className="d-flex justify-content-center align-items-center vh-100 bg-secondary">
@@ -142,7 +137,6 @@ const handleDashboardSubmit = async (e) => {
     );
   }
 
-  // --- EKRAN 2: PANEL ---
   return (
     <div className="container mt-5">
       <div className="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded shadow-sm">
