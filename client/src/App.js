@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -13,7 +13,7 @@ function App() {
   });
   const [editingId, setEditingId] = useState(null);
 
-  // --- API FONKSİYONLARI ---
+ 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
@@ -27,15 +27,25 @@ function App() {
     }
   };
 
+  // Güncellenmiş Kayıt Ol Fonksiyonu
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:3001/users', formData);
+      // Form verilerini düzenliyoruz: Yaşı sayıya çeviriyoruz!
+      const formattedData = {
+        ...formData,
+        age: formData.age ? parseInt(formData.age) : null // <-- İŞTE ÇÖZÜM BURADA
+      };
+
+      await axios.post('http://localhost:3001/users', formattedData);
+      
       alert("Kayıt Başarılı! 🎉 Şimdi giriş yapabilirsin.");
       setFormData({ name: '', username: '', email: '', age: '', address: '', password: '' });
       setIsRegisterMode(false); 
     } catch (error) {
-      alert("Kayıt Hatası: " + error.message);
+      // Hatanın detayını gösterelim (Sunucudan gelen mesajı oku)
+      const errorMessage = error.response?.data?.message || error.message;
+      alert("Kayıt Hatası: " + errorMessage);
     }
   };
 
@@ -45,21 +55,29 @@ function App() {
       setUsers(response.data.data); 
     } catch (error) { console.error(error); }
   };
-
-  const handleDashboardSubmit = async (e) => {
+const handleDashboardSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Burada da yaşı sayıya çeviriyoruz
+      const formattedData = {
+        ...formData,
+        age: formData.age ? parseInt(formData.age) : null
+      };
+
       if (editingId) {
-        await axios.put(`http://localhost:3001/users/${editingId}`, formData);
+        await axios.put(`http://localhost:3001/users/${editingId}`, formattedData);
         alert("Kullanıcı Güncellendi! ✅");
       } else {
-        await axios.post('http://localhost:3001/users', formData);
+        await axios.post('http://localhost:3001/users', formattedData);
         alert("Yeni Kullanıcı Eklendi! 🛡️");
       }
       setFormData({ name: '', username: '', email: '', age: '', address: '', password: '' });
       setEditingId(null);
       fetchUsers();
-    } catch (error) { alert("İşlem hatası!"); }
+    } catch (error) { 
+       const errorMessage = error.response?.data?.message || error.message;
+       alert("İşlem hatası: " + errorMessage); 
+    }
   };
 
   const handleDelete = async (id) => {
