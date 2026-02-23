@@ -19,7 +19,10 @@ const Dashboard = ({ user, onLogout }) => {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/users');
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:3001/users', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setUsers(response.data.data);
     } catch (error) {
       console.error("Veri çekme hatası:", error);
@@ -38,11 +41,14 @@ const Dashboard = ({ user, onLogout }) => {
         age: formData.age ? parseInt(formData.age) : null
       };
 
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+
       if (editingId) {
-        await axios.put(`http://localhost:3001/users/${editingId}`, formattedData);
+        await axios.put(`http://localhost:3001/users/${editingId}`, formattedData, config);
         alert("Kullanıcı Güncellendi! ✅");
       } else {
-        await axios.post('http://localhost:3001/users', formattedData);
+        await axios.post('http://localhost:3001/users', formattedData, config);
         alert("Yeni Kullanıcı Eklendi! 🛡️");
       }
 
@@ -57,7 +63,10 @@ const Dashboard = ({ user, onLogout }) => {
   const handleDelete = async (id) => {
     if (window.confirm("Bu kullanıcıyı silmek istediğine emin misin?")) {
       try {
-        await axios.delete(`http://localhost:3001/users/${id}`);
+        const token = localStorage.getItem('token');
+        await axios.delete(`http://localhost:3001/users/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         fetchUsers();
       } catch (error) {
         alert("Silme hatası: " + error.message);
@@ -97,7 +106,6 @@ const Dashboard = ({ user, onLogout }) => {
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-       
           <div className="lg:col-span-1">
             <div className="bg-white p-6 rounded-xl shadow-md sticky top-6">
               <h2 className="text-lg font-bold mb-4 text-gray-700 border-b pb-2">
@@ -145,7 +153,6 @@ const Dashboard = ({ user, onLogout }) => {
             </div>
           </div>
 
-         
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-md overflow-hidden">
                 <div className="p-4 border-b bg-gray-50 flex justify-between items-center">

@@ -1,7 +1,5 @@
+const jwt = require('jsonwebtoken');
 const userService = require('../services/userService');
-
-// --- GARSON KATMANI (CONTROLLER) ---
-// HTTP isteklerini (req) karşılar ve cevap (res) döner.
 
 const getUsers = async (req, res) => {
   try {
@@ -25,7 +23,14 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await userService.loginUser(email, password);
-    res.json({ success: true, message: "Giriş Başarılı!", user: user });
+    
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.json({ success: true, message: "Giriş Başarılı!", user: user, token: token });
   } catch (error) {
     res.status(401).json({ success: false, message: error.message });
   }

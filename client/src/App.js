@@ -9,7 +9,10 @@ function App() {
 
   const handleLogin = async (email, password) => {
     try {
-      const response = await axios.post('http://localhost:3001/login', { email, password });
+      const response = await axios.post('http://localhost:3001/users/login', { email, password });
+
+      localStorage.setItem('token', response.data.token);
+
       setUser(response.data.user);
     } catch (error) {
       alert("Giriş Başarısız: " + (error.response?.data?.message || error.message));
@@ -24,7 +27,7 @@ function App() {
         age: registerData.age ? parseInt(registerData.age) : null
       };
       
-      await axios.post('http://localhost:3001/users', formattedData);
+      await axios.post('http://localhost:3001/users/register', formattedData);
       alert("Kayıt Başarılı! Şimdi giriş yapabilirsin.");
     } catch (error) {
       alert("Kayıt Hatası: " + (error.response?.data?.message || error.message));
@@ -33,6 +36,8 @@ function App() {
 
 
   const handleLogout = () => {
+
+    localStorage.removeItem('token');
     setUser(null);
   };
 
