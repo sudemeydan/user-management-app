@@ -11,7 +11,8 @@ function App() {
     try {
       const response = await axios.post('http://localhost:3001/users/login', { email, password });
 
-      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('accessToken', response.data.accessToken); 
+      localStorage.setItem('refreshToken', response.data.refreshToken);
 
       setUser(response.data.user);
     } catch (error) {
@@ -37,7 +38,8 @@ function App() {
 
   const handleLogout = () => {
 
-    localStorage.removeItem('token');
+    localStorage.removeItem('accessToken'); 
+    localStorage.removeItem('refreshToken');
     setUser(null);
   };
 

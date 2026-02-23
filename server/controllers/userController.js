@@ -24,17 +24,52 @@ const login = async (req, res) => {
     const { email, password } = req.body;
     const user = await userService.loginUser(email, password);
     
-    const token = jwt.sign(
+    const accessToken = jwt.sign(
       { id: user.id, email: user.email },
       process.env.JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: '10m' }
     );
 
-    res.json({ success: true, message: "Giriş Başarılı!", user: user, token: token });
+    const refreshToken = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET, 
+      { expiresIn: '7d' }
+    );
+
+    res.json({ 
+      success: true, 
+      message: "Giriş Başarılı!", 
+      user: user, 
+      accessToken: accessToken, 
+      refreshToken: refreshToken 
+    });
   } catch (error) {
     res.status(401).json({ success: false, message: error.message });
   }
 };
+
+const refresh = async (req, res) => {
+  const { refreshToken } = req.body; 
+
+  if (!refreshToken) {
+    return res.status(401).json({ success: false, message: "Refresh Token bulunamadı!" });
+  }
+
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+
+    const newAccessToken = jwt.sign(
+      { id: decoded.id, email: decoded.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    res.json({ success: true, accessToken: newAccessToken });
+  } catch (error) {
+    res.status(403).json({ success: false, message: "Geçersiz Refresh Token, tekrar giriş yapın." });
+  }
+};
+
 
 const updateUser = async (req, res) => {
   try {
@@ -61,5 +96,6 @@ module.exports = {
   createUser,
   login,
   updateUser,
-  deleteUser
+  deleteUser,
+  refresh 
 };

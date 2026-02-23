@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosInstance from '../axiosInstance';
 
 const Dashboard = ({ user, onLogout }) => {
   const [users, setUsers] = useState([]);
@@ -20,7 +20,7 @@ const Dashboard = ({ user, onLogout }) => {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:3001/users', {
+      const response = await axiosInstance.get('http://localhost:3001/users', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUsers(response.data.data);
@@ -45,10 +45,10 @@ const Dashboard = ({ user, onLogout }) => {
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
       if (editingId) {
-        await axios.put(`http://localhost:3001/users/${editingId}`, formattedData, config);
+        await axiosInstance.put(`http://localhost:3001/users/${editingId}`, formattedData, config);
         alert("Kullanıcı Güncellendi! ✅");
       } else {
-        await axios.post('http://localhost:3001/users', formattedData, config);
+        await axiosInstance.post('http://localhost:3001/users', formattedData, config);
         alert("Yeni Kullanıcı Eklendi! 🛡️");
       }
 
@@ -64,7 +64,7 @@ const Dashboard = ({ user, onLogout }) => {
     if (window.confirm("Bu kullanıcıyı silmek istediğine emin misin?")) {
       try {
         const token = localStorage.getItem('token');
-        await axios.delete(`http://localhost:3001/users/${id}`, {
+        await axiosInstance.delete(`http://localhost:3001/users/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         fetchUsers();
