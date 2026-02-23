@@ -39,11 +39,8 @@ function App() {
   return (
     <div>
       {!user ? (
-        // Kullanıcı yoksa Login Ekranı
         <Login onLogin={handleLogin} onRegister={handleRegister} />
       ) : (
-        // Kullanıcı varsa Dashboard Ekranı
-        // Kullanıcı bilgisini ve çıkış fonksiyonunu Dashboard'a gönderiyoruz
         <Dashboard user={user} onLogout={handleLogout} />
       )}
     </div>
