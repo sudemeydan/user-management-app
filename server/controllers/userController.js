@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const userService = require('../services/userService');
 
+// Kullanıcıları Listele
 const getUsers = async (req, res) => {
   try {
     const users = await userService.getAllUsers();
@@ -10,6 +11,7 @@ const getUsers = async (req, res) => {
   }
 };
 
+// Yeni Kullanıcı Oluştur
 const createUser = async (req, res) => {
   try {
     const newUser = await userService.registerUser(req.body);
@@ -19,19 +21,20 @@ const createUser = async (req, res) => {
   }
 };
 
+// Giriş Yap
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await userService.loginUser(email, password);
     
     const accessToken = jwt.sign(
-      { id: user.id, email: user.email },
+      { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: '10m' }
+      { expiresIn: '15m' }
     );
 
     const refreshToken = jwt.sign(
-      { id: user.id, email: user.email },
+      { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET, 
       { expiresIn: '7d' }
     );
@@ -48,6 +51,7 @@ const login = async (req, res) => {
   }
 };
 
+// Token Yenile
 const refresh = async (req, res) => {
   const { refreshToken } = req.body; 
 
@@ -70,7 +74,7 @@ const refresh = async (req, res) => {
   }
 };
 
-
+// Kullanıcı Güncelle
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -81,11 +85,43 @@ const updateUser = async (req, res) => {
   }
 };
 
+// Kullanıcı Sil
 const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
     await userService.deleteUser(id);
     res.json({ success: true, message: "Silindi" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+const requestUpgrade = async (req, res) => {
+  console.log("📍 CONTROLLER: Yükseltme isteği geldi. User ID:", req.user?.id);
+  try {
+    
+    await userService.requestUpgrade(req.user.id);
+
+    res.json({ 
+      success: true, 
+      message: "Talebini aldık! Yönetici onayladığında PRO olacaksın." 
+    });
+  } catch (error) {
+    console.error("❌ CONTROLLER HATASI:", error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const handleUpgradeRequest = async (req, res) => {
+  try {
+    const { userId, action } = req.body; 
+    
+    
+    await userService.handleUpgrade(userId, action);
+
+    res.json({ success: true, message: `İşlem Başarılı: ${action}` });
+
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -97,5 +133,7 @@ module.exports = {
   login,
   updateUser,
   deleteUser,
-  refresh 
+  refresh,
+  requestUpgrade,      
+  handleUpgradeRequest
 };

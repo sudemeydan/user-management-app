@@ -1,15 +1,16 @@
 const prisma = require('../utils/prisma');
 
-
 const findAllUsers = async () => {
   return await prisma.user.findMany({
-    orderBy: { createdAt: 'desc' } // En son eklenen en üstte olsun
+    orderBy: { createdAt: 'desc' },
+    include: { upgradeRequests: true } 
   });
 };
 
 const findUserById = async (id) => {
   return await prisma.user.findUnique({
-    where: { id: parseInt(id) }
+    where: { id: parseInt(id) },
+    include: { upgradeRequests: true }
   });
 };
 
@@ -26,15 +27,52 @@ const createUser = async (userData) => {
 };
 
 const updateUser = async (id, userData) => {
+  
+  const { 
+    isUpgradeRequested,
+    upgradeRequests,   
+    id: userId,         
+    ...safeData         
+  } = userData;
+
+  if (Object.keys(safeData).length === 0) {
+      return await prisma.user.findUnique({ where: { id: parseInt(id) } });
+  }
+
   return await prisma.user.update({
     where: { id: parseInt(id) },
-    data: userData
+    data: safeData 
   });
 };
+// ------------------------------------------------
 
 const deleteUser = async (id) => {
   return await prisma.user.delete({
     where: { id: parseInt(id) }
+  });
+};
+
+
+const createUpgradeRequest = async (userId) => {
+  return await prisma.upgradeRequest.create({
+    data: {
+      userId: parseInt(userId),
+      status: 'PENDING'
+    }
+  });
+};
+
+const findLatestUpgradeRequest = async (userId) => {
+  return await prisma.upgradeRequest.findFirst({
+    where: { userId: parseInt(userId) },
+    orderBy: { createdAt: 'desc' }
+  });
+};
+
+const updateUpgradeRequestStatus = async (requestId, status) => {
+  return await prisma.upgradeRequest.update({
+    where: { id: parseInt(requestId) },
+    data: { status: status }
   });
 };
 
@@ -44,5 +82,8 @@ module.exports = {
   findUserByEmail,
   createUser,
   updateUser,
-  deleteUser
+  deleteUser,
+  createUpgradeRequest,
+  findLatestUpgradeRequest,
+  updateUpgradeRequestStatus
 };

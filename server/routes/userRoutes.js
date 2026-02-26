@@ -1,19 +1,32 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
-
-const authMiddleware = require('../middlewares/authMiddleware'); 
+const authMiddleware = require('../middlewares/authMiddleware');
+const roleMiddleware = require('../middlewares/roleMiddleware'); 
 
 router.post('/register', userController.createUser);
-
 router.post('/login', userController.login);
-
-router.get('/', authMiddleware, userController.getUsers); 
-
-router.put('/:id', authMiddleware, userController.updateUser);
-
 router.post('/refresh', userController.refresh);
+router.post('/request-upgrade', authMiddleware, userController.requestUpgrade);
 
-router.delete('/:id', authMiddleware, userController.deleteUser);
+router.get('/', authMiddleware, userController.getUsers);
 
-module.exports = router; 
+router.put('/:id', 
+  authMiddleware, 
+  roleMiddleware(['PRO_USER', 'SUPERADMIN']), 
+  userController.updateUser
+);
+
+router.delete('/:id', 
+  authMiddleware, 
+  roleMiddleware(['SUPERADMIN']), 
+  userController.deleteUser
+);
+
+router.post('/handle-upgrade', 
+  authMiddleware, 
+  roleMiddleware(['SUPERADMIN']), 
+  userController.handleUpgradeRequest
+);
+
+module.exports = router;

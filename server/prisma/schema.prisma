@@ -4,16 +4,51 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  url      = "file:./dev.db"
 }
 
+
+
 model User {
+  id              Int              @id @default(autoincrement())
+  email           String           @unique
+  password        String
+  name            String?
+  username        String           @unique
+  age             Int?
+  address         String?
+  role            String           @default("FREE_USER")
+  createdAt       DateTime         @default(now())
+
+  
+  upgradeRequests UpgradeRequest[] 
+  profile         Profile?         
+  tasks           Task[]          
+}
+
+model UpgradeRequest {
   id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  name      String?
-  username  String   @unique
-  age       Int?
-  address   String?
+  status    String   @default("PENDING") 
+  adminNote String?  
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt          
+
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Profile {
+  id      Int     @id @default(autoincrement())
+  bio     String?
+  phone   String?
+  userId  Int     @unique
+  user    User    @relation(fields: [userId], references: [id])
+}
+
+model Task {
+  id          Int      @id @default(autoincrement())
+  title       String
+  isCompleted Boolean  @default(false)
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
 }
