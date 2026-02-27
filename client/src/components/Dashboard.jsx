@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axiosInstance from '../axiosInstance';
 import { 
     Users, UserPlus, LogOut, Edit2, Trash2, Search, 
     X, CheckCircle, LayoutDashboard, Settings, 
-    Crown, Zap, Loader2, Clock, Check, XCircle
+    Crown, Zap, Loader2, Clock, Check, XCircle, Camera
 } from 'lucide-react';
 
 const Dashboard = ({ user, onLogout }) => {
@@ -12,6 +12,9 @@ const Dashboard = ({ user, onLogout }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoadingAction, setIsLoadingAction] = useState(false);
   
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const fileInputRef = useRef(null);
+
   const [formData, setFormData] = useState({
     name: '', username: '', email: '', age: '', address: '', password: '', role: 'FREE_USER'
   });
@@ -29,6 +32,42 @@ const Dashboard = ({ user, onLogout }) => {
       console.error("Veri çekme hatası:", error);
     }
   };
+
+  
+  const handleImageClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+        alert("Lütfen geçerli bir resim dosyası seçin!");
+        return;
+    }
+
+    setUploadingImg(true);
+    const formData = new FormData();
+    formData.append('image', file); 
+
+    try {
+        await axiosInstance.post('/users/upload-avatar', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        alert("Profil resmi güncellendi! 📸");
+        fetchUsers(); 
+        
+        window.location.reload(); 
+    } catch (error) {
+        console.error("Upload Hatası:", error);
+        alert("Resim yüklenirken hata oluştu: " + (error.response?.data?.message || error.message));
+    } finally {
+        setUploadingImg(false);
+    }
+  };
+
+ 
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -125,6 +164,8 @@ const Dashboard = ({ user, onLogout }) => {
 
   const currentUserData = users.find(u => u.id === user.id) || user;
   const hasPendingRequest = currentUserData.upgradeRequests?.some(req => req.status === 'PENDING');
+  
+  const profileImgUrl = currentUserData.profileImage?.url;
 
   return (
     <div className="min-h-screen bg-gray-100 flex font-sans">
@@ -151,15 +192,42 @@ const Dashboard = ({ user, onLogout }) => {
         </nav>
 
         <div className="p-4 border-t border-indigo-800">
+            {/* --- PROFİL KARTI VE RESİM YÜKLEME --- */}
             <div className="flex items-center gap-3 mb-4 px-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 to-orange-500 flex items-center justify-center font-bold text-xs text-white">
-                    {user.name?.charAt(0).toUpperCase()}
+                <div className="relative group cursor-pointer" onClick={handleImageClick}>
+                    {/* Gizli Dosya Inputu */}
+                    <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={handleFileChange} 
+                        className="hidden" 
+                        accept="image/*"
+                    />
+                    
+                    {/* Profil Resmi veya Baş Harf */}
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-yellow-400 to-orange-500 flex items-center justify-center font-bold text-xs text-white overflow-hidden border-2 border-indigo-700">
+                        {uploadingImg ? (
+                            <Loader2 className="animate-spin w-4 h-4" />
+                        ) : profileImgUrl ? (
+                            <img src={profileImgUrl} alt="Profil" className="w-full h-full object-cover" />
+                        ) : (
+                            currentUserData.name?.charAt(0).toUpperCase()
+                        )}
+                    </div>
+
+                    {/* Hover ile çıkan kamera ikonu */}
+                    <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Camera size={14} className="text-white" />
+                    </div>
                 </div>
+
                 <div className="overflow-hidden">
-                    <p className="text-sm font-medium truncate">{user.name}</p>
-                    <p className="text-xs text-indigo-300 truncate">{user.role}</p>
+                    <p className="text-sm font-medium truncate">{currentUserData.name}</p>
+                    <p className="text-xs text-indigo-300 truncate">{currentUserData.role}</p>
                 </div>
             </div>
+            {/* ------------------------------------- */}
+
             <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500 hover:text-white text-red-200 py-2 rounded-lg transition text-sm font-medium border border-red-500/20">
                 <LogOut size={16} /> Çıkış Yap
             </button>
@@ -255,7 +323,22 @@ const Dashboard = ({ user, onLogout }) => {
 
                             return (
                                 <tr key={u.id} className="hover:bg-gray-50/80 transition group">
-                                    <td className="p-5 font-medium">{u.name} <div className="text-gray-500 text-xs font-normal">{u.email}</div></td>
+                                    <td className="p-5 font-medium flex items-center gap-3">
+                                        {/* Tabloda da resmi gösterelim */}
+                                        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
+                                            {u.profileImage?.url ? (
+                                                <img src={u.profileImage.url} alt="" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center bg-indigo-100 text-indigo-500 font-bold text-xs">
+                                                    {u.name?.charAt(0).toUpperCase()}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div>
+                                            {u.name} 
+                                            <div className="text-gray-500 text-xs font-normal">{u.email}</div>
+                                        </div>
+                                    </td>
                                     <td className="p-5">
                                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                                             u.role === 'SUPERADMIN' ? 'bg-purple-100 text-purple-700' : 
@@ -284,6 +367,7 @@ const Dashboard = ({ user, onLogout }) => {
         </div>
       </main>
 
+      {/* MODAL KODLARI BURADA AYNI ŞEKİLDE DURUYOR (Değişiklik yok, kod kısalığı için gizliyorum ama sen yapıştırırken silme!) */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">

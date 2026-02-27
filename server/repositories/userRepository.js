@@ -3,14 +3,15 @@ const prisma = require('../utils/prisma');
 const findAllUsers = async () => {
   return await prisma.user.findMany({
     orderBy: { createdAt: 'desc' },
-    include: { upgradeRequests: true } 
+    include: { upgradeRequests: true ,profileImage: true } 
+
   });
 };
 
 const findUserById = async (id) => {
   return await prisma.user.findUnique({
     where: { id: parseInt(id) },
-    include: { upgradeRequests: true }
+    include: { upgradeRequests: true ,profileImage: true }
   });
 };
 
@@ -44,7 +45,7 @@ const updateUser = async (id, userData) => {
     data: safeData 
   });
 };
-// ------------------------------------------------
+
 
 const deleteUser = async (id) => {
   return await prisma.user.delete({

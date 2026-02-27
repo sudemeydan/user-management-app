@@ -19,7 +19,7 @@ model User {
   address         String?
   role            String           @default("FREE_USER")
   createdAt       DateTime         @default(now())
-
+  profileImage    ProfileImage?
   
   upgradeRequests UpgradeRequest[] 
   profile         Profile?         
@@ -51,4 +51,18 @@ model Task {
   isCompleted Boolean  @default(false)
   userId      Int
   user        User     @relation(fields: [userId], references: [id])
+}
+
+model ProfileImage {
+  id        Int      @id @default(autoincrement())
+  
+  url       String   
+  
+  fileId    String   
+  
+  userId    Int      @unique 
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

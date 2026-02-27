@@ -1,5 +1,9 @@
 const userRepository = require('../repositories/userRepository');
 const bcrypt = require('bcrypt');
+const driveClient = require('../utils/driveClient');
+const fs = require('fs');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 const getAllUsers = async () => {
   return await userRepository.findAllUsers();
@@ -82,6 +86,38 @@ const handleUpgrade = async (userId, action) => {
   }
 };
 
+const uploadProfileImage = async (userId, fileObj) => {
+  const { fileId, publicUrl } = await driveClient.uploadToDrive(fileObj);
+
+  fs.unlink(fileObj.path, (err) => {
+    if (err) console.error("Geçici dosya silinemedi:", err);
+  });
+
+  
+  const existingImage = await prisma.profileImage.findUnique({
+    where: { userId: parseInt(userId) }
+  });
+
+  if (existingImage) {
+    await driveClient.deleteFromDrive(existingImage.fileId);
+  }
+
+  const savedImage = await prisma.profileImage.upsert({
+    where: { userId: parseInt(userId) },
+    update: {
+      url: publicUrl,
+      fileId: fileId
+    },
+    create: {
+      userId: parseInt(userId),
+      url: publicUrl,
+      fileId: fileId
+    }
+  });
+
+  return savedImage;
+};
+
 module.exports = {
   getAllUsers,
   registerUser,
@@ -89,5 +125,6 @@ module.exports = {
   updateUser,
   deleteUser,
   requestUpgrade,
-  handleUpgrade
+  handleUpgrade,
+  uploadProfileImage
 };

@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const userService = require('../services/userService');
 
-// Kullanıcıları Listele
+
 const getUsers = async (req, res) => {
   try {
     const users = await userService.getAllUsers();
@@ -11,7 +11,7 @@ const getUsers = async (req, res) => {
   }
 };
 
-// Yeni Kullanıcı Oluştur
+
 const createUser = async (req, res) => {
   try {
     const newUser = await userService.registerUser(req.body);
@@ -21,7 +21,7 @@ const createUser = async (req, res) => {
   }
 };
 
-// Giriş Yap
+
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -51,7 +51,7 @@ const login = async (req, res) => {
   }
 };
 
-// Token Yenile
+
 const refresh = async (req, res) => {
   const { refreshToken } = req.body; 
 
@@ -74,7 +74,7 @@ const refresh = async (req, res) => {
   }
 };
 
-// Kullanıcı Güncelle
+
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -85,7 +85,7 @@ const updateUser = async (req, res) => {
   }
 };
 
-// Kullanıcı Sil
+
 const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -98,7 +98,7 @@ const deleteUser = async (req, res) => {
 
 
 const requestUpgrade = async (req, res) => {
-  console.log("📍 CONTROLLER: Yükseltme isteği geldi. User ID:", req.user?.id);
+  console.log(" CONTROLLER: Yükseltme isteği geldi. User ID:", req.user?.id);
   try {
     
     await userService.requestUpgrade(req.user.id);
@@ -108,7 +108,7 @@ const requestUpgrade = async (req, res) => {
       message: "Talebini aldık! Yönetici onayladığında PRO olacaksın." 
     });
   } catch (error) {
-    console.error("❌ CONTROLLER HATASI:", error.message);
+    console.error("CONTROLLER HATASI:", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -127,6 +127,19 @@ const handleUpgradeRequest = async (req, res) => {
   }
 };
 
+const uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "Dosya yok" });
+    }
+    
+    const savedImage = await userService.uploadProfileImage(req.user.id, req.file);
+    res.json({ success: true, message: "Resim yüklendi!", data: savedImage });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getUsers,
   createUser,
@@ -135,5 +148,6 @@ module.exports = {
   deleteUser,
   refresh,
   requestUpgrade,      
-  handleUpgradeRequest
+  handleUpgradeRequest,
+  uploadAvatar
 };

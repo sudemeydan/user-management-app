@@ -4,6 +4,9 @@ const userController = require('../controllers/userController');
 const authMiddleware = require('../middlewares/authMiddleware');
 const roleMiddleware = require('../middlewares/roleMiddleware'); 
 
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' });
+
 router.post('/register', userController.createUser);
 router.post('/login', userController.login);
 router.post('/refresh', userController.refresh);
@@ -27,6 +30,13 @@ router.post('/handle-upgrade',
   authMiddleware, 
   roleMiddleware(['SUPERADMIN']), 
   userController.handleUpgradeRequest
+);
+
+router.post(
+  '/upload-avatar', 
+  authMiddleware, 
+  upload.single('image'), 
+  userController.uploadAvatar 
 );
 
 module.exports = router;
