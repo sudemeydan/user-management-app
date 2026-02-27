@@ -4,8 +4,11 @@ import Login from './components/Login';
 import Dashboard from './components/Dashboard'; 
 
 function App() {
-  const [user, setUser] = useState(null);
-
+  // 1. DEĞİŞİKLİK: Sayfa ilk açıldığında localStorage'a bak. Kullanıcı varsa onu al, yoksa null yap.
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('userData');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
 
   const handleLogin = async (email, password) => {
     try {
@@ -13,6 +16,9 @@ function App() {
 
       localStorage.setItem('accessToken', response.data.accessToken); 
       localStorage.setItem('refreshToken', response.data.refreshToken);
+      
+      // 2. DEĞİŞİKLİK: Kullanıcı bilgilerini de tarayıcı hafızasına kaydet
+      localStorage.setItem('userData', JSON.stringify(response.data.user));
 
       setUser(response.data.user);
     } catch (error) {
@@ -20,7 +26,6 @@ function App() {
     }
   };
 
-  
   const handleRegister = async (registerData) => {
     try {
       const formattedData = {
@@ -35,11 +40,13 @@ function App() {
     }
   };
 
-
   const handleLogout = () => {
-
     localStorage.removeItem('accessToken'); 
     localStorage.removeItem('refreshToken');
+    
+    // 3. DEĞİŞİKLİK: Çıkış yapıldığında kullanıcı bilgilerini hafızadan sil
+    localStorage.removeItem('userData'); 
+    
     setUser(null);
   };
 
