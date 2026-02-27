@@ -50,8 +50,10 @@ const uploadToDrive = async (fileObj) => {
       },
     });
 
-const publicUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
-    return { fileId, publicUrl };
+
+// Google'ın resimleri <img> etiketinde en stabil gösteren sunucusu:
+const publicUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+  return { fileId, publicUrl };
 
   } catch (error) {
     console.error('❌ Google Drive Yükleme Hatası:', error.message);
