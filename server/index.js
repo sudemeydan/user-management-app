@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-
+const postRoutes = require('./routes/postRoutes');
 const userRoutes = require('./routes/userRoutes'); 
 const connectionRoutes = require('./routes/connectionRoutes');
 const app = express();
@@ -18,6 +18,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/users', userRoutes); 
 
 app.use('/connections', connectionRoutes);
+app.use('/posts', postRoutes);
+
 
 const AppError = require('./utils/AppError');
 app.use((req, res, next) => {

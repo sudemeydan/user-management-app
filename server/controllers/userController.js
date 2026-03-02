@@ -142,14 +142,12 @@ const uploadAvatar = async (req, res) => {
 const togglePrivacy = async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
-    const { isPrivate } = req.body; // Frontend'den true veya false gelecek
+    const { isPrivate } = req.body; 
 
-    // Sadece hesabın sahibi veya Superadmin bu ayarı değiştirebilir (Güvenlik Guard'ı)
     if (req.user.id !== userId && req.user.role !== 'SUPERADMIN') {
       return res.status(403).json({ success: false, message: "Başkasının gizlilik ayarını değiştiremezsiniz!" });
     }
 
-    // Prisma ile veritabanını güncelle
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: { isPrivate: isPrivate },

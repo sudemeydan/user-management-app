@@ -83,12 +83,21 @@ model Connection {
   @@unique([senderId, receiverId]) 
 }
 
+// Eski halini güncelliyoruz:
 model Post {
-  id        Int      @id @default(autoincrement())
-  content   String?  // Kullanıcının yazdığı metin
-  mediaUrl  String?  // Resim veya Video eklendiyse Drive Linki
-  mediaType String   @default("TEXT") // İçerik tipi: TEXT, IMAGE veya VIDEO
+  id        Int         @id @default(autoincrement())
+  content   String?     // Kullanıcının yazdığı metin
   authorId  Int
-  author    User     @relation(fields: [authorId], references: [id])
+  author    User        @relation(fields: [authorId], references: [id])
+  images    PostImage[] // YENİ: Bir gönderinin birden fazla resmi olabilir
+  createdAt DateTime    @default(now())
+}
+
+model PostImage {
+  id        Int      @id @default(autoincrement())
+  url       String   // Ekranda göstermek için Drive Linki
+  fileId    String   // Silme işlemi için Drive Dosya Kimliği (Kritik!)
+  postId    Int
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 }
