@@ -1,17 +1,14 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// 1. İstek Gönder
 const sendRequest = async (req, res) => {
   try {
-    const senderId = req.user.id; // İsteği atan kişi (Token'dan gelir)
-    const receiverId = parseInt(req.body.receiverId); // İstek atılan kişi
-
+    const senderId = req.user.id; 
+    const receiverId = parseInt(req.body.receiverId);
     if (senderId === receiverId) {
       return res.status(400).json({ success: false, message: "Kendinize istek atamazsınız!" });
     }
 
-    // Daha önce istek atılmış mı kontrol et (Spam önlemi)
     const existingConnection = await prisma.connection.findFirst({
       where: { senderId, receiverId }
     });
@@ -30,13 +27,11 @@ const sendRequest = async (req, res) => {
   }
 };
 
-// 2. İsteği Kabul Et
 const acceptRequest = async (req, res) => {
   try {
     const connectionId = parseInt(req.params.id);
     const userId = req.user.id;
 
-    // Bağlantıyı bul
     const connection = await prisma.connection.findUnique({ where: { id: connectionId } });
 
     if (!connection || connection.receiverId !== userId) {
@@ -54,7 +49,6 @@ const acceptRequest = async (req, res) => {
   }
 };
 
-// 3. İsteği Reddet veya Bağlantıyı Sil
 const rejectOrRemoveRequest = async (req, res) => {
   try {
     const connectionId = parseInt(req.params.id);

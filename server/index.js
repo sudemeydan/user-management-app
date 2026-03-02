@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 
 const userRoutes = require('./routes/userRoutes'); 
 const connectionRoutes = require('./routes/connectionRoutes');
@@ -13,7 +14,7 @@ app.use((req, res, next) => {
   next();
 });
 app.use(express.json());
-
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/users', userRoutes); 
 
 app.use('/connections', connectionRoutes);

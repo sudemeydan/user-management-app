@@ -4,7 +4,7 @@ import {
     Users, UserPlus, LogOut, Edit2, Trash2, Search, 
     X, CheckCircle, LayoutDashboard, Settings, 
     Crown, Zap, Loader2, Clock, Check, XCircle, Camera,
-    Lock, Unlock, Send, UserCheck, UserX // Sosyal Medya İkonları Eklendi
+    Lock, Unlock, Send, UserCheck, UserX 
 } from 'lucide-react';
 
 const Dashboard = ({ user, onLogout }) => {
@@ -25,24 +25,25 @@ const Dashboard = ({ user, onLogout }) => {
     fetchUsers();
   }, []);
 
+  
   const fetchUsers = async () => {
     try {
       const response = await axiosInstance.get('/users');
       const fetchedUsers = response.data.data;
       setUsers(fetchedUsers);
 
-      // Veritabanından gelen en güncel kendi bilgilerini bul ve tarayıcı hafızasına da (localStorage) yaz!
       const latestCurrentUser = fetchedUsers.find(u => u.id === user.id);
       if (latestCurrentUser) {
           localStorage.setItem('userData', JSON.stringify(latestCurrentUser));
       }
-      // -------------------------
-
     } catch (error) {
       console.error("Veri çekme hatası:", error);
+      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+          alert("Oturum süreniz doldu. Lütfen tekrar giriş yapın.");
+          onLogout(); 
+      }
     }
   };
-
   const handleImageClick = () => fileInputRef.current.click();
 
   const handleFileChange = async (e) => {
