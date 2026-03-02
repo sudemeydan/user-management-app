@@ -35,11 +35,12 @@ const uploadToDrive = async (fileObj) => {
     const response = await drive.files.create({
       requestBody: fileMetadata,
       media: media,
-      fields: 'id, webViewLink, webContentLink',
+      fields: 'id, webViewLink, webContentLink, thumbnailLink', 
       supportsAllDrives: true,
     });
 
     const fileId = response.data.id;
+    const thumbnail = response.data.thumbnailLink; 
     console.log("✅ Dosya Drive'a Yüklendi! ID:", fileId);
 
     await drive.permissions.create({
@@ -50,10 +51,16 @@ const uploadToDrive = async (fileObj) => {
       },
     });
 
+    
+    let publicUrl = '';
+    
+    if (thumbnail) {
+        publicUrl = thumbnail.replace(/=s\d+/, '=s1000');
+    } else {
+        publicUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+    }
 
-// Google'ın resimleri <img> etiketinde en stabil gösteren sunucusu:
-const publicUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
-  return { fileId, publicUrl };
+    return { fileId, publicUrl };
 
   } catch (error) {
     console.error('❌ Google Drive Yükleme Hatası:', error.message);

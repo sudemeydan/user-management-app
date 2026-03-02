@@ -11,7 +11,7 @@ router.post('/register', userController.createUser);
 router.post('/login', userController.login);
 router.post('/refresh', userController.refresh);
 router.post('/request-upgrade', authMiddleware, userController.requestUpgrade);
-
+router.patch('/:id/privacy', authMiddleware, userController.togglePrivacy);
 router.get('/', authMiddleware, userController.getUsers);
 
 router.put('/:id', 
