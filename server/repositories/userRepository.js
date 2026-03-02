@@ -3,7 +3,8 @@ const prisma = require('../utils/prisma');
 const findAllUsers = async () => {
   return await prisma.user.findMany({
     orderBy: { createdAt: 'desc' },
-    include: { upgradeRequests: true ,profileImage: true } 
+    include: { upgradeRequests: true ,profileImage: true ,sentConnections: true,     // YENİ EKLENDİ (Gönderilen İstekler)
+      receivedConnections: true} 
 
   });
 };

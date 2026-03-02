@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const driveClient = require('../utils/driveClient');
 const fs = require('fs');
 const { PrismaClient } = require('@prisma/client');
+const AppError = require('../utils/AppError');
 const prisma = new PrismaClient();
 
 const getAllUsers = async () => {
@@ -25,18 +26,18 @@ const registerUser = async (userData) => {
 
 const loginUser = async (email, password) => {
   const user = await userRepository.findUserByEmail(email);
+  
   if (!user) {
-    throw new Error("Kullanıcı bulunamadı.");
+    throw new AppError("E-posta adresi veya şifre hatalı.", 401);
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
-    throw new Error("Şifre hatalı.");
+    throw new AppError("E-posta adresi veya şifre hatalı.", 401);
   }
 
   return user;
 };
-
 const updateUser = async (id, userData) => {
   if (userData.password) {
     userData.password = await bcrypt.hash(userData.password, 10);

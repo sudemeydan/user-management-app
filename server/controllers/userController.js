@@ -36,7 +36,7 @@ const login = async (req, res) => {
     const refreshToken = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET, 
-      { expiresIn: '7d' }
+      { expiresIn: '2h' }
     );
 
     res.json({ 
@@ -139,6 +139,32 @@ const uploadAvatar = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+const togglePrivacy = async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const { isPrivate } = req.body; // Frontend'den true veya false gelecek
+
+    // Sadece hesabın sahibi veya Superadmin bu ayarı değiştirebilir (Güvenlik Guard'ı)
+    if (req.user.id !== userId && req.user.role !== 'SUPERADMIN') {
+      return res.status(403).json({ success: false, message: "Başkasının gizlilik ayarını değiştiremezsiniz!" });
+    }
+
+    // Prisma ile veritabanını güncelle
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { isPrivate: isPrivate },
+    });
+
+    res.json({ 
+      success: true, 
+      message: `Hesap artık ${isPrivate ? 'Gizli' : 'Herkese Açık'}.`, 
+      data: updatedUser 
+    });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Gizlilik ayarı güncellenirken hata oluştu: " + error.message });
+  }
+};
 
 module.exports = {
   getUsers,
@@ -149,5 +175,6 @@ module.exports = {
   refresh,
   requestUpgrade,      
   handleUpgradeRequest,
-  uploadAvatar
+  uploadAvatar,
+  togglePrivacy
 };

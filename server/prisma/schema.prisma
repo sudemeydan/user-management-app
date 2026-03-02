@@ -24,6 +24,10 @@ model User {
   upgradeRequests UpgradeRequest[] 
   profile         Profile?         
   tasks           Task[]          
+  isPrivate           Boolean       @default(false)
+  sentConnections     Connection[]  @relation("SentConnections")
+  receivedConnections Connection[]  @relation("ReceivedConnections")
+  posts               Post[]
 }
 
 model UpgradeRequest {
@@ -65,4 +69,27 @@ model ProfileImage {
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Connection {
+  id         Int      @id @default(autoincrement())
+  senderId   Int
+  sender     User     @relation("SentConnections", fields: [senderId], references: [id])
+  receiverId Int
+  receiver   User     @relation("ReceivedConnections", fields: [receiverId], references: [id])
+  status     String   @default("PENDING") // Durumlar: PENDING, ACCEPTED, REJECTED
+  createdAt  DateTime @default(now())
+
+  // Bir kişi aynı kişiye sadece 1 istek atabilsin diye veritabanı düzeyinde koruma:
+  @@unique([senderId, receiverId]) 
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  content   String?  // Kullanıcının yazdığı metin
+  mediaUrl  String?  // Resim veya Video eklendiyse Drive Linki
+  mediaType String   @default("TEXT") // İçerik tipi: TEXT, IMAGE veya VIDEO
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
 }
