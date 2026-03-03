@@ -10,6 +10,8 @@ router.post('/', authMiddleware, upload.array('images', 10), postController.crea
 
 router.get('/', authMiddleware, postController.getAllPosts);
 
+router.get('/image/:fileId', postController.getImage);
+
 router.delete('/:id', authMiddleware, postController.deletePost);
 
 module.exports = router;

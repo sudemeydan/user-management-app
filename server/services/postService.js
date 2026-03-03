@@ -9,7 +9,7 @@ const createPostWithImages = async (authorId, content, files) => {
   if (files && files.length > 0) {
     const uploadPromises = files.map(async (file) => {
       const result = await driveClient.uploadToDrive(file);
-      
+
       fs.unlink(file.path, (err) => {
         if (err) console.error("Geçici dosya silinemedi:", err);
       });
@@ -28,7 +28,7 @@ const createPostWithImages = async (authorId, content, files) => {
       content: content,
       authorId: authorId,
       images: {
-        create: uploadedImagesData 
+        create: uploadedImagesData
       }
     },
     include: {
@@ -42,8 +42,8 @@ const createPostWithImages = async (authorId, content, files) => {
   return newPost;
 };
 
-const getAllPosts = async () => {
-  return await prisma.post.findMany({
+const getAllPosts = async (currentUserId) => {
+  const posts = await prisma.post.findMany({
     orderBy: { createdAt: 'desc' },
     include: {
       images: true,
@@ -52,6 +52,24 @@ const getAllPosts = async () => {
       }
     }
   });
+
+  if (!currentUserId) return posts;
+
+  const user = await prisma.user.findUnique({
+    where: { id: parseInt(currentUserId) },
+    include: {
+      blockingUsers: true,
+      blockedUsers: true
+    }
+  });
+
+  if (!user) return posts;
+
+  const excludedIds = new Set();
+  user.blockingUsers?.forEach(b => excludedIds.add(b.blockedId));
+  user.blockedUsers?.forEach(b => excludedIds.add(b.blockerId));
+
+  return posts.filter(p => !excludedIds.has(p.authorId));
 };
 
 const deletePost = async (postId, userId, userRole) => {

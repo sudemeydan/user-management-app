@@ -6,8 +6,27 @@ const { PrismaClient } = require('@prisma/client');
 const AppError = require('../utils/AppError');
 const prisma = new PrismaClient();
 
-const getAllUsers = async () => {
-  return await userRepository.findAllUsers();
+const getAllUsers = async (currentUserId) => {
+  const users = await userRepository.findAllUsers();
+
+  if (!currentUserId) return users;
+
+  const filteredUsers = [];
+  for (const user of users) {
+    // If this user has blocked the current user, hide them completely
+    const hasBlockedMe = user.blockingUsers?.some(block => block.blockedId === parseInt(currentUserId));
+    if (hasBlockedMe) continue;
+
+    // If the current user has blocked this user, attach a flag
+    const iHaveBlocked = user.blockedUsers?.some(block => block.blockerId === parseInt(currentUserId));
+
+    filteredUsers.push({
+      ...user,
+      isBlockedByMe: iHaveBlocked
+    });
+  }
+
+  return filteredUsers;
 };
 
 const registerUser = async (userData) => {
@@ -17,7 +36,7 @@ const registerUser = async (userData) => {
   }
 
   const hashedPassword = await bcrypt.hash(userData.password, 10);
-  
+
   return await userRepository.createUser({
     ...userData,
     password: hashedPassword
@@ -26,7 +45,7 @@ const registerUser = async (userData) => {
 
 const loginUser = async (email, password) => {
   const user = await userRepository.findUserByEmail(email);
-  
+
   if (!user) {
     throw new AppError("E-posta adresi veya şifre hatalı.", 401);
   }
@@ -53,13 +72,13 @@ const requestUpgrade = async (userId) => {
   console.log("1. Service Katmanı: İstek başladı. Kullanıcı ID:", userId);
 
   if (!userRepository.createUpgradeRequest) {
-      console.error("!!! HATA: userRepository.createUpgradeRequest fonksiyonu BULUNAMADI!");
-      throw new Error("Sunucu hatası: Repository fonksiyonu eksik.");
+    console.error("!!! HATA: userRepository.createUpgradeRequest fonksiyonu BULUNAMADI!");
+    throw new Error("Sunucu hatası: Repository fonksiyonu eksik.");
   }
 
   const lastRequest = await userRepository.findLatestUpgradeRequest(userId);
   console.log("2. Son istek durumu:", lastRequest);
-  
+
   if (lastRequest && lastRequest.status === 'PENDING') {
     console.log("3. Zaten bekleyen istek var, iptal ediliyor.");
     throw new Error("Zaten incelenmeyi bekleyen bir talebiniz var.");
@@ -67,14 +86,14 @@ const requestUpgrade = async (userId) => {
 
   console.log("4. Yeni kayıt oluşturuluyor...");
   const newRequest = await userRepository.createUpgradeRequest(userId);
-  
+
   console.log("5. SONUÇ: Yeni kayıt oluşturuldu:", newRequest);
   return newRequest;
 };
 
 const handleUpgrade = async (userId, action) => {
   const lastRequest = await userRepository.findLatestUpgradeRequest(userId);
-  
+
   if (!lastRequest || lastRequest.status !== 'PENDING') {
     throw new Error("Bekleyen bir talep bulunamadı.");
   }
@@ -94,7 +113,7 @@ const uploadProfileImage = async (userId, fileObj) => {
     if (err) console.error("Geçici dosya silinemedi:", err);
   });
 
-  
+
   const existingImage = await prisma.profileImage.findUnique({
     where: { userId: parseInt(userId) }
   });
@@ -119,6 +138,17 @@ const uploadProfileImage = async (userId, fileObj) => {
   return savedImage;
 };
 
+const blockUser = async (blockerId, blockedId) => {
+  if (parseInt(blockerId) === parseInt(blockedId)) {
+    throw new Error("Kendinizi engelleyemezsiniz.");
+  }
+  return await userRepository.blockUser(blockerId, blockedId);
+};
+
+const unblockUser = async (blockerId, blockedId) => {
+  return await userRepository.unblockUser(blockerId, blockedId);
+};
+
 module.exports = {
   getAllUsers,
   registerUser,
@@ -127,5 +157,7 @@ module.exports = {
   deleteUser,
   requestUpgrade,
   handleUpgrade,
-  uploadProfileImage
+  uploadProfileImage,
+  blockUser,
+  unblockUser
 };

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import Login from './components/Login';
-import Dashboard from './components/Dashboard'; 
+import Dashboard from './components/Dashboard';
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -11,11 +11,11 @@ function App() {
 
   const handleLogin = async (email, password) => {
     try {
-      const response = await axios.post('http://localhost:3001/users/login', { email, password });
+      const response = await axios.post('http://127.0.0.1:3001/users/login', { email, password });
 
-      localStorage.setItem('accessToken', response.data.accessToken); 
+      localStorage.setItem('accessToken', response.data.accessToken);
       localStorage.setItem('refreshToken', response.data.refreshToken);
-      
+
       localStorage.setItem('userData', JSON.stringify(response.data.user));
 
       setUser(response.data.user);
@@ -30,8 +30,8 @@ function App() {
         ...registerData,
         age: registerData.age ? parseInt(registerData.age) : null
       };
-      
-      await axios.post('http://localhost:3001/users/register', formattedData);
+
+      await axios.post('http://127.0.0.1:3001/users/register', formattedData);
       alert("Kayıt Başarılı! Şimdi giriş yapabilirsin.");
     } catch (error) {
       alert("Kayıt Hatası: " + (error.response?.data?.message || error.message));
@@ -39,11 +39,11 @@ function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('accessToken'); 
+    localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
-    
-    localStorage.removeItem('userData'); 
-    
+
+    localStorage.removeItem('userData');
+
     setUser(null);
   };
 

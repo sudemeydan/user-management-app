@@ -3,8 +3,14 @@ const prisma = require('../utils/prisma');
 const findAllUsers = async () => {
   return await prisma.user.findMany({
     orderBy: { createdAt: 'desc' },
-    include: { upgradeRequests: true ,profileImage: true ,sentConnections: true,     // YENİ EKLENDİ (Gönderilen İstekler)
-      receivedConnections: true} 
+    include: {
+      upgradeRequests: true,
+      profileImage: true,
+      sentConnections: true,
+      receivedConnections: true,
+      blockingUsers: true,
+      blockedUsers: true
+    }
 
   });
 };
@@ -12,7 +18,7 @@ const findAllUsers = async () => {
 const findUserById = async (id) => {
   return await prisma.user.findUnique({
     where: { id: parseInt(id) },
-    include: { upgradeRequests: true ,profileImage: true }
+    include: { upgradeRequests: true, profileImage: true }
   });
 };
 
@@ -29,21 +35,21 @@ const createUser = async (userData) => {
 };
 
 const updateUser = async (id, userData) => {
-  
-  const { 
+
+  const {
     isUpgradeRequested,
-    upgradeRequests,   
-    id: userId,         
-    ...safeData         
+    upgradeRequests,
+    id: userId,
+    ...safeData
   } = userData;
 
   if (Object.keys(safeData).length === 0) {
-      return await prisma.user.findUnique({ where: { id: parseInt(id) } });
+    return await prisma.user.findUnique({ where: { id: parseInt(id) } });
   }
 
   return await prisma.user.update({
     where: { id: parseInt(id) },
-    data: safeData 
+    data: safeData
   });
 };
 
@@ -78,6 +84,26 @@ const updateUpgradeRequestStatus = async (requestId, status) => {
   });
 };
 
+const blockUser = async (blockerId, blockedId) => {
+  return await prisma.block.create({
+    data: {
+      blockerId: parseInt(blockerId),
+      blockedId: parseInt(blockedId)
+    }
+  });
+};
+
+const unblockUser = async (blockerId, blockedId) => {
+  return await prisma.block.delete({
+    where: {
+      blockerId_blockedId: {
+        blockerId: parseInt(blockerId),
+        blockedId: parseInt(blockedId)
+      }
+    }
+  });
+};
+
 module.exports = {
   findAllUsers,
   findUserById,
@@ -87,5 +113,7 @@ module.exports = {
   deleteUser,
   createUpgradeRequest,
   findLatestUpgradeRequest,
-  updateUpgradeRequestStatus
+  updateUpgradeRequestStatus,
+  blockUser,
+  unblockUser
 };

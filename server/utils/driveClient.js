@@ -6,7 +6,7 @@ const CLIENT_ID = process.env.GOOGLE_DRIVE_CLIENT_ID;
 const CLIENT_SECRET = process.env.GOOGLE_DRIVE_CLIENT_SECRET;
 const REFRESH_TOKEN = process.env.GOOGLE_DRIVE_REFRESH_TOKEN;
 
-const FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID; 
+const FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID;
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -24,7 +24,7 @@ const uploadToDrive = async (fileObj) => {
 
     const fileMetadata = {
       name: `user-${Date.now()}-${fileObj.originalname}`,
-      parents: [FOLDER_ID], 
+      parents: [FOLDER_ID],
     };
 
     const media = {
@@ -35,12 +35,12 @@ const uploadToDrive = async (fileObj) => {
     const response = await drive.files.create({
       requestBody: fileMetadata,
       media: media,
-      fields: 'id, webViewLink, webContentLink, thumbnailLink', 
+      fields: 'id, webViewLink, webContentLink, thumbnailLink',
       supportsAllDrives: true,
     });
 
     const fileId = response.data.id;
-    const thumbnail = response.data.thumbnailLink; 
+    const thumbnail = response.data.thumbnailLink;
     console.log("✅ Dosya Drive'a Yüklendi! ID:", fileId);
 
     await drive.permissions.create({
@@ -51,21 +51,15 @@ const uploadToDrive = async (fileObj) => {
       },
     });
 
-    
-    let publicUrl = '';
-    
-    if (thumbnail) {
-        publicUrl = thumbnail.replace(/=s\d+/, '=s1000');
-    } else {
-        publicUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
-    }
+
+    let publicUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
 
     return { fileId, publicUrl };
 
   } catch (error) {
     console.error('❌ Google Drive Yükleme Hatası:', error.message);
     if (error.response) {
-         console.error("🔍 API Hatası Detayı:", JSON.stringify(error.response.data, null, 2));
+      console.error("🔍 API Hatası Detayı:", JSON.stringify(error.response.data, null, 2));
     }
     throw new Error('Resim Drive\'a yüklenemedi.');
   }
@@ -80,4 +74,24 @@ const deleteFromDrive = async (fileId) => {
   }
 };
 
-module.exports = { uploadToDrive, deleteFromDrive };
+const streamFile = async (fileId, res) => {
+  try {
+    const response = await drive.files.get(
+      { fileId: fileId, alt: 'media' },
+      { responseType: 'stream' }
+    );
+    response.data.on('end', () => { });
+    response.data.on('error', err => {
+      console.error('Error reading drive stream', err);
+      if (!res.headersSent) res.status(500).end();
+    });
+    // Set caching headers
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    response.data.pipe(res);
+  } catch (error) {
+    console.error('Error fetching file for streaming:', error.message);
+    if (!res.headersSent) res.status(404).send('Not Found');
+  }
+};
+
+module.exports = { uploadToDrive, deleteFromDrive, streamFile };

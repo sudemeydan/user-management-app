@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
 const authMiddleware = require('../middlewares/authMiddleware');
-const roleMiddleware = require('../middlewares/roleMiddleware'); 
+const roleMiddleware = require('../middlewares/roleMiddleware');
 
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
@@ -14,29 +14,32 @@ router.post('/request-upgrade', authMiddleware, userController.requestUpgrade);
 router.patch('/:id/privacy', authMiddleware, userController.togglePrivacy);
 router.get('/', authMiddleware, userController.getUsers);
 
-router.put('/:id', 
-  authMiddleware, 
-  roleMiddleware(['PRO_USER', 'SUPERADMIN']), 
+router.post('/:id/block', authMiddleware, userController.blockUser);
+router.delete('/:id/block', authMiddleware, userController.unblockUser);
+
+router.put('/:id',
+  authMiddleware,
+  roleMiddleware(['PRO_USER', 'SUPERADMIN']),
   userController.updateUser
 );
 
-router.delete('/:id', 
-  authMiddleware, 
-  roleMiddleware(['SUPERADMIN']), 
+router.delete('/:id',
+  authMiddleware,
+  roleMiddleware(['SUPERADMIN']),
   userController.deleteUser
 );
 
-router.post('/handle-upgrade', 
-  authMiddleware, 
-  roleMiddleware(['SUPERADMIN']), 
+router.post('/handle-upgrade',
+  authMiddleware,
+  roleMiddleware(['SUPERADMIN']),
   userController.handleUpgradeRequest
 );
 
 router.post(
-  '/upload-avatar', 
-  authMiddleware, 
-  upload.single('image'), 
-  userController.uploadAvatar 
+  '/upload-avatar',
+  authMiddleware,
+  upload.single('image'),
+  userController.uploadAvatar
 );
 
 module.exports = router;
