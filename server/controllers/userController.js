@@ -1,7 +1,6 @@
 const jwt = require('jsonwebtoken');
 const userService = require('../services/userService');
 
-
 const getUsers = async (req, res) => {
   try {
     const currentUserId = req.user ? req.user.id : null;
@@ -12,16 +11,24 @@ const getUsers = async (req, res) => {
   }
 };
 
-
 const createUser = async (req, res) => {
   try {
     const newUser = await userService.registerUser(req.body);
-    res.status(201).json({ success: true, message: "Kayıt Başarılı!", data: newUser });
+    res.status(201).json({ success: true, message: "Kayıt Başarılı! Lütfen e-postanızı onaylayın.", data: newUser });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
 };
 
+const verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.params;
+    await userService.verifyEmail(token);
+    res.json({ success: true, message: "E-posta adresiniz başarıyla onaylandı! Artık giriş yapabilirsiniz." });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
 
 const login = async (req, res) => {
   try {
@@ -52,29 +59,44 @@ const login = async (req, res) => {
   }
 };
 
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    await userService.forgotPassword(email);
+    res.json({ success: true, message: "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi." });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { newPassword } = req.body;
+    await userService.resetPassword(token, newPassword);
+    res.json({ success: true, message: "Şifreniz başarıyla güncellendi. Artık yeni şifrenizle giriş yapabilirsiniz." });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
 
 const refresh = async (req, res) => {
   const { refreshToken } = req.body;
-
   if (!refreshToken) {
     return res.status(401).json({ success: false, message: "Refresh Token bulunamadı!" });
   }
-
   try {
     const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
-
     const newAccessToken = jwt.sign(
       { id: decoded.id, email: decoded.email },
       process.env.JWT_SECRET,
       { expiresIn: '15m' }
     );
-
     res.json({ success: true, accessToken: newAccessToken });
   } catch (error) {
     res.status(403).json({ success: false, message: "Geçersiz Refresh Token, tekrar giriş yapın." });
   }
 };
-
 
 const updateUser = async (req, res) => {
   try {
@@ -86,7 +108,6 @@ const updateUser = async (req, res) => {
   }
 };
 
-
 const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -97,19 +118,11 @@ const deleteUser = async (req, res) => {
   }
 };
 
-
 const requestUpgrade = async (req, res) => {
-  console.log(" CONTROLLER: Yükseltme isteği geldi. User ID:", req.user?.id);
   try {
-
     await userService.requestUpgrade(req.user.id);
-
-    res.json({
-      success: true,
-      message: "Talebini aldık! Yönetici onayladığında PRO olacaksın."
-    });
+    res.json({ success: true, message: "Talebini aldık! Yönetici onayladığında PRO olacaksın." });
   } catch (error) {
-    console.error("CONTROLLER HATASI:", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -117,12 +130,8 @@ const requestUpgrade = async (req, res) => {
 const handleUpgradeRequest = async (req, res) => {
   try {
     const { userId, action } = req.body;
-
-
     await userService.handleUpgrade(userId, action);
-
     res.json({ success: true, message: `İşlem Başarılı: ${action}` });
-
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -133,33 +142,22 @@ const uploadAvatar = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ success: false, message: "Dosya yok" });
     }
-
     const savedImage = await userService.uploadProfileImage(req.user.id, req.file);
     res.json({ success: true, message: "Resim yüklendi!", data: savedImage });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 const togglePrivacy = async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
     const { isPrivate } = req.body;
-
     if (req.user.id !== userId && req.user.role !== 'SUPERADMIN') {
       return res.status(403).json({ success: false, message: "Başkasının gizlilik ayarını değiştiremezsiniz!" });
     }
-
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: { isPrivate: isPrivate },
-    });
-
-    res.json({
-      success: true,
-      message: `Hesap artık ${isPrivate ? 'Gizli' : 'Herkese Açık'}.`,
-      data: updatedUser
-    });
-
+    const updatedUser = await userService.updateUser(userId, { isPrivate });
+    res.json({ success: true, message: `Hesap artık ${isPrivate ? 'Gizli' : 'Herkese Açık'}.`, data: updatedUser });
   } catch (error) {
     res.status(500).json({ success: false, message: "Gizlilik ayarı güncellenirken hata oluştu: " + error.message });
   }
@@ -190,7 +188,10 @@ const unblockUser = async (req, res) => {
 module.exports = {
   getUsers,
   createUser,
+  verifyEmail,
   login,
+  forgotPassword,
+  resetPassword,
   updateUser,
   deleteUser,
   refresh,

@@ -20,6 +20,10 @@ model User {
   role            String           @default("FREE_USER")
   createdAt       DateTime         @default(now())
   profileImage    ProfileImage?
+  isEmailVerified          Boolean          @default(false)
+  emailVerificationToken   String?          @unique
+  resetPasswordToken       String?          @unique
+  resetPasswordExpires     DateTime?
   
   upgradeRequests UpgradeRequest[] 
   profile         Profile?         

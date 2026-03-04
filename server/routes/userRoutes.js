@@ -7,13 +7,18 @@ const roleMiddleware = require('../middlewares/roleMiddleware');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
 
+// --- AUTH VE KAYIT ROTALARI ---
 router.post('/register', userController.createUser);
+router.get('/verify-email/:token', userController.verifyEmail);
 router.post('/login', userController.login);
 router.post('/refresh', userController.refresh);
+router.post('/forgot-password', userController.forgotPassword);
+router.post('/reset-password/:token', userController.resetPassword);
+
+// --- KULLANICI İŞLEMLERİ ROTALARI ---
+router.get('/', authMiddleware, userController.getUsers);
 router.post('/request-upgrade', authMiddleware, userController.requestUpgrade);
 router.patch('/:id/privacy', authMiddleware, userController.togglePrivacy);
-router.get('/', authMiddleware, userController.getUsers);
-
 router.post('/:id/block', authMiddleware, userController.blockUser);
 router.delete('/:id/block', authMiddleware, userController.unblockUser);
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
+import ResetPassword from './components/ResetPassword';
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -38,6 +39,17 @@ function App() {
     }
   };
 
+  const handleForgotPassword = async (email) => {
+    try {
+      await axios.post('http://127.0.0.1:3001/users/forgot-password', { email });
+      alert("Şifre sıfırlama bağlantısı e-posta adresinize gönderildi. Lütfen gelen kutunuzu kontrol edin.");
+      return true;
+    } catch (error) {
+      alert("Hata: " + (error.response?.data?.message || error.message));
+      return false;
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
@@ -47,10 +59,17 @@ function App() {
     setUser(null);
   };
 
+  const path = window.location.pathname;
+
+  if (path.startsWith('/reset-password/')) {
+    const token = path.split('/')[2];
+    return <ResetPassword token={token} />;
+  }
+
   return (
     <div>
       {!user ? (
-        <Login onLogin={handleLogin} onRegister={handleRegister} />
+        <Login onLogin={handleLogin} onRegister={handleRegister} onForgotPassword={handleForgotPassword} />
       ) : (
         <Dashboard user={user} onLogout={handleLogout} />
       )}
