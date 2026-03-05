@@ -13,6 +13,16 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  # YENİ: Mesaj Kuyruğu Servisi
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq-broker
+    ports:
+      - "5672:5672"   # Node.js ve Python'un haberleşeceği port
+      - "15672:15672" # RabbitMQ Görsel Yönetim Paneli (Browser'dan girilebilir)
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
   backend:
     build:
       context: ./server
@@ -22,11 +32,13 @@ services:
       - "3001:3001"
     environment:
       - DATABASE_URL=postgresql://sude:superpassword@db:5432/user_management_db?schema=public
+      - RABBITMQ_URL=amqp://rabbitmq:5672 # YENİ: Backend'in RabbitMQ adresi
     env_file:
       - ./server/.env
     command: sh -c "sleep 10 && npx prisma db push && node index.js"
     depends_on:
       - db
+      - rabbitmq # YENİ: Backend RabbitMQ'yu beklemeli
 
   frontend:
     build:
@@ -44,5 +56,17 @@ services:
     depends_on:
       - backend
 
+  # YENİ: Python CV Ayrıştırma Servisimiz
+  cv-worker:
+    build:
+      context: ./cv-parser
+      dockerfile: Dockerfile
+    container_name: python-cv-worker
+    environment:
+      - RABBITMQ_HOST=rabbitmq # Python kodundaki değişken
+    depends_on:
+      - rabbitmq
+
 volumes:
   pgdata:
+  rabbitmq_data: # : Kuyruk verileri için kalıcı alan
