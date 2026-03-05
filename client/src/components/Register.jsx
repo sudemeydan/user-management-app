@@ -49,11 +49,8 @@ const Register = () => {
         // 2. Backend İstediği
         setIsLoading(true);
         try {
-            // Confirm password'ü backend'e göndermemek için ayırıyoruz
-            const { confirmPassword, ...registerData } = formData;
-
             // Senin API yapına göre endpoint'i '/register' veya '/users/register' olarak güncelleyebilirsin
-            await axiosInstance.post('/register', registerData);
+            await axiosInstance.post('/register', formData);
 
             setSuccess("Kayıt başarıyla oluşturuldu! Giriş sayfasına yönlendiriliyorsunuz...");
 

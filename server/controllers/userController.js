@@ -185,6 +185,81 @@ const unblockUser = async (req, res) => {
   }
 };
 
+const uploadCV = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "Lütfen geçerli bir PDF veya DOCX dosyası seçin." });
+    }
+    const savedCV = await userService.uploadCV(req.user.id, req.file);
+    res.json({ success: true, message: "CV başarıyla yüklendi!", data: savedCV });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const getUserCVs = async (req, res) => {
+  try {
+    const targetUserId = req.params.id;
+    const requesterId = req.user.id;
+    const requesterRole = req.user.role;
+
+    const cvs = await userService.getUserCVs(targetUserId, requesterId, requesterRole);
+    res.json({ success: true, data: cvs });
+  } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ success: false, message: error.message });
+    }
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const activateCV = async (req, res) => {
+  try {
+    const cvId = req.params.cvId;
+    const userId = req.user.id;
+    await userService.activateCV(userId, cvId);
+    res.json({ success: true, message: "CV başarıyla aktif edildi." });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+const deleteCV = async (req, res) => {
+  try {
+    const cvId = req.params.cvId;
+    const userId = req.user.id;
+    await userService.deleteCV(userId, cvId);
+    res.json({ success: true, message: "CV başarıyla silindi." });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+const downloadCV = async (req, res) => {
+  const driveClient = require('../utils/driveClient');
+  try {
+    const { fileId } = req.params;
+    // streamFile (driveClient içerisindeki) doğrudan res objesine pipe atıyor.
+    await driveClient.streamFile(fileId, res);
+  } catch (error) {
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, message: "Dosya indirilemedi." });
+    }
+  }
+};
+
+const getAllActiveCVs = async (req, res) => {
+  try {
+    const requesterId = req.user.id;
+    const requesterRole = req.user.role;
+
+    const cvs = await userService.getAllActiveCVs(requesterId, requesterRole);
+    res.json({ success: true, data: cvs });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getUsers,
   createUser,
@@ -200,5 +275,11 @@ module.exports = {
   uploadAvatar,
   togglePrivacy,
   blockUser,
-  unblockUser
+  unblockUser,
+  uploadCV,
+  getUserCVs,
+  activateCV,
+  deleteCV,
+  downloadCV,
+  getAllActiveCVs
 };

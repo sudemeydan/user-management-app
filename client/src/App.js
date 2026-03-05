@@ -66,6 +66,21 @@ function App() {
     return <ResetPassword token={token} />;
   }
 
+  if (path.startsWith('/verify-email/')) {
+    const token = path.split('/')[2];
+    // Basit bir component render etmek yerine useEffect ile arkada dogrulama yapip Login'e geri atacagiz
+    axios.get(`http://127.0.0.1:3001/users/verify-email/${token}`)
+      .then(() => {
+        alert("E-posta adresiniz başarıyla onaylandı! Artık giriş yapabilirsiniz.");
+        window.location.href = '/login';
+      })
+      .catch((err) => {
+        alert("E-posta onaylanamadı: " + (err.response?.data?.message || err.message));
+        window.location.href = '/login';
+      });
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
   return (
     <div>
       {!user ? (

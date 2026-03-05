@@ -66,8 +66,7 @@ const Login = ({ onLogin, onRegister, onForgotPassword }) => {
 
     setTimeout(() => {
       if (isRegisterMode) {
-        const { confirmPassword, ...dataToSend } = formData;
-        onRegister(dataToSend);
+        onRegister(formData);
       } else {
         onLogin(formData.email, formData.password);
       }

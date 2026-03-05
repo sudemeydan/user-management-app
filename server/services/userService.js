@@ -252,6 +252,145 @@ const uploadProfileImage = async (userId, fileObj) => {
   return savedImage;
 };
 
+const uploadCV = async (userId, file) => {
+  const cvFolderId = process.env.GOOGLE_DRIVE_CV_FOLDER_ID;
+
+  const driveResponse = await driveClient.uploadToDrive(file, cvFolderId);
+
+  // Set others to inactive if this is the first CV? No, user explicitly activates.
+
+  const newCV = await prisma.cV.create({
+    data: {
+      fileName: file.originalname, // Kullanıcının göreceği orijinal dosya adı
+      fileId: driveResponse.fileId, // Drive ID'si
+      fileSize: file.size, // Multer bize boyutu BYTE cinsinden verir
+      mimeType: file.mimetype,
+      isActive: false, // Varsayilan false
+      userId: userId
+    }
+  });
+
+  return newCV;
+};
+
+const getUserCVs = async (targetUserId, requesterId, requesterRole) => {
+  const targetUser = await prisma.user.findUnique({
+    where: { id: parseInt(targetUserId) },
+    include: {
+      sentConnections: { where: { receiverId: parseInt(requesterId), status: 'ACCEPTED' } },
+      receivedConnections: { where: { senderId: parseInt(requesterId), status: 'ACCEPTED' } }
+    }
+  });
+
+  if (!targetUser) throw new Error("Kullanıcı bulunamadı.");
+
+  const isOwner = parseInt(targetUserId) === parseInt(requesterId);
+  const isAdmin = requesterRole === 'SUPERADMIN';
+  const isConnected = targetUser.sentConnections.length > 0 || targetUser.receivedConnections.length > 0;
+
+  if (!isOwner && !isAdmin && targetUser.isPrivate && !isConnected) {
+    throw new AppError("Gizli profil olduğu için CV'leri göremezsiniz.", 403);
+  }
+
+  // Sahibi ise tüm CV'leri, değilse sadece aktif olanı listele
+  const cvs = await prisma.cV.findMany({
+    where: {
+      userId: parseInt(targetUserId),
+      ...(isOwner || isAdmin ? {} : { isActive: true })
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  return cvs;
+};
+
+const activateCV = async (userId, cvId) => {
+  const cv = await prisma.cV.findFirst({
+    where: { id: parseInt(cvId), userId: parseInt(userId) }
+  });
+
+  if (!cv) throw new Error("CV bulunamadı veya yetkiniz yok.");
+
+  // Önce hepsi pasif, sonra seçilen aktif (Transaction ile)
+  await prisma.$transaction([
+    prisma.cV.updateMany({
+      where: { userId: parseInt(userId) },
+      data: { isActive: false }
+    }),
+    prisma.cV.update({
+      where: { id: parseInt(cvId) },
+      data: { isActive: true }
+    })
+  ]);
+
+  return true;
+};
+
+const deleteCV = async (userId, cvId) => {
+  const cv = await prisma.cV.findFirst({
+    where: { id: parseInt(cvId), userId: parseInt(userId) }
+  });
+
+  if (!cv) throw new Error("CV bulunamadı veya yetkiniz yok.");
+
+  // Drive'dan sil
+  try {
+    await driveClient.deleteFromDrive(cv.fileId);
+  } catch (error) {
+    console.error("Drive silme hatası (Yine de veritabanından kaldırılacak):", error);
+  }
+
+  // Veritabanından sil
+  await prisma.cV.delete({
+    where: { id: parseInt(cvId) }
+  });
+
+  return true;
+};
+
+const getAllActiveCVs = async (requesterId, requesterRole) => {
+  const isAdmin = requesterRole === 'SUPERADMIN';
+
+  // Get all active CVs including user and their connections
+  const activeCVs = await prisma.cV.findMany({
+    where: { isActive: true },
+    include: {
+      user: {
+        include: {
+          sentConnections: { where: { receiverId: parseInt(requesterId), status: 'ACCEPTED' } },
+          receivedConnections: { where: { senderId: parseInt(requesterId), status: 'ACCEPTED' } }
+        }
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  // Filter based on privacy rules
+  const accessibleCVs = activeCVs.filter(cv => {
+    const isOwner = cv.userId === parseInt(requesterId);
+    if (isOwner || isAdmin) return true;
+    if (!cv.user.isPrivate) return true;
+
+    const isConnected = cv.user.sentConnections.length > 0 || cv.user.receivedConnections.length > 0;
+    return isConnected;
+  });
+
+  // Remove connection details from response to keep it clean, but keep user name/email
+  return accessibleCVs.map(cv => ({
+    id: cv.id,
+    fileName: cv.fileName,
+    fileId: cv.fileId,
+    fileSize: cv.fileSize,
+    mimeType: cv.mimeType,
+    isActive: cv.isActive,
+    createdAt: cv.createdAt,
+    userId: cv.userId,
+    userName: cv.user.name,
+    userEmail: cv.user.email,
+    userRole: cv.user.role
+  }));
+};
+
 const blockUser = async (blockerId, blockedId) => {
   if (parseInt(blockerId) === parseInt(blockedId)) {
     throw new Error("Kendinizi engelleyemezsiniz.");
@@ -262,6 +401,8 @@ const blockUser = async (blockerId, blockedId) => {
 const unblockUser = async (blockerId, blockedId) => {
   return await userRepository.unblockUser(blockerId, blockedId);
 };
+
+
 
 module.exports = {
   getAllUsers,
@@ -276,5 +417,10 @@ module.exports = {
   handleUpgrade,
   uploadProfileImage,
   blockUser,
-  unblockUser
+  unblockUser,
+  uploadCV,
+  getUserCVs,
+  activateCV,
+  deleteCV,
+  getAllActiveCVs
 };

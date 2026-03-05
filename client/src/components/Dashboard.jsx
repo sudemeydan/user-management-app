@@ -4,7 +4,8 @@ import {
     Users, UserPlus, LogOut, Edit2, Trash2, Search,
     X, CheckCircle, LayoutDashboard, Settings,
     Crown, Zap, Loader2, Clock, Check, XCircle, Camera,
-    Lock, Unlock, Send, UserCheck, UserX, ImageIcon
+    Lock, Unlock, Send, UserCheck, UserX, ImageIcon,
+    FileText, Download, UploadCloud, Star, StarOff, Briefcase
 } from 'lucide-react';
 
 const Dashboard = ({ user, onLogout }) => {
@@ -27,10 +28,35 @@ const Dashboard = ({ user, onLogout }) => {
     });
     const [editingId, setEditingId] = useState(null);
 
+    const [myCvs, setMyCvs] = useState([]);
+    const [allActiveCvs, setAllActiveCvs] = useState([]);
+    const [isUploadingCV, setIsUploadingCV] = useState(false);
+    const cvFileInputRef = useRef(null);
+
     useEffect(() => {
         fetchUsers();
         fetchPosts();
+        fetchMyCVs();
+        fetchAllActiveCvs();
     }, []);
+
+    const fetchAllActiveCvs = async () => {
+        try {
+            const response = await axiosInstance.get('/users/all-active-cvs');
+            setAllActiveCvs(response.data.data);
+        } catch (error) {
+            console.error("Aktif CV'ler çekilemedi:", error);
+        }
+    };
+
+    const fetchMyCVs = async () => {
+        try {
+            const response = await axiosInstance.get(`/users/${user.id}/cvs`);
+            setMyCvs(response.data.data);
+        } catch (error) {
+            console.error("CV'ler çekilemedi:", error);
+        }
+    };
 
     const fetchUsers = async () => {
         try {
@@ -129,6 +155,90 @@ const Dashboard = ({ user, onLogout }) => {
             alert("Resim yüklenirken hata oluştu.");
         } finally {
             setUploadingImg(false);
+        }
+    };
+
+    const handleCVUploadChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'];
+        if (!allowedTypes.includes(file.type)) {
+            alert("Lütfen sadece PDF veya DOCX dosyası yükleyin.");
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            alert("Dosya boyutu 5MB'dan küçük olmalıdır.");
+            return;
+        }
+
+        setIsUploadingCV(true);
+        const tfData = new FormData();
+        tfData.append('cvFile', file);
+
+        try {
+            const res = await axiosInstance.post('/users/upload-cv', tfData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            alert(res.data.message);
+            fetchMyCVs();
+        } catch (error) {
+            alert("CV yüklenemedi: " + (error.response?.data?.message || error.message));
+        } finally {
+            setIsUploadingCV(false);
+            if (cvFileInputRef.current) cvFileInputRef.current.value = "";
+        }
+    };
+
+    const handleCVActivate = async (cvId) => {
+        try {
+            await axiosInstance.put(`/users/cvs/${cvId}/activate`);
+            fetchMyCVs();
+        } catch (error) {
+            alert("Aktifleştirme başarısız: " + (error.response?.data?.message || error.message));
+        }
+    };
+
+    const handleCVDelete = async (cvId) => {
+        if (!window.confirm("Bu CV'yi silmek istediğinize emin misiniz?")) return;
+        try {
+            await axiosInstance.delete(`/users/cvs/${cvId}`);
+            fetchMyCVs();
+        } catch (error) {
+            alert("Silme başarısız: " + (error.response?.data?.message || error.message));
+        }
+    };
+
+    const downloadCVStream = async (fileId, fileName) => {
+        try {
+            const res = await axiosInstance.get(`/users/cv-download/${fileId}`, { responseType: 'blob' });
+            const blob = new Blob([res.data]);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        } catch (error) {
+            alert("İndirme sırasında bir hata oluştu.");
+        }
+    };
+
+    const handleDownloadTargetCV = async (targetUserId, targetUserName) => {
+        try {
+            const response = await axiosInstance.get(`/users/${targetUserId}/cvs`);
+            const targetCVS = response.data.data;
+            const activeCV = targetCVS.find(cv => cv.isActive);
+            if (!activeCV) {
+                alert("Bu kullanıcının aktif bir CV'si bulunmuyor.");
+                return;
+            }
+            // İndir
+            downloadCVStream(activeCV.fileId, `${targetUserName}_CV.pdf`);
+        } catch (error) {
+            alert("Kullanıcı CV'sine erişim izniniz yok veya CV bulunamadı.");
         }
     };
 
@@ -250,6 +360,16 @@ const Dashboard = ({ user, onLogout }) => {
                         onClick={() => setActiveTab('users')}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${activeTab === 'users' ? 'bg-indigo-800 text-white shadow-sm' : 'text-indigo-200 hover:bg-indigo-800/50 hover:text-white'}`}>
                         <Users size={20} /><span className="font-medium">Kişiler</span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('cvs')}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${activeTab === 'cvs' ? 'bg-indigo-800 text-white shadow-sm' : 'text-indigo-200 hover:bg-indigo-800/50 hover:text-white'}`}>
+                        <FileText size={20} /><span className="font-medium">Özgeçmişlerim</span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('all-cvs')}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${activeTab === 'all-cvs' ? 'bg-indigo-800 text-white shadow-sm' : 'text-indigo-200 hover:bg-indigo-800/50 hover:text-white'}`}>
+                        <Briefcase size={20} /><span className="font-medium">Tüm Özgeçmişler</span>
                     </button>
                 </nav>
 
@@ -484,6 +604,11 @@ const Dashboard = ({ user, onLogout }) => {
                                                                     <UserX size={14} /> Engelle
                                                                 </button>
                                                             )}
+                                                            {canViewDetails && !isBlockedByMe && (
+                                                                <button onClick={() => handleDownloadTargetCV(u.id, u.name)} title="Aktif CV'sini İndir" className="flex items-center gap-1 text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white px-3 py-1.5 rounded-lg transition font-medium border border-indigo-200 ml-2">
+                                                                    <Download size={14} /> CV İndir
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </td>
@@ -493,6 +618,145 @@ const Dashboard = ({ user, onLogout }) => {
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+                )}
+
+                {activeTab === 'cvs' && (
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden p-6 max-w-4xl mx-auto">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2"><FileText /> Özgeçmiş Yönetimi</h2>
+
+                            <div>
+                                <input type="file" ref={cvFileInputRef} onChange={handleCVUploadChange} accept=".pdf,.doc,.docx" className="hidden" />
+                                <button
+                                    onClick={() => cvFileInputRef.current.click()}
+                                    disabled={isUploadingCV}
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 shadow-sm"
+                                >
+                                    {isUploadingCV ? <Loader2 className="animate-spin" size={18} /> : <UploadCloud size={18} />}
+                                    Yeni CV Yükle
+                                </button>
+                            </div>
+                        </div>
+
+                        {myCvs.length === 0 ? (
+                            <div className="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-300 text-gray-500">
+                                Henüz hiç özgeçmiş yüklemediniz. İş arayışınızda öne çıkmak için hemen bir CV ekleyin!
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
+                                            <th className="p-4 font-semibold rounded-tl-xl">Dosya Adı</th>
+                                            <th className="p-4 font-semibold">Boyut</th>
+                                            <th className="p-4 font-semibold">Yüklenme Tarihi</th>
+                                            <th className="p-4 font-semibold text-center">Durum</th>
+                                            <th className="p-4 font-semibold text-right rounded-tr-xl">İşlemler</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100 text-sm">
+                                        {myCvs.map(cv => (
+                                            <tr key={cv.id} className={`hover:bg-gray-50 transition ${cv.isActive ? 'bg-indigo-50/30' : ''}`}>
+                                                <td className="p-4 font-medium text-gray-800 flex items-center gap-3">
+                                                    <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg"><FileText size={16} /></div>
+                                                    <span className="truncate max-w-[200px]" title={cv.fileName}>{cv.fileName}</span>
+                                                </td>
+                                                <td className="p-4 text-gray-500">
+                                                    {cv.fileSize > 1024 * 1024
+                                                        ? `${(cv.fileSize / (1024 * 1024)).toFixed(2)} MB`
+                                                        : `${(cv.fileSize / 1024).toFixed(2)} KB`}
+                                                </td>
+                                                <td className="p-4 text-gray-500">
+                                                    {new Date(cv.createdAt).toLocaleDateString('tr-TR')}
+                                                </td>
+                                                <td className="p-4 text-center">
+                                                    {cv.isActive
+                                                        ? <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-bold"><CheckCircle size={12} /> Aktif Profil CV'si</span>
+                                                        : <span className="inline-flex items-center bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full text-xs font-semibold">Pasif</span>
+                                                    }
+                                                </td>
+                                                <td className="p-4 text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        {!cv.isActive && (
+                                                            <button onClick={() => handleCVActivate(cv.id)} title="Aktif Yap" className="p-2 text-amber-500 hover:bg-amber-50 rounded-lg transition border border-transparent hover:border-amber-200">
+                                                                <Star size={18} />
+                                                            </button>
+                                                        )}
+                                                        <button onClick={() => downloadCVStream(cv.fileId, cv.fileName)} title="İndir" className="p-2 text-indigo-500 hover:bg-indigo-50 rounded-lg transition border border-transparent hover:border-indigo-200">
+                                                            <Download size={18} />
+                                                        </button>
+                                                        <button onClick={() => handleCVDelete(cv.id)} title="Sil" className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition border border-transparent hover:border-red-200">
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'all-cvs' && (
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden p-6 max-w-5xl mx-auto">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2"><Briefcase /> Tüm Aktif Özgeçmişler</h2>
+                            <p className="text-sm text-gray-500">Platformdaki diğer kullanıcıların paylaşıma açtığı özgeçmişler</p>
+                        </div>
+
+                        {allActiveCvs.length === 0 ? (
+                            <div className="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-300 text-gray-500">
+                                Sistemde şu an sizin görüntüleyebileceğiniz paylaşılan aktif bir CV bulunmuyor.
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
+                                            <th className="p-4 font-semibold rounded-tl-xl">Kullanıcı Adı</th>
+                                            <th className="p-4 font-semibold">Dosya Adı</th>
+                                            <th className="p-4 font-semibold">Boyut</th>
+                                            <th className="p-4 font-semibold text-center">Tarih</th>
+                                            <th className="p-4 font-semibold text-right rounded-tr-xl">İndir</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100 text-sm">
+                                        {allActiveCvs.map(cv => (
+                                            <tr key={cv.id} className="hover:bg-gray-50 transition">
+                                                <td className="p-4 font-medium text-gray-800 flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm">
+                                                        {cv.userName?.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-bold">{cv.userName}</div>
+                                                        <div className="text-xs text-gray-400">{cv.userRole}</div>
+                                                    </div>
+                                                </td>
+                                                <td className="p-4 text-gray-500 max-w-[200px] truncate" title={cv.fileName}>
+                                                    {cv.fileName}
+                                                </td>
+                                                <td className="p-4 text-gray-500">
+                                                    {cv.fileSize > 1024 * 1024
+                                                        ? `${(cv.fileSize / (1024 * 1024)).toFixed(2)} MB`
+                                                        : `${(cv.fileSize / 1024).toFixed(2)} KB`}
+                                                </td>
+                                                <td className="p-4 text-center text-gray-500">
+                                                    {new Date(cv.createdAt).toLocaleDateString('tr-TR')}
+                                                </td>
+                                                <td className="p-4 text-right">
+                                                    <button onClick={() => downloadCVStream(cv.fileId, cv.fileName)} title="İndir" className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition border border-transparent hover:border-indigo-200 inline-flex items-center gap-1">
+                                                        <Download size={18} /> <span className="font-semibold text-xs py-1">İndir</span>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </div>
                 )}
             </main>

@@ -38,6 +38,9 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
+    volumes:
+      - ./client/src:/app/src
+      - ./client/public:/app/public
     depends_on:
       - backend
 

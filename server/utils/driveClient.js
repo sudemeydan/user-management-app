@@ -18,13 +18,15 @@ oauth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 
 const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
-const uploadToDrive = async (fileObj) => {
+const uploadToDrive = async (fileObj, customFolderId = null) => {
   try {
-    console.log("🚀 Yükleme Başlıyor (OAuth2 Modu)... Hedef Klasör:", FOLDER_ID);
+    // Eğer customFolderId gelirse (CV için) onu kullan, gelmezse varsayılan resim klasörünü (FOLDER_ID) kullan
+    const targetFolderId = customFolderId || FOLDER_ID;
+    console.log("🚀 Yükleme Başlıyor... Hedef Klasör:", targetFolderId);
 
     const fileMetadata = {
-      name: `user-${Date.now()}-${fileObj.originalname}`,
-      parents: [FOLDER_ID],
+      name: `file-${Date.now()}-${fileObj.originalname}`,
+      parents: [targetFolderId], // Artık dinamik
     };
 
     const media = {
@@ -40,7 +42,6 @@ const uploadToDrive = async (fileObj) => {
     });
 
     const fileId = response.data.id;
-    const thumbnail = response.data.thumbnailLink;
     console.log("✅ Dosya Drive'a Yüklendi! ID:", fileId);
 
     await drive.permissions.create({
@@ -51,20 +52,15 @@ const uploadToDrive = async (fileObj) => {
       },
     });
 
-
     let publicUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
 
     return { fileId, publicUrl };
 
   } catch (error) {
     console.error('❌ Google Drive Yükleme Hatası:', error.message);
-    if (error.response) {
-      console.error("🔍 API Hatası Detayı:", JSON.stringify(error.response.data, null, 2));
-    }
-    throw new Error('Resim Drive\'a yüklenemedi.');
+    throw new Error('Dosya Drive\'a yüklenemedi.');
   }
 };
-
 const deleteFromDrive = async (fileId) => {
   try {
     await drive.files.delete({ fileId: fileId });

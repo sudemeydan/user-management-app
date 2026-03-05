@@ -24,6 +24,7 @@ model User {
   emailVerificationToken   String?          @unique
   resetPasswordToken       String?          @unique
   resetPasswordExpires     DateTime?
+  cvs                CV[]
   
   upgradeRequests UpgradeRequest[] 
   profile         Profile?         
@@ -118,4 +119,19 @@ model PostImage {
   postId    Int
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+}
+
+model CV {
+  id           Int      @id @default(autoincrement())
+  fileName     String   // Kullanıcının gördüğü orijinal dosya adı (örn: "Backend_Developer_Sude.pdf")
+  fileId       String   // Google Drive'daki benzersiz dosya ID'si
+  fileSize     Int      // Dosya boyutu (Byte cinsinden tutacağız, frontend'de MB/KB'a çevireceğiz)
+  mimeType     String   // 'application/pdf' veya docx formatı tespiti için
+  isActive     Boolean  @default(false) // Profilde sergilenecek ana CV mi?
+  
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
