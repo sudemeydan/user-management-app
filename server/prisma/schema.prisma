@@ -128,10 +128,49 @@ model CV {
   fileSize     Int      // Dosya boyutu (Byte cinsinden tutacağız, frontend'de MB/KB'a çevireceğiz)
   mimeType     String   // 'application/pdf' veya docx formatı tespiti için
   isActive     Boolean  @default(false) // Profilde sergilenecek ana CV mi?
-  
   userId       Int
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  status       JobStatus @default(PENDING) // Ayrıştırma durumunu takip etmek için
+  rawText      String?   @db.Text          // Python'dan gelecek ham metin
+  summary      String?   @db.Text          // Gemini'nin çıkaracağı özet
+  entries      CVEntry[]                   // 1-N İlişkisi
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+model CVEntry {
+  id          Int           @id @default(autoincrement())
+  cvId        Int           // İlişki tipi senin projene uygun olarak Int yapıldı
+  cv          CV            @relation(fields: [cvId], references: [id], onDelete: Cascade)
+  
+  category    EntryCategory 
+  
+  title       String        
+  subtitle    String?       
+  startDate   String?       
+  endDate     String?       
+  description String?       @db.Text 
+  metadata    Json?         
+  
+  createdAt   DateTime      @default(now())
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum EntryCategory {
+  CONTACT_INFO
+  EXPERIENCE
+  EDUCATION
+  SKILL
+  PROJECT
+  LANGUAGE
+  CERTIFICATE
+  OTHER
 }

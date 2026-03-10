@@ -70,7 +70,6 @@ router.post(
   userController.uploadAvatar
 );
 
-// YENİ EKLENEN: CV yükleme rotası
 router.post(
   '/upload-cv',
   authMiddleware,

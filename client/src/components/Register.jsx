@@ -80,7 +80,6 @@ const Register = () => {
                 </div>
 
                 <div className="p-8">
-                    {/* Hata Mesajı */}
                     {error && (
                         <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl flex items-start gap-3 text-sm">
                             <AlertCircle size={18} className="shrink-0 mt-0.5" />

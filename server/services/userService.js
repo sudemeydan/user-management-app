@@ -298,6 +298,10 @@ const getUserCVs = async (targetUserId, requesterId, requesterRole) => {
       userId: parseInt(targetUserId),
       ...(isOwner || isAdmin ? {} : { isActive: true })
     },
+    // YENİ EKLENEN KISIM: CV'nin içindeki ayrıştırılmış detayları da (entries) getir.
+    include: {
+      entries: true
+    },
     orderBy: { createdAt: 'desc' }
   });
 

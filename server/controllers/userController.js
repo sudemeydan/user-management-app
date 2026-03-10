@@ -1,5 +1,8 @@
 const jwt = require('jsonwebtoken');
+const fs = require('fs');
 const userService = require('../services/userService');
+// YENİ EKLEDİĞİMİZ SATIR: RabbitMQ'ya mesaj göndermek için gerekli fonksiyonu çağırıyoruz.
+const { sendToQueue } = require('../services/rabbitmqService');
 
 const getUsers = async (req, res) => {
   try {
@@ -190,12 +193,42 @@ const uploadCV = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ success: false, message: "Lütfen geçerli bir PDF veya DOCX dosyası seçin." });
     }
+
+    let pdfBase64 = null;
+
+    // 1. Eğer yüklenecek dosya PDF ise, Drive'a gidip silinmeden ÖNCE diskten/memory'den oku ve base64'e çevir
+    if (req.file.mimetype === 'application/pdf') {
+      if (req.file.buffer) {
+        pdfBase64 = req.file.buffer.toString('base64');
+      } else if (req.file.path) {
+        const fileData = fs.readFileSync(req.file.path);
+        pdfBase64 = fileData.toString('base64');
+      } else {
+        throw new Error("Dosya verisi okunamadı (ne buffer ne de path bulundu).");
+      }
+    }
+
+    // 2. Dosyayı Drive'a yükle ve DB'ye CV'yi kaydet (BU İŞLEM DİSKTEKİ DOSYAYI SİLEBİLİR)
     const savedCV = await userService.uploadCV(req.user.id, req.file);
-    res.json({ success: true, message: "CV başarıyla yüklendi!", data: savedCV });
+
+    // 3. Dosya PDF ise, önceden hazırladığımız base64 verisini Python'a (RabbitMQ'ya) gönder
+    if (pdfBase64) {
+      const queueMessage = {
+        cvId: savedCV.id,
+        fileData: pdfBase64
+      };
+
+      await sendToQueue('cv_parsing_queue', queueMessage);
+      console.log(`[x] CV (ID: ${savedCV.id}) RabbitMQ kuyruğuna gönderildi.`);
+    }
+
+    res.json({ success: true, message: "CV başarıyla yüklendi ve işleniyor!", data: savedCV });
   } catch (error) {
+    console.error("CV Yükleme Hatası (Controller):", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
+// ------------------------------------------
 
 const getUserCVs = async (req, res) => {
   try {
@@ -239,7 +272,6 @@ const downloadCV = async (req, res) => {
   const driveClient = require('../utils/driveClient');
   try {
     const { fileId } = req.params;
-    // streamFile (driveClient içerisindeki) doğrudan res objesine pipe atıyor.
     await driveClient.streamFile(fileId, res);
   } catch (error) {
     if (!res.headersSent) {
