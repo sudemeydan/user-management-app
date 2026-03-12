@@ -292,6 +292,66 @@ const getAllActiveCVs = async (req, res) => {
   }
 };
 
+const optimizeCVFormat = async (req, res) => {
+  try {
+    const { cvId } = req.params;
+    const userId = req.user.id;
+    const result = await userService.optimizeCVFormat(userId, cvId);
+    res.json({ success: true, message: "CV başarıyla ATS formatına dönüştürüldü!", data: result });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ success: false, message: error.message });
+  }
+};
+
+const getATSStatus = async (req, res) => {
+  try {
+    const { cvId } = req.params;
+    const status = await userService.getUserATSStatus(cvId);
+    res.json({ success: true, data: status });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ---- İŞ İLANI VE TAILORING CONTROLLER ----
+
+const createJobPosting = async (req, res) => {
+  try {
+    const { jobText, url } = req.body;
+    if (!jobText) {
+      return res.status(400).json({ success: false, message: "İş ilanı metni gereklidir." });
+    }
+    const jobPosting = await userService.createJobPosting(jobText, url);
+    res.json({ success: true, message: "İş ilanı başarıyla kaydedildi ve analiz edildi!", data: jobPosting });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const getTailoringProposals = async (req, res) => {
+  try {
+    const { cvId, jobPostingId } = req.params;
+    const proposals = await userService.getTailoringProposals(cvId, jobPostingId);
+    res.json({ success: true, data: proposals });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ success: false, message: error.message });
+  }
+};
+
+const createTailoredCV = async (req, res) => {
+  try {
+    const { originalCvId, jobPostingId, improvedSummary, approvedProposals } = req.body;
+    const userId = req.user.id;
+    const tailoredCV = await userService.createTailoredCV(userId, originalCvId, jobPostingId, {
+      improvedSummary,
+      approvedProposals
+    });
+    res.json({ success: true, message: "Uyarlanmış CV başarıyla oluşturuldu!", data: tailoredCV });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getUsers,
   createUser,
@@ -313,5 +373,10 @@ module.exports = {
   activateCV,
   deleteCV,
   downloadCV,
-  getAllActiveCVs
+  getAllActiveCVs,
+  optimizeCVFormat,
+  getATSStatus,
+  createJobPosting,
+  getTailoringProposals,
+  createTailoredCV
 };

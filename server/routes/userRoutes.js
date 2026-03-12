@@ -83,6 +83,15 @@ router.get('/:id/cvs', authMiddleware, userController.getUserCVs);
 router.put('/cvs/:cvId/activate', authMiddleware, userController.activateCV);
 router.delete('/cvs/:cvId', authMiddleware, userController.deleteCV);
 
+// ATS Rotaları
+router.post('/cvs/:cvId/optimize', authMiddleware, userController.optimizeCVFormat);
+router.get('/cvs/:cvId/ats-status', authMiddleware, userController.getATSStatus);
+
+// İş İlanı & Tailoring Rotaları
+router.post('/job-postings', authMiddleware, userController.createJobPosting);
+router.get('/cvs/:cvId/tailor/:jobPostingId', authMiddleware, userController.getTailoringProposals);
+router.post('/tailored-cvs', authMiddleware, userController.createTailoredCV);
+
 // İndirme rotasında token gönderilmesini istiyoruz ki gizli belge indirilmesin
 router.get('/cv-download/:fileId', authMiddleware, userController.downloadCV);
 

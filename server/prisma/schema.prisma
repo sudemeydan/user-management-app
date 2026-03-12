@@ -35,6 +35,7 @@ model User {
   posts               Post[]
   blockingUsers       Block[]       @relation("BlockingUser")
   blockedUsers        Block[]       @relation("BlockedUser")
+  tailoredCVs         TailoredCV[]
 }
 
 model Block {
@@ -136,9 +137,17 @@ model CV {
   summary      String?   @db.Text          // Gemini'nin çıkaracağı özet
   entries      CVEntry[]                   // 1-N İlişkisi
 
+  // YENİ: ATS Skoru ve Geri Bildirimi
+  atsFormatScore    Int?
+  atsFormatFeedback String? @db.Text
+
+  atsFormattedCV AtsFormattedCV?
+  tailoredCVs    TailoredCV[]
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+
 
 model CVEntry {
   id          Int           @id @default(autoincrement())
@@ -155,6 +164,67 @@ model CVEntry {
   metadata    Json?         
   
   createdAt   DateTime      @default(now())
+}
+
+model AtsFormattedCV {
+  id        Int      @id @default(autoincrement())
+  cvId      Int      @unique
+  cv        CV       @relation(fields: [cvId], references: [id], onDelete: Cascade)
+  
+  fileId    String?  // Üretilen ATS-Friendly PDF'in Drive ID'si
+  content   Json?    // Formatlanmış veri (opsiyonel, entries'den de alınabilir)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model JobPosting {
+  id              Int      @id @default(autoincrement())
+  title           String
+  company         String?
+  description     String   @db.Text
+  url             String?
+  extractedSkills Json?    // Gemini tarafından çıkarılan anahtar kelimeler
+  
+  tailoredCVs     TailoredCV[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model TailoredCV {
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  jobPostingId    Int
+  jobPosting      JobPosting @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+  
+  originalCvId    Int
+  originalCv      CV       @relation(fields: [originalCvId], references: [id], onDelete: Cascade)
+  
+  atsScore        Int?     // İlanla uyum skoru
+  improvedSummary String?  @db.Text
+  
+  entries         TailoredCVEntry[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model TailoredCVEntry {
+  id            Int           @id @default(autoincrement())
+  tailoredCvId  Int
+  tailoredCv    TailoredCV    @relation(fields: [tailoredCvId], references: [id], onDelete: Cascade)
+  
+  category      EntryCategory
+  name          String
+  description   String?       @db.Text
+  
+  isModified    Boolean       @default(false)
+  aiComment     String?       @db.Text
+  
+  createdAt     DateTime      @default(now())
 }
 
 enum JobStatus {

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATS Friendly CV</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        h2 {
+            border-bottom: 1px solid #666;
+            margin-top: 25px;
+            padding-bottom: 5px;
+            text-transform: uppercase;
+            font-size: 1.2em;
+        }
+        .contact-info {
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+        .entry {
+            margin-bottom: 15px;
+        }
+        .entry-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+        }
+        .entry-subtitle {
+            font-style: italic;
+            color: #555;
+        }
+        .description {
+            margin-top: 5px;
+            white-space: pre-line;
+        }
+        .skills-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .skill-item {
+            background: #f4f4f4;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>{{name}}</h1>
+        <div class="contact-info">
+            {{email}} | {{phone}} | {{address}} | {{linkedin}}
+        </div>
+    </header>
+
+    <section>
+        <h2>Profil Özeti</h2>
+        <p>{{summary}}</p>
+    </section>
+
+    <section id="experience">
+        <h2>Deneyimler</h2>
+        {{#experiences}}
+        <div class="entry">
+            <div class="entry-header">
+                <span>{{title}}</span>
+                <span>{{startDate}} - {{endDate}}</span>
+            </div>
+            <div class="entry-subtitle">{{subtitle}}</div>
+            <div class="description">{{description}}</div>
+        </div>
+        {{/experiences}}
+    </section>
+
+    <section id="education">
+        <h2>Eğitim</h2>
+        {{#educations}}
+        <div class="entry">
+            <div class="entry-header">
+                <span>{{title}}</span>
+                <span>{{startDate}} - {{endDate}}</span>
+            </div>
+            <div class="entry-subtitle">{{subtitle}}</div>
+            <div class="description">{{description}}</div>
+        </div>
+        {{/educations}}
+    </section>
+
+    <section id="skills">
+        <h2>Yetenekler</h2>
+        <div class="skills-list">
+            {{#skills}}
+            <span class="skill-item">{{title}}</span>
+            {{/skills}}
+        </div>
+    </section>
+
+    <section id="projects">
+        <h2>Projeler</h2>
+        {{#projects}}
+        <div class="entry">
+            <div class="entry-header">
+                <span>{{title}}</span>
+                <span>{{startDate}} - {{endDate}}</span>
+            </div>
+            <div class="description">{{description}}</div>
+        </div>
+        {{/projects}}
+    </section>
+</body>
+</html>

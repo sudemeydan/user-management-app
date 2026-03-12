@@ -1,7 +1,7 @@
 // server/services/rabbitmqService.js
 const amqp = require('amqplib');
 const prisma = require('../utils/prisma');
-const { parseCVText } = require('./geminiService');
+const { parseCVText, analyzeATSCompatibility } = require('./geminiService');
 
 let connection = null;
 let channel = null;
@@ -78,11 +78,16 @@ const startResultConsumer = async () => {
                     const parsedData = await parseCVText(rawText);
 
                     // 2. Gemini'den gelen verileri DB'ye kaydet
-                    // Önce CV'nin özetini güncelle
+                    // YENİ: ATS format analizi yap
+                    console.log(`[x] ATS Analizi yapılıyor (CV ID: ${cvId})...`);
+                    const atsAnalysis = await analyzeATSCompatibility(rawText);
+
                     await prisma.cV.update({
                         where: { id: parseInt(cvId) },
                         data: {
                             summary: parsedData.summary,
+                            atsFormatScore: atsAnalysis.score,
+                            atsFormatFeedback: atsAnalysis.feedback,
                             status: 'COMPLETED'
                         }
                     });

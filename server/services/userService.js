@@ -7,6 +7,9 @@ const fs = require('fs');
 const { PrismaClient } = require('@prisma/client');
 const AppError = require('../utils/AppError');
 const prisma = new PrismaClient();
+const { generateATSPDF } = require('./pdfService');
+const { uploadBufferToDrive } = require('../utils/driveClient');
+const { extractJobDetails, generateTailoringProposals } = require('./geminiService');
 
 const getAllUsers = async (currentUserId) => {
   const users = await userRepository.findAllUsers();
@@ -406,7 +409,120 @@ const unblockUser = async (blockerId, blockedId) => {
   return await userRepository.unblockUser(blockerId, blockedId);
 };
 
+const optimizeCVFormat = async (userId, cvId) => {
+  const cv = await prisma.cV.findUnique({
+    where: { id: parseInt(cvId) },
+    include: { entries: true, user: true }
+  });
 
+  if (!cv || cv.userId !== parseInt(userId)) {
+    throw new AppError("CV bulunamadı veya yetkiniz yok.", 404);
+  }
+
+  // Optimize edilmiş PDF üret
+  const pdfBuffer = await generateATSPDF({
+    summary: cv.summary,
+    userName: cv.user.name,
+    userEmail: cv.user.email
+  }, cv.entries);
+
+  // Drive'a yükle
+  const driveResponse = await uploadBufferToDrive(
+    pdfBuffer, 
+    `ATS-${cv.fileName}`, 
+    'application/pdf', 
+    process.env.GOOGLE_DRIVE_CV_FOLDER_ID
+  );
+
+  // Veritabanında kaydet
+  const atsFormattedCV = await prisma.atsFormattedCV.upsert({
+    where: { cvId: parseInt(cvId) },
+    update: {
+      fileId: driveResponse.fileId
+    },
+    create: {
+      cvId: parseInt(cvId),
+      fileId: driveResponse.fileId
+    }
+  });
+
+  return {
+    ...atsFormattedCV,
+    publicUrl: driveResponse.publicUrl
+  };
+};
+
+const getUserATSStatus = async (cvId) => {
+  const cv = await prisma.cV.findUnique({
+    where: { id: parseInt(cvId) },
+    select: {
+      atsFormatScore: true,
+      atsFormatFeedback: true,
+      atsFormattedCV: true
+    }
+  });
+  return cv;
+};
+
+// ---- İŞ İLANI VE TAILORING FONKSİYONLARI ----
+
+const createJobPosting = async (jobText, url = null) => {
+  const extracted = await extractJobDetails(jobText);
+  return await prisma.jobPosting.create({
+    data: {
+      title: extracted.title,
+      company: extracted.company,
+      description: jobText,
+      url: url,
+      extractedSkills: extracted.skills
+    }
+  });
+};
+
+const getTailoringProposals = async (cvId, jobPostingId) => {
+  const cv = await prisma.cV.findUnique({
+    where: { id: parseInt(cvId) },
+    include: { entries: true }
+  });
+  const job = await prisma.jobPosting.findUnique({
+    where: { id: parseInt(jobPostingId) }
+  });
+
+  if (!cv || !job) throw new AppError("CV veya İş İlanı bulunamadı.", 404);
+
+  const proposals = await generateTailoringProposals(cv, job);
+  return proposals;
+};
+
+const createTailoredCV = async (userId, originalCvId, jobPostingId, tailoredData) => {
+  const { improvedSummary, approvedProposals } = tailoredData;
+
+  const tailoredCV = await prisma.tailoredCV.create({
+    data: {
+      userId: parseInt(userId),
+      originalCvId: parseInt(originalCvId),
+      jobPostingId: parseInt(jobPostingId),
+      improvedSummary: improvedSummary
+    }
+  });
+
+  if (approvedProposals && approvedProposals.length > 0) {
+    const entriesToCreate = approvedProposals.map(p => ({
+      tailoredCvId: tailoredCV.id,
+      category: p.category,
+      name: p.suggestedTitle || 'Belirtilmemiş',
+      description: p.suggestedDescription,
+      isModified: true,
+      aiComment: p.aiComment
+    }));
+
+    await prisma.tailoredCVEntry.createMany({
+      data: entriesToCreate
+    });
+  }
+
+  return tailoredCV;
+};
 
 module.exports = {
   getAllUsers,
@@ -426,5 +542,10 @@ module.exports = {
   getUserCVs,
   activateCV,
   deleteCV,
-  getAllActiveCVs
-};
+  getAllActiveCVs,
+  optimizeCVFormat,
+  getUserATSStatus,
+  createJobPosting,
+  getTailoringProposals,
+  createTailoredCV
+};
