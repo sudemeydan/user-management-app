@@ -16,6 +16,15 @@ const oauth2Client = new google.auth.OAuth2(
 
 oauth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 
+// Yeni token alındığında (refresh sonrası) otomatik güncelleme
+oauth2Client.on('tokens', (tokens) => {
+  if (tokens.refresh_token) {
+    console.log("🔄 Yeni Refresh Token Alındı!");
+    // Opsiyonel: .env dosyasını veya DB'yi güncelleyebilirsin
+  }
+  console.log("🔑 Access Token Yenilendi.");
+});
+
 const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
 const uploadToDrive = async (fileObj, customFolderId = null) => {
@@ -61,45 +70,6 @@ const uploadToDrive = async (fileObj, customFolderId = null) => {
     throw new Error('Dosya Drive\'a yüklenemedi.');
   }
 };
-const uploadBufferToDrive = async (buffer, fileName, mimeType, customFolderId = null) => {
-  try {
-    const targetFolderId = customFolderId || FOLDER_ID;
-    const { Readable } = require('stream');
-    const bufferStream = new Readable();
-    bufferStream.push(buffer);
-    bufferStream.push(null);
-
-    const fileMetadata = {
-      name: `ats-${Date.now()}-${fileName}`,
-      parents: [targetFolderId],
-    };
-
-    const media = {
-      mimeType: mimeType,
-      body: bufferStream,
-    };
-
-    const response = await drive.files.create({
-      requestBody: fileMetadata,
-      media: media,
-      fields: 'id, webViewLink, webContentLink',
-      supportsAllDrives: true,
-    });
-
-    const fileId = response.data.id;
-    await drive.permissions.create({
-      fileId: fileId,
-      requestBody: { role: 'reader', type: 'anyone' },
-    });
-
-    let publicUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
-    return { fileId, publicUrl };
-  } catch (error) {
-    console.error('❌ Google Drive Buffer Yükleme Hatası:', error.message);
-    throw new Error('Dosya Drive\'a yüklenemedi.');
-  }
-};
-
 const deleteFromDrive = async (fileId) => {
   try {
     await drive.files.delete({ fileId: fileId });
@@ -129,4 +99,4 @@ const streamFile = async (fileId, res) => {
   }
 };
 
-module.exports = { uploadToDrive, uploadBufferToDrive, deleteFromDrive, streamFile };
+module.exports = { uploadToDrive, deleteFromDrive, streamFile };

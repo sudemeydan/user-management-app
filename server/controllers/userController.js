@@ -352,6 +352,17 @@ const createTailoredCV = async (req, res) => {
   }
 };
 
+const optimizeTailoredCV = async (req, res) => {
+  try {
+    const { tailoredCvId } = req.params;
+    const userId = req.user.id;
+    const result = await userService.optimizeTailoredCV(userId, tailoredCvId);
+    res.json({ success: true, message: "Uyarlanmış CV PDF'i başarıyla oluşturuldu!", data: result });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getUsers,
   createUser,
@@ -378,5 +389,6 @@ module.exports = {
   getATSStatus,
   createJobPosting,
   getTailoringProposals,
-  createTailoredCV
+  createTailoredCV,
+  optimizeTailoredCV
 };

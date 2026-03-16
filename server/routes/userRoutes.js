@@ -91,6 +91,7 @@ router.get('/cvs/:cvId/ats-status', authMiddleware, userController.getATSStatus)
 router.post('/job-postings', authMiddleware, userController.createJobPosting);
 router.get('/cvs/:cvId/tailor/:jobPostingId', authMiddleware, userController.getTailoringProposals);
 router.post('/tailored-cvs', authMiddleware, userController.createTailoredCV);
+router.post('/tailored-cvs/:tailoredCvId/optimize', authMiddleware, userController.optimizeTailoredCV);
 
 // İndirme rotasında token gönderilmesini istiyoruz ki gizli belge indirilmesin
 router.get('/cv-download/:fileId', authMiddleware, userController.downloadCV);

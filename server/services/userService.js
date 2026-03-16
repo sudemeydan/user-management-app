@@ -4,10 +4,12 @@ const crypto = require('crypto');
 const emailService = require('./emailService');
 const driveClient = require('../utils/driveClient');
 const fs = require('fs');
+const path = require('path');
+const os = require('os');
 const { PrismaClient } = require('@prisma/client');
 const AppError = require('../utils/AppError');
 const prisma = new PrismaClient();
-const { generateATSPDF } = require('./pdfService');
+const { generateATSPDF, generateTailoredPDF } = require('./pdfService');
 const { uploadBufferToDrive } = require('../utils/driveClient');
 const { extractJobDetails, generateTailoringProposals } = require('./geminiService');
 
@@ -432,13 +434,19 @@ const optimizeCVFormat = async (userId, cvId) => {
     userEmail: cv.user.email
   }, cv.entries);
 
+  // Dosyayı geçici olarak diske kaydet (Diğer yüklemelerin mantığı)
+  const tempPath = path.join(os.tmpdir(), `ATS-${cv.id}-${Date.now()}.pdf`);
+  fs.writeFileSync(tempPath, pdfBuffer);
+
   // Drive'a yükle
-  const driveResponse = await uploadBufferToDrive(
-    pdfBuffer,
-    `ATS-${cv.fileName}`,
-    'application/pdf',
-    process.env.GOOGLE_DRIVE_CV_FOLDER_ID
-  );
+  const driveResponse = await driveClient.uploadToDrive({
+    path: tempPath,
+    originalname: `ATS-${cv.fileName}`,
+    mimetype: 'application/pdf'
+  }, process.env.GOOGLE_DRIVE_CV_FOLDER_ID);
+
+  // Geçici dosyayı sil
+  fs.unlinkSync(tempPath);
 
   // Veritabanında kaydet
   const atsFormattedCV = await prisma.atsFormattedCV.upsert({
@@ -530,6 +538,62 @@ const createTailoredCV = async (userId, originalCvId, jobPostingId, tailoredData
   return tailoredCV;
 };
 
+const optimizeTailoredCV = async (userId, tailoredCvId) => {
+  const tailoredCV = await prisma.tailoredCV.findUnique({
+    where: { id: parseInt(tailoredCvId) },
+    include: {
+      entries: true,
+      jobPosting: true,
+      originalCv: {
+        include: {
+          entries: true,
+          user: true
+        }
+      }
+    }
+  });
+
+  if (!tailoredCV || tailoredCV.userId !== parseInt(userId)) {
+    throw new AppError("Uyarlanmış CV bulunamadı veya yetkiniz yok.", 404);
+  }
+
+  // PDF için cvData objesini hazırla (ats_cv.html beklentilerine göre)
+  const cvData = {
+    userName: tailoredCV.originalCv.user.name,
+    userEmail: tailoredCV.originalCv.user.email,
+    summary: tailoredCV.originalCv.summary,
+    entries: tailoredCV.originalCv.entries
+  };
+
+  // PDF Üret
+  const pdfBuffer = await generateTailoredPDF(cvData, tailoredCV);
+
+  // Dosyayı geçici olarak diske kaydet
+  const tempPath = path.join(os.tmpdir(), `Tailored-${tailoredCvId}-${Date.now()}.pdf`);
+  fs.writeFileSync(tempPath, pdfBuffer);
+
+  // Drive'a yükle
+  const driveResponse = await driveClient.uploadToDrive({
+    path: tempPath,
+    originalname: `Tailored-${tailoredCV.jobPosting.title}-${tailoredCV.originalCv.fileName}`,
+    mimetype: 'application/pdf'
+  }, process.env.GOOGLE_DRIVE_CV_FOLDER_ID);
+
+  // Geçici dosyayı sil
+  fs.unlinkSync(tempPath);
+
+  // DB Güncelle
+  const updated = await prisma.tailoredCV.update({
+    where: { id: parseInt(tailoredCvId) },
+    data: { fileId: driveResponse.fileId }
+  });
+
+  return {
+    ...updated,
+    publicUrl: driveResponse.publicUrl
+  };
+};
+
 module.exports = {
   getAllUsers,
   registerUser,
@@ -553,5 +617,6 @@ module.exports = {
   getUserATSStatus,
   createJobPosting,
   getTailoringProposals,
-  createTailoredCV
+  createTailoredCV,
+  optimizeTailoredCV
 };

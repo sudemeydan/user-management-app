@@ -156,7 +156,7 @@ const MyCVsTab = ({ user, myCvs, fetchMyCVs }) => {
                                 </div>
 
                                 {/* Detay */}
-                                {isExpanded && !isProcessing && <CVDetailAccordion cv={cv} />}
+                                {isExpanded && !isProcessing && <CVDetailAccordion cv={cv} fetchMyCVs={fetchMyCVs} />}
                             </div>
                         );
                     })}

@@ -1,13 +1,38 @@
 import React, { useState } from 'react';
+import axiosInstance from '../../axiosInstance';
 import {
-    BrainCircuit, UserCheck, Zap, Crown, Briefcase, FileSignature, ChevronDown, ChevronUp
+    BrainCircuit, UserCheck, Zap, Crown, Briefcase, FileSignature, ChevronDown, ChevronUp, Download, Loader2
 } from 'lucide-react';
 
-const CVDetailAccordion = ({ cv }) => {
+const CVDetailAccordion = ({ cv, fetchMyCVs }) => {
     const [openTailoredId, setOpenTailoredId] = useState(null);
+    const [loadingIds, setLoadingIds] = useState([]);
 
     const toggleTailored = (id) => {
         setOpenTailoredId(openTailoredId === id ? null : id);
+    };
+
+    const handleDownloadTailoredCV = async (fileId, fileName) => {
+        try {
+            const res = await axiosInstance.get(`/users/cv-download/${fileId}`, { responseType: 'blob' });
+            const blob = new Blob([res.data]);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = fileName; document.body.appendChild(a); a.click(); a.remove();
+        } catch (error) { alert("İndirme sırasında bir hata oluştu."); }
+    };
+
+    const handleGenerateTailoredPDF = async (tailoredCvId) => {
+        setLoadingIds(prev => [...prev, tailoredCvId]);
+        try {
+            const res = await axiosInstance.post(`/users/tailored-cvs/${tailoredCvId}/optimize`);
+            alert(res.data.message);
+            if (fetchMyCVs) fetchMyCVs();
+        } catch (error) {
+            alert("Dosya hazırlama hatası: " + (error.response?.data?.message || error.message));
+        } finally {
+            setLoadingIds(prev => prev.filter(id => id !== tailoredCvId));
+        }
     };
     if (!cv.entries || cv.entries.length === 0) {
         return <div className="p-6 text-center text-gray-500 text-sm">Ayrıştırılmış detay bulunamadı veya işlenemedi.</div>;
@@ -138,13 +163,31 @@ const CVDetailAccordion = ({ cv }) => {
                                             {tcv.jobPosting?.title || 'Pozisyon Belirtilmemiş'}
                                             <span className="text-pink-600 ml-2 font-medium">({tcv.jobPosting?.company || 'Şirket Belirtilmemiş'})</span>
                                         </p>
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            Oluşturulma: {new Date(tcv.createdAt).toLocaleDateString('tr-TR')}
-                                        </p>
                                     </div>
-                                    <button className="text-gray-400">
-                                        {openTailoredId === tcv.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                                    </button>
+                                    <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                                        {tcv.fileId ? (
+                                            <button 
+                                                onClick={() => handleDownloadTailoredCV(tcv.fileId, `Tailored-${tcv.jobPosting?.title || 'CV'}.pdf`)}
+                                                className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition border border-indigo-100"
+                                                title="PDF İndir"
+                                            >
+                                                <Download size={18} />
+                                            </button>
+                                        ) : (
+                                            <button 
+                                                onClick={() => handleGenerateTailoredPDF(tcv.id)}
+                                                disabled={loadingIds.includes(tcv.id)}
+                                                className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition border border-purple-100 flex items-center gap-1 text-xs font-bold"
+                                                title="Dosya Hazırla"
+                                            >
+                                                {loadingIds.includes(tcv.id) ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
+                                                <span>PDF Üret</span>
+                                            </button>
+                                        )}
+                                        <button className="text-gray-400 p-2" onClick={() => toggleTailored(tcv.id)}>
+                                            {openTailoredId === tcv.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {openTailoredId === tcv.id && (
