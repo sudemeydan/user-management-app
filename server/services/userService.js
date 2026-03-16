@@ -301,9 +301,15 @@ const getUserCVs = async (targetUserId, requesterId, requesterRole) => {
       userId: parseInt(targetUserId),
       ...(isOwner || isAdmin ? {} : { isActive: true })
     },
-    // YENİ EKLENEN KISIM: CV'nin içindeki ayrıştırılmış detayları da (entries) getir.
     include: {
-      entries: true
+      entries: true,
+      // YENİ EKLENEN KISIM: Normal CV'ye bağlı uyarlanmış (Tailored) CV'leri de getir
+      tailoredCVs: {
+        include: {
+          entries: true, // Uyarlanmış CV'nin güncellenmiş yetenek/deneyim girdileri
+          jobPosting: true // Hangi iş ilanına göre uyarlandığı bilgisi (opsiyonel)
+        }
+      }
     },
     orderBy: { createdAt: 'desc' }
   });
@@ -428,9 +434,9 @@ const optimizeCVFormat = async (userId, cvId) => {
 
   // Drive'a yükle
   const driveResponse = await uploadBufferToDrive(
-    pdfBuffer, 
-    `ATS-${cv.fileName}`, 
-    'application/pdf', 
+    pdfBuffer,
+    `ATS-${cv.fileName}`,
+    'application/pdf',
     process.env.GOOGLE_DRIVE_CV_FOLDER_ID
   );
 
@@ -548,4 +554,4 @@ module.exports = {
   createJobPosting,
   getTailoringProposals,
   createTailoredCV
-};
+};

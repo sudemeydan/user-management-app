@@ -1,9 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-    BrainCircuit, UserCheck, Zap, Crown, Briefcase
+    BrainCircuit, UserCheck, Zap, Crown, Briefcase, FileSignature, ChevronDown, ChevronUp
 } from 'lucide-react';
 
 const CVDetailAccordion = ({ cv }) => {
+    const [openTailoredId, setOpenTailoredId] = useState(null);
+
+    const toggleTailored = (id) => {
+        setOpenTailoredId(openTailoredId === id ? null : id);
+    };
     if (!cv.entries || cv.entries.length === 0) {
         return <div className="p-6 text-center text-gray-500 text-sm">Ayrıştırılmış detay bulunamadı veya işlenemedi.</div>;
     }
@@ -113,6 +118,75 @@ const CVDetailAccordion = ({ cv }) => {
                                 </div>
                             ))}
                         </div>
+                    </div>
+                )}
+
+                {/* AI ile Uyarlanmış Sürümler (Tailored CVs) */}
+                {cv.tailoredCVs && cv.tailoredCVs.length > 0 && (
+                    <div className="md:col-span-2 mt-4 space-y-4">
+                        <h4 className="text-md font-bold text-gray-800 flex items-center gap-2 border-b border-gray-200 pb-2">
+                            <FileSignature size={18} className="text-pink-500" /> Yapay Zeka ile Uyarlanmış Sürümler
+                        </h4>
+                        {cv.tailoredCVs.map((tcv) => (
+                            <div key={tcv.id} className="bg-white rounded-xl border border-pink-200 overflow-hidden shadow-sm">
+                                <div
+                                    className="p-4 bg-pink-50/50 flex justify-between items-center cursor-pointer hover:bg-pink-50 transition"
+                                    onClick={() => toggleTailored(tcv.id)}
+                                >
+                                    <div>
+                                        <p className="font-bold text-gray-800 text-sm">
+                                            {tcv.jobPosting?.title || 'Pozisyon Belirtilmemiş'}
+                                            <span className="text-pink-600 ml-2 font-medium">({tcv.jobPosting?.company || 'Şirket Belirtilmemiş'})</span>
+                                        </p>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Oluşturulma: {new Date(tcv.createdAt).toLocaleDateString('tr-TR')}
+                                        </p>
+                                    </div>
+                                    <button className="text-gray-400">
+                                        {openTailoredId === tcv.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                    </button>
+                                </div>
+
+                                {openTailoredId === tcv.id && (
+                                    <div className="p-4 border-t border-pink-100 space-y-4">
+                                        {tcv.improvedSummary && (
+                                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                                <h5 className="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1">
+                                                    <BrainCircuit size={14} className="text-purple-500" /> İyileştirilmiş Profesyonel Özet
+                                                </h5>
+                                                <p className="text-sm text-gray-600 leading-relaxed">{tcv.improvedSummary}</p>
+                                            </div>
+                                        )}
+
+                                        {tcv.entries && tcv.entries.length > 0 && (
+                                            <div>
+                                                <h5 className="text-xs font-bold text-gray-700 mb-3">Değiştirilen / Eklenen Kayıtlar</h5>
+                                                <div className="space-y-3">
+                                                    {tcv.entries.map((entry, idx) => (
+                                                        <div key={idx} className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <span className="bg-pink-100 text-pink-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                                                                    {entry.category}
+                                                                </span>
+                                                                <span className="font-semibold text-gray-800 text-sm">{entry.name}</span>
+                                                            </div>
+                                                            {entry.description && (
+                                                                <p className="text-xs text-gray-600 leading-relaxed mb-2">{entry.description}</p>
+                                                            )}
+                                                            {entry.aiComment && (
+                                                                <p className="text-[11px] text-purple-600 font-medium flex items-start gap-1.5 italic bg-purple-50/50 p-2 rounded">
+                                                                    <BrainCircuit size={12} className="mt-0.5 flex-shrink-0" /> {entry.aiComment}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>
