@@ -478,6 +478,33 @@ const getUserATSStatus = async (cvId) => {
   return cv;
 };
 
+const getCVDataForRender = async (cvId) => {
+  const cv = await prisma.cV.findUnique({
+    where: { id: parseInt(cvId) },
+    include: {
+      entries: true,
+      user: true
+    }
+  });
+
+  if (!cv) throw new Error("CV bulunamadı");
+  
+  // Format data to match what the frontend expects
+  return {
+    personalInfo: {
+      firstName: cv.user.name.split(' ')[0],
+      lastName: cv.user.name.split(' ').slice(1).join(' '),
+      email: cv.user.email,
+      phone: '', // Add fields from user profile if available
+      linkedin: '',
+      github: '',
+      portfolio: ''
+    },
+    summary: cv.summary,
+    entries: cv.entries
+  };
+};
+
 // ---- İŞ İLANI VE TAILORING FONKSİYONLARI ----
 
 const createJobPosting = async (jobText, url = null) => {
@@ -615,6 +642,7 @@ module.exports = {
   getAllActiveCVs,
   optimizeCVFormat,
   getUserATSStatus,
+  getCVDataForRender,
   createJobPosting,
   getTailoringProposals,
   createTailoredCV,

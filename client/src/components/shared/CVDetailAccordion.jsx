@@ -22,6 +22,21 @@ const CVDetailAccordion = ({ cv, fetchMyCVs }) => {
         } catch (error) { alert("İndirme sırasında bir hata oluştu."); }
     };
 
+    const handleDownloadOriginalCV = async () => {
+        setLoadingIds(prev => [...prev, 'original-' + cv.id]);
+        try {
+            const res = await axiosInstance.get(`/users/cvs/${cv.id}/download-pdf?template=classic`, { responseType: 'blob' });
+            const blob = new Blob([res.data]);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `CV-${cv.personalInfo?.firstName || 'Ats'}-${cv.id}.pdf`; document.body.appendChild(a); a.click(); a.remove();
+        } catch (error) {
+            alert("PDF oluşturulurken bir hata oluştu.");
+        } finally {
+            setLoadingIds(prev => prev.filter(id => id !== 'original-' + cv.id));
+        }
+    };
+
     const handleGenerateTailoredPDF = async (tailoredCvId) => {
         setLoadingIds(prev => [...prev, tailoredCvId]);
         try {
@@ -74,11 +89,23 @@ const CVDetailAccordion = ({ cv, fetchMyCVs }) => {
                 </div>
             )}
 
-            {/* AI Analiz Etiketi */}
-            <div className="flex items-center gap-2 mb-6">
+            {/* AI Analiz Etiketi & İndirme Butonu */}
+            <div className="flex items-center justify-between mb-6">
                 <span className="bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 border border-indigo-200">
                     <BrainCircuit size={14} /> Yapay Zeka Analizi
                 </span>
+
+                <button 
+                    onClick={handleDownloadOriginalCV}
+                    disabled={loadingIds.includes('original-' + cv.id)}
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-1.5 px-4 rounded-lg transition-colors shadow-sm disabled:bg-blue-300"
+                >
+                    {loadingIds.includes('original-' + cv.id) ? (
+                        <> <Loader2 size={16} className="animate-spin" /> Hazırlanıyor... </>
+                    ) : (
+                        <> <Download size={16} /> PDF Olarak İndir </>
+                    )}
+                </button>
             </div>
 
             {/* Özet */}

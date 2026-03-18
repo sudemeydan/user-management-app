@@ -3,6 +3,7 @@ import axios from 'axios';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import ResetPassword from './components/ResetPassword';
+import RenderCVPage from './components/RenderCVPage';
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -79,6 +80,10 @@ function App() {
         window.location.href = '/login';
       });
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
+  if (path.startsWith('/render-cv/')) {
+    return <RenderCVPage />;
   }
 
   return (

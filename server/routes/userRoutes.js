@@ -82,6 +82,8 @@ router.get('/all-active-cvs', authMiddleware, userController.getAllActiveCVs);
 router.get('/:id/cvs', authMiddleware, userController.getUserCVs);
 router.put('/cvs/:cvId/activate', authMiddleware, userController.activateCV);
 router.delete('/cvs/:cvId', authMiddleware, userController.deleteCV);
+router.get('/cvs/:cvId/render-data', userController.getCvRenderData);
+router.get('/cvs/:cvId/download-pdf', authMiddleware, userController.downloadCvPdf);
 
 // ATS Rotaları
 router.post('/cvs/:cvId/optimize', authMiddleware, userController.optimizeCVFormat);

@@ -303,6 +303,72 @@ const optimizeCVFormat = async (req, res) => {
   }
 };
 
+const getCvRenderData = async (req, res) => {
+  try {
+    const { cvId } = req.params;
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+       return res.status(401).json({ success: false, message: "Yetkisiz erişim: Token eksik" });
+    }
+    // Basit bir geçici doğrulama veya process.env.JWT_SECRET ile de yapılabilir
+    // Şimdilik sadece token var mı diye kontrol edelim çünkü Puppeteer bunu 127.0.0.1'den atacak.
+    try {
+        jwt.verify(token, process.env.JWT_SECRET);
+    } catch(err) {
+        return res.status(401).json({ success: false, message: "Geçersiz veya süresi dolmuş token" });
+    }
+
+    const cvData = await userService.getCVDataForRender(cvId);
+    res.json({ success: true, data: cvData });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const downloadCvPdf = async (req, res) => {
+  try {
+    const { cvId } = req.params;
+    const { template = 'classic' } = req.query;
+    
+    // Puppeteer'ın sayfaya erişebilmesi için kısa süreli bir token oluştur
+    const tempToken = jwt.sign({ cvId, role: 'SYSTEM_RENDERER' }, process.env.JWT_SECRET, { expiresIn: '1m' });
+    
+    const puppeteer = require('puppeteer');
+    
+    // Docker ortamında host name 'client' veya 'host.docker.internal' olabilir
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+    const targetUrl = `${clientUrl}/render-cv/${cvId}?template=${template}&token=${tempToken}`;
+    
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    
+    const page = await browser.newPage();
+    await page.goto(targetUrl, { waitUntil: 'networkidle0' });
+    
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '0', right: '0', bottom: '0', left: '0' }
+    });
+    
+    await browser.close();
+    
+    res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename=cv-${cvId}-ats.pdf`,
+        'Content-Length': pdfBuffer.length
+    });
+    
+    res.end(pdfBuffer);
+    
+  } catch (error) {
+    console.error("Puppeteer PDF Error:", error);
+    res.status(500).json({ success: false, message: "PDF oluşturulurken hata meydana geldi." });
+  }
+};
+
 const getATSStatus = async (req, res) => {
   try {
     const { cvId } = req.params;
@@ -386,6 +452,9 @@ module.exports = {
   downloadCV,
   getAllActiveCVs,
   optimizeCVFormat,
+  getCvRenderData,
+  downloadCvPdf,
+  getATSStatus,
   getATSStatus,
   createJobPosting,
   getTailoringProposals,
