@@ -35,7 +35,7 @@ const getAllUsers = async (currentUserId) => {
 };
 
 const registerUser = async (userData) => {
-  // 1. Gelen veriyi parçalıyoruz (confirmPassword db'ye gitmeyecek)
+  // 1. Gelen veriyi parçalıyoruz 
   const { email, password, confirmPassword, address, ...otherData } = userData;
 
   // 2. Gerekli Alanların Doluluk Kontrolü
@@ -60,21 +60,21 @@ const registerUser = async (userData) => {
     throw new Error("Lütfen geçerli bir şehir seçiniz.");
   }
 
-  // 6. Kullanıcı Zaten Var mı Kontrolü (Senin mevcut kodun)
+  // 6. Kullanıcı Zaten Var mı Kontrolü 
   const existingUser = await userRepository.findUserByEmail(email);
   if (existingUser) {
     throw new Error("Bu e-posta adresi zaten kullanımda.");
   }
 
-  // 7. Şifreyi Hashleme ve Token Oluşturma (Senin mevcut kodun)
+  // 7. Şifreyi Hashleme ve Token Oluşturma 
   const hashedPassword = await bcrypt.hash(password, 10);
   const verificationToken = crypto.randomBytes(32).toString('hex');
 
   // 8. Veritabanına Kayıt (Repository üzerinden)
   const newUser = await userRepository.createUser({
-    ...otherData, // İsim, soyisim gibi ekstra alanlar varsa kaybolmasın
+    ...otherData,
     email,
-    address,      // db'deki address alanına seçilen şehri yazıyoruz
+    address,
     password: hashedPassword,
     emailVerificationToken: verificationToken,
     isEmailVerified: false
@@ -297,7 +297,6 @@ const getUserCVs = async (targetUserId, requesterId, requesterRole) => {
     throw new AppError("Gizli profil olduğu için CV'leri göremezsiniz.", 403);
   }
 
-  // Sahibi ise tüm CV'leri, değilse sadece aktif olanı listele
   const cvs = await prisma.cV.findMany({
     where: {
       userId: parseInt(targetUserId),
@@ -305,11 +304,10 @@ const getUserCVs = async (targetUserId, requesterId, requesterRole) => {
     },
     include: {
       entries: true,
-      // YENİ EKLENEN KISIM: Normal CV'ye bağlı uyarlanmış (Tailored) CV'leri de getir
       tailoredCVs: {
         include: {
-          entries: true, // Uyarlanmış CV'nin güncellenmiş yetenek/deneyim girdileri
-          jobPosting: true // Hangi iş ilanına göre uyarlandığı bilgisi (opsiyonel)
+          entries: true,
+          jobPosting: true
         }
       }
     },
@@ -488,7 +486,7 @@ const getCVDataForRender = async (cvId) => {
   });
 
   if (!cv) throw new Error("CV bulunamadı");
-  
+
   // Format data to match what the frontend expects
   return {
     personalInfo: {
@@ -536,14 +534,15 @@ const getTailoringProposals = async (cvId, jobPostingId) => {
 };
 
 const createTailoredCV = async (userId, originalCvId, jobPostingId, tailoredData) => {
-  const { improvedSummary, approvedProposals } = tailoredData;
+  const { improvedSummary, approvedProposals, atsScore } = tailoredData;
 
   const tailoredCV = await prisma.tailoredCV.create({
     data: {
       userId: parseInt(userId),
       originalCvId: parseInt(originalCvId),
       jobPostingId: parseInt(jobPostingId),
-      improvedSummary: improvedSummary
+      improvedSummary: improvedSummary,
+      atsScore: atsScore || null
     }
   });
 
@@ -592,8 +591,8 @@ const optimizeTailoredCV = async (userId, tailoredCvId) => {
     entries: tailoredCV.originalCv.entries
   };
 
-  // PDF Üret
-  const pdfBuffer = await generateTailoredPDF(cvData, tailoredCV);
+  // PDF Üret (Modern şablonu zorla)
+  const pdfBuffer = await generateTailoredPDF(cvData, tailoredCV, 'modern');
 
   // Dosyayı geçici olarak diske kaydet
   const tempPath = path.join(os.tmpdir(), `Tailored-${tailoredCvId}-${Date.now()}.pdf`);

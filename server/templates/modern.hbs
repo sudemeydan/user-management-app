@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Modern Premium CV</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for identical icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm 20mm 15mm 20mm;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 9pt;
+            color: #111;
+            line-height: 1.35;
+        }
+
+        .avoid-break {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        a {
+            color: #333;
+            text-decoration: none;
+        }
+
+        .section-title {
+            font-size: 11pt;
+            font-weight: 800;
+            color: #1f2937;
+            border-bottom: 2px solid #000;
+            padding-bottom: 2px;
+            margin-bottom: 8px;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+
+<body class="bg-white">
+
+    <!-- Header Section -->
+    <div class="mb-4">
+        <h1 class="text-[18pt] font-extrabold text-black leading-none mb-1">{{name}}</h1>
+        {{#if summary}}
+
+        {{/if}}
+
+        <div class="flex flex-wrap text-[8.5pt] font-semibold text-gray-800 gap-x-4 gap-y-1 mt-2">
+            {{#if email}}
+            <div class="flex items-center gap-1.5">
+                <i class="fa-solid fa-envelope"></i><span>{{email}}</span>
+            </div>
+            {{/if}}
+            {{#if phone}}
+            <div class="flex items-center gap-1.5">
+                <i class="fa-solid fa-phone"></i><span>{{phone}}</span>
+            </div>
+            {{/if}}
+            {{#if address}}
+            <div class="flex items-center gap-1.5">
+                <i class="fa-solid fa-location-dot"></i><span>{{address}}</span>
+            </div>
+            {{/if}}
+            {{#if birthDate}}
+            <div class="flex items-center gap-1.5">
+                <i class="fa-solid fa-calendar-days"></i><span>{{birthDate}}</span>
+            </div>
+            {{/if}}
+        </div>
+        <div class="flex flex-wrap text-[8.5pt] font-semibold text-gray-800 gap-x-4 gap-y-1 mt-1">
+            {{#if github}}
+            <div class="flex items-center gap-1.5">
+                <i class="fa-brands fa-github"></i><span>github.com/{{github}}</span>
+            </div>
+            {{/if}}
+            {{#if linkedin}}
+            <div class="flex items-center gap-1.5">
+                <i class="fa-brands fa-linkedin"></i><span>linkedin.com/in/{{linkedin}}</span>
+            </div>
+            {{/if}}
+            {{#if portfolio}}
+            <div class="flex items-center gap-1.5">
+                <i class="fa-solid fa-link"></i><span>{{portfolio}}</span>
+            </div>
+            {{/if}}
+        </div>
+    </div>
+
+    <!-- Profile -->
+    {{#if summary}}
+    <div class="avoid-break mb-1">
+        <h2 class="section-title">Profile</h2>
+        <p class="text-[9pt] text-gray-800 text-justify">{{summary}}</p>
+    </div>
+    {{/if}}
+
+    <!-- Education -->
+    {{#if educations.length}}
+    <div class="avoid-break mb-1">
+        <h2 class="section-title">Education</h2>
+        <div class="space-y-2">
+            {{#each educations}}
+            <div>
+                <div class="flex justify-between items-baseline">
+                    <div>
+                        <span class="font-bold text-[9pt]">{{this.subtitle}}</span>{{#if this.subtitle}}{{#if
+                        this.title}}, {{/if}}{{/if}}<span class="italic text-[9pt]">{{this.title}}</span>
+                    </div>
+                    <span class="text-[8.5pt] font-semibold text-gray-700 whitespace-nowrap">{{this.startDate}} - {{#if
+                        this.endDate}}{{this.endDate}}{{else}}Present{{/if}}</span>
+                </div>
+                {{#if this.description}}{{bulletPoints this.description}}{{/if}}
+            </div>
+            {{/each}}
+        </div>
+    </div>
+    {{/if}}
+
+    <!-- Skills (2 Column Grid) -->
+    {{#if skills.length}}
+    <div class="avoid-break mb-1">
+        <h2 class="section-title">Skills</h2>
+        <div class="grid grid-cols-2 gap-x-8 gap-y-3">
+            {{#each skills}}
+            <div>
+                <div class="font-extrabold text-[9pt] mb-0.5">{{this.title}}</div>
+                <div class="text-[8.5pt] text-gray-800 leading-snug">{{this.description}}</div>
+            </div>
+            {{/each}}
+        </div>
+    </div>
+    {{/if}}
+
+    <!-- Languages -->
+    {{#if languages.length}}
+    <div class="avoid-break mb-1">
+        <h2 class="section-title">Languages</h2>
+        <div class="grid grid-cols-2 gap-x-8 gap-y-3">
+            {{#each languages}}
+            <div>
+                <div class="font-bold text-[9pt] mb-0.5">{{this.title}}</div>
+                <div class="text-[8.5pt] text-gray-800">{{this.description}}</div>
+            </div>
+            {{/each}}
+        </div>
+    </div>
+    {{/if}}
+
+    <!-- Certificates -->
+    {{#if certificates.length}}
+    <div class="avoid-break mb-1">
+        <h2 class="section-title">Certificates</h2>
+        <div class="grid grid-cols-2 gap-x-8 gap-y-3">
+            {{#each certificates}}
+            <div>
+                <div class="font-bold text-[9pt] mb-0.5">{{this.title}}</div>
+                <div class="text-[8.5pt] text-gray-800">{{this.description}}</div>
+            </div>
+            {{/each}}
+        </div>
+    </div>
+    {{/if}}
+
+    <!-- Experience -->
+    {{#if experiences.length}}
+    <div class="mb-1">
+        <h2 class="section-title">Experience</h2>
+        <div class="space-y-4">
+            {{#each experiences}}
+            <div class="avoid-break">
+                <div class="flex justify-between items-baseline mb-0.5">
+                    <span class="font-bold text-[9.5pt]">{{this.title}}</span>
+                    <span class="text-[8.5pt] font-semibold text-gray-700 whitespace-nowrap">{{this.startDate}} - {{#if
+                        this.endDate}}{{this.endDate}}{{else}}Present{{/if}}</span>
+                </div>
+                {{#if this.subtitle}}<div class="italic text-[9pt] mb-1.5 text-gray-800">{{this.subtitle}}</div>{{/if}}
+                {{#if this.description}}
+                <div class="pl-2">
+                    {{bulletPoints this.description}}
+                </div>
+                {{/if}}
+            </div>
+            {{/each}}
+        </div>
+    </div>
+    {{/if}}
+
+    <!-- Projects -->
+    {{#if projects.length}}
+    <div class="mb-1">
+        <h2 class="section-title">Projects</h2>
+        <div class="space-y-4">
+            {{#each projects}}
+            <div class="avoid-break">
+                <div class="flex justify-between items-baseline mb-0.5">
+                    <span class="font-bold text-[9pt]">{{this.title}}</span>
+                    <span class="text-[8.5pt] font-semibold text-gray-700 whitespace-nowrap">{{#if
+                        this.startDate}}{{this.startDate}}{{/if}}{{#if this.endDate}} - {{this.endDate}}{{/if}}</span>
+                </div>
+                {{#if this.subtitle}}<div class="italic text-[8.5pt] mb-1.5 text-gray-800">{{this.subtitle}}</div>
+                {{/if}}
+                {{#if this.description}}
+                <div class="pl-2">
+                    {{bulletPoints this.description}}
+                </div>
+                {{/if}}
+            </div>
+            {{/each}}
+        </div>
+    </div>
+    {{/if}}
+
+</body>
+
+</html>

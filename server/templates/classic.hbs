@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ATS CV - Classic</title>
+    <!-- Include Tailwind CSS for easy styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* PDF specific print media logic */
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 11pt;
+            color: black;
+            line-height: 1.4;
+        }
+        /* Prevents breaking a section across pages if possible */
+        .avoid-break {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+        a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        h1, h2, h3 {
+            page-break-after: avoid;
+        }
+    </style>
+</head>
+<body class="bg-white text-black bg-white">
+    <!-- Header -->
+    <div class="text-center border-b-2 border-black pb-4 mb-4">
+        <h1 class="text-3xl font-bold uppercase mb-2">{{name}}</h1>
+        <div class="text-sm space-x-2 flex justify-center flex-wrap">
+            {{#if email}}<span><a href="mailto:{{email}}">{{email}}</a></span>{{/if}}
+            {{#if phone}}<span>|</span><span>{{phone}}</span>{{/if}}
+            {{#if linkedin}}<span>|</span><span><a href="{{linkedin}}">LinkedIn</a></span>{{/if}}
+            {{#if github}}<span>|</span><span><a href="{{github}}">GitHub</a></span>{{/if}}
+            {{#if portfolio}}<span>|</span><span><a href="{{portfolio}}">Portfolio</a></span>{{/if}}
+            {{#if address}}<span>|</span><span>{{address}}</span>{{/if}}
+        </div>
+    </div>
+
+    <!-- Summary -->
+    {{#if summary}}
+    <div class="mb-5 avoid-break">
+        <h2 class="text-lg font-bold uppercase border-b border-gray-400 mb-2 pb-1">Professional Summary</h2>
+        <p class="text-sm">{{summary}}</p>
+    </div>
+    {{/if}}
+
+    <!-- Experience -->
+    {{#if experiences.length}}
+    <div class="mb-5">
+        <h2 class="text-lg font-bold uppercase border-b border-gray-400 mb-2 pb-1">Experience</h2>
+        <div class="space-y-4">
+            {{#each experiences}}
+            <div class="avoid-break">
+                <div class="flex justify-between items-baseline mb-1">
+                    <h3 class="text-sm font-bold">{{this.title}}</h3>
+                    <span class="text-xs font-semibold">{{this.startDate}} - {{#if this.endDate}}{{this.endDate}}{{else}}Present{{/if}}</span>
+                </div>
+                {{#if this.subtitle}}<div class="text-xs font-semibold italic mb-1">{{this.subtitle}}</div>{{/if}}
+                {{#if this.description}}<p class="text-xs whitespace-pre-line">{{this.description}}</p>{{/if}}
+            </div>
+            {{/each}}
+        </div>
+    </div>
+    {{/if}}
+
+    <!-- Education -->
+    {{#if educations.length}}
+    <div class="mb-5">
+        <h2 class="text-lg font-bold uppercase border-b border-gray-400 mb-2 pb-1">Education</h2>
+        <div class="space-y-3">
+            {{#each educations}}
+            <div class="avoid-break">
+                <div class="flex justify-between items-baseline mb-1">
+                    <h3 class="text-sm font-bold">{{this.title}}</h3>
+                    <span class="text-xs font-semibold">{{this.startDate}} - {{this.endDate}}</span>
+                </div>
+                {{#if this.subtitle}}<div class="text-xs italic mb-1">{{this.subtitle}}</div>{{/if}}
+                {{#if this.description}}<p class="text-xs whitespace-pre-line">{{this.description}}</p>{{/if}}
+            </div>
+            {{/each}}
+        </div>
+    </div>
+    {{/if}}
+
+    <!-- Projects -->
+    {{#if projects.length}}
+    <div class="mb-5">
+        <h2 class="text-lg font-bold uppercase border-b border-gray-400 mb-2 pb-1">Projects</h2>
+        <div class="space-y-3">
+            {{#each projects}}
+            <div class="avoid-break">
+                <div class="flex justify-between items-baseline mb-1">
+                    <h3 class="text-sm font-bold">{{this.title}}</h3>
+                    <span class="text-xs font-semibold">{{this.startDate}} - {{this.endDate}}</span>
+                </div>
+                {{#if this.subtitle}}<div class="text-xs italic mb-1">{{this.subtitle}}</div>{{/if}}
+                {{#if this.description}}<p class="text-xs whitespace-pre-line">{{this.description}}</p>{{/if}}
+            </div>
+            {{/each}}
+        </div>
+    </div>
+    {{/if}}
+
+    <!-- Skills -->
+    {{#if skills.length}}
+    <div class="mb-5 avoid-break">
+        <h2 class="text-lg font-bold uppercase border-b border-gray-400 mb-2 pb-1">Skills</h2>
+        <div class="text-sm">
+            <p>
+                {{#each skills}}
+                {{this.title}}{{#if this.subtitle}} ({{this.subtitle}}){{/if}}{{#unless @last}}, {{/unless}}
+                {{/each}}
+            </p>
+        </div>
+    </div>
+    {{/if}}
+</body>
+</html>

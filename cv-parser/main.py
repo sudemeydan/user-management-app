@@ -17,7 +17,8 @@ def extract_text_from_pdf_bytes(pdf_bytes):
         # stream=True ile bellekten (bytes) PDF okuma
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
         for page in doc:
-            text += page.get_text()
+            # 'sort=True' parametresi blokları mantıksal düzene (yukarıdan aşağıya, soldan sağa) sokar
+            text += page.get_text("text", sort=True) + "\n\n"
         doc.close()
         return text
     except Exception as e:

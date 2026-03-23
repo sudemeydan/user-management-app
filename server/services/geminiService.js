@@ -41,6 +41,12 @@ const parseCVText = async (rawText) => {
     Aşağıda ham metni verilen CV'yi analiz et ve istenen JSON şemasına uygun olarak ayrıştır.
     Eğer bir bilgi yoksa null veya boş bırakabilirsin. Tarihleri (startDate, endDate) anlayabildiğin en iyi formata (örn: YYYY-MM) çevir.
     
+    ÖNEMLİ KURALLAR:
+    1. Metin PDF'den çıkarıldığı için kolonlar veya tablolar birbirine karışmış olabilir. Bağlamı (Experience, Education vs.) iyi analiz et ve mantıksal sıraları eşleştir.
+    2. İsim, e-posta, telefon gibi verileri mutlaka CONTACT_INFO kategorisine ekle ve metadata içine 'fullName' anahtarını eksiksiz doldur.
+    3. Uzun bullet-point listeleri veya kopuk paragrafları anlamlı bir şekilde birleştirerek (gerekirse madde işaretlerini kullanarak) 'description' içine koy.
+    4. Yabancı dilde olan açıklamaları da en iyi şekilde aynı dilde koruyarak ama anlaşılır bir yapıda JSON'a çevir.
+    
     İstenen JSON Formatı:
     {
       "summary": "Adayın geçmişi, yetenekleri ve hedefleri hakkında profesyonel özet (Türkçe).",
@@ -52,7 +58,7 @@ const parseCVText = async (rawText) => {
           "startDate": "YYYY-MM formatında başlangıç tarihi (yoksa null)",
           "endDate": "YYYY-MM formatında bitiş tarihi veya 'Present' (yoksa null)",
           "description": "Detaylı açıklamalar, sorumluluklar veya kazanımlar",
-          "metadata": { "ekstra_bilgi_anahtari": "degeri" } 
+          "metadata": { "fullName": "Adayın Tam Adı (SADECE CONTACT_INFO İÇİN ZORUNLU)", "email": "...", "phone": "..." } 
         }
       ]
     }
@@ -155,10 +161,11 @@ const generateTailoringProposals = async (cvData, jobData) => {
     İstenen Çıktı Formatı:
     {
       "improvedSummary": "CV'nin başındaki özet kısmının işe uygun hali",
+      "atsScore": 95, 
       "proposals": [
         {
           "entryId": "CV'deki entry'nin ID'si",
-          "category": "EXPERIENCE | SKILL | PROJECT vb.",
+          "category": "BUNLARDAN YALNIZCA BİRİ: EXPERIENCE, EDUCATION, SKILL, PROJECT, LANGUAGE, CERTIFICATE, OTHER",
           "suggestedTitle": "Önerilen Başlık (gerekirse)",
           "suggestedDescription": "Önerilen yeni açıklama (ilandaki anahtar kelimeleri içeren)",
           "aiComment": "Açıklama"

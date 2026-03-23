@@ -26,13 +26,13 @@ RUN apt-get update && apt-get install -y \
 # 2. Konteyner içinde çalışacağımız klasörü belirle
 WORKDIR /app
 
-# 3. Önce sadece paket dosyalarını kopyala (Hızlandırmak için)
+# 3. Önce sadece paket dosyalarını kopyala
 COPY package*.json ./
 
 # 4. Kütüphaneleri kur
 RUN npm install
 
-# 5. Prisma şemasını kopyala ve Prisma Client'ı oluştur (Çok kritik!)
+# 5. Prisma şemasını kopyala ve Prisma Client'ı oluştur 
 COPY prisma ./prisma/
 RUN npx prisma generate
 

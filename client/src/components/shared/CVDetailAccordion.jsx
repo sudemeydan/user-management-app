@@ -25,7 +25,7 @@ const CVDetailAccordion = ({ cv, fetchMyCVs }) => {
     const handleDownloadOriginalCV = async () => {
         setLoadingIds(prev => [...prev, 'original-' + cv.id]);
         try {
-            const res = await axiosInstance.get(`/users/cvs/${cv.id}/download-pdf?template=classic`, { responseType: 'blob' });
+            const res = await axiosInstance.get(`/users/cvs/${cv.id}/download-pdf?template=modern`, { responseType: 'blob' });
             const blob = new Blob([res.data]);
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -189,6 +189,11 @@ const CVDetailAccordion = ({ cv, fetchMyCVs }) => {
                                         <p className="font-bold text-gray-800 text-sm">
                                             {tcv.jobPosting?.title || 'Pozisyon Belirtilmemiş'}
                                             <span className="text-pink-600 ml-2 font-medium">({tcv.jobPosting?.company || 'Şirket Belirtilmemiş'})</span>
+                                            {tcv.atsScore && (
+                                                <span className="ml-3 text-xs font-bold bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full border border-pink-200">
+                                                    ATS Skoru: {tcv.atsScore}/100
+                                                </span>
+                                            )}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>

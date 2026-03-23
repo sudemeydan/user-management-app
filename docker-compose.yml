@@ -5,21 +5,22 @@ services:
     image: postgres:16-alpine
     container_name: postgres-db
     environment:
-      POSTGRES_USER: sude
-      POSTGRES_PASSWORD: superpassword
-      POSTGRES_DB: user_management_db
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    env_file:
+      - ./.env
 
-  # YENİ: Mesaj Kuyruğu Servisi
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: rabbitmq-broker
     ports:
-      - "5672:5672"   # Node.js ve Python'un haberleşeceği port
-      - "15672:15672" # RabbitMQ Görsel Yönetim Paneli (Browser'dan girilebilir)
+      - "5672:5672"   
+      - "15672:15672" 
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
@@ -31,15 +32,15 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - DATABASE_URL=postgresql://sude:superpassword@db:5432/user_management_db?schema=public
-      - RABBITMQ_URL=amqp://rabbitmq:5672 # YENİ: Backend'in RabbitMQ adresi
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?schema=public
+      - RABBITMQ_URL=${RABBITMQ_URL} 
     env_file:
       - ./server/.env
+      - ./.env
     command: sh -c "sleep 10 && npx prisma db push && node index.js"
     depends_on:
       - db
-      - rabbitmq # YENİ: Backend RabbitMQ'yu beklemeli
-
+      - rabbitmq
   frontend:
     build:
       context: ./client
@@ -56,17 +57,16 @@ services:
     depends_on:
       - backend
 
-  # YENİ: Python CV Ayrıştırma Servisimiz
   cv-worker:
     build:
       context: ./cv-parser
       dockerfile: Dockerfile
     container_name: python-cv-worker
     environment:
-      - RABBITMQ_HOST=rabbitmq # Python kodundaki değişken
+      - RABBITMQ_HOST=rabbitmq 
     depends_on:
       - rabbitmq
 
 volumes:
   pgdata:
-  rabbitmq_data: # : Kuyruk verileri için kalıcı alan
+  rabbitmq_data:

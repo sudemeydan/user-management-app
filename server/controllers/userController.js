@@ -303,57 +303,36 @@ const optimizeCVFormat = async (req, res) => {
   }
 };
 
-const getCvRenderData = async (req, res) => {
-  try {
-    const { cvId } = req.params;
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-       return res.status(401).json({ success: false, message: "Yetkisiz erişim: Token eksik" });
-    }
-    // Basit bir geçici doğrulama veya process.env.JWT_SECRET ile de yapılabilir
-    // Şimdilik sadece token var mı diye kontrol edelim çünkü Puppeteer bunu 127.0.0.1'den atacak.
-    try {
-        jwt.verify(token, process.env.JWT_SECRET);
-    } catch(err) {
-        return res.status(401).json({ success: false, message: "Geçersiz veya süresi dolmuş token" });
-    }
-
-    const cvData = await userService.getCVDataForRender(cvId);
-    res.json({ success: true, data: cvData });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
+const { generateATSPDF } = require('../services/pdfService');
 
 const downloadCvPdf = async (req, res) => {
   try {
     const { cvId } = req.params;
     const { template = 'classic' } = req.query;
     
-    // Puppeteer'ın sayfaya erişebilmesi için kısa süreli bir token oluştur
-    const tempToken = jwt.sign({ cvId, role: 'SYSTEM_RENDERER' }, process.env.JWT_SECRET, { expiresIn: '1m' });
+    // DB'den CV'yi çek (Buradan entries vs geliyor varsayımıyla veya userService.js'de bir helper metod kullanarak)
+    // Şimdilik getCVDataForRender fonksiyonunu userService içerisinden çağırıp, bu verileri pdfService'e yollayabiliriz.
+    // Ancak generateATSPDF zaten (cvData, entries) formatında bekliyor. Biz optimizeCVFormat içindeki mantıkla aynı şekilde
+    // DB'den veriyi almalıyız:
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
     
-    const puppeteer = require('puppeteer');
-    
-    // Docker ortamında host name 'client' veya 'host.docker.internal' olabilir
-    const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
-    const targetUrl = `${clientUrl}/render-cv/${cvId}?template=${template}&token=${tempToken}`;
-    
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    const cv = await prisma.cV.findUnique({
+      where: { id: parseInt(cvId) },
+      include: { entries: true, user: true }
     });
-    
-    const page = await browser.newPage();
-    await page.goto(targetUrl, { waitUntil: 'networkidle0' });
-    
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: { top: '0', right: '0', bottom: '0', left: '0' }
-    });
-    
-    await browser.close();
+
+    if (!cv) {
+        return res.status(404).json({ success: false, message: "CV bulunamadı." });
+    }
+
+    const cvDataDetails = {
+        summary: cv.summary,
+        userName: cv.user.name,
+        userEmail: cv.user.email
+    };
+
+    const pdfBuffer = await generateATSPDF(cvDataDetails, cv.entries, template);
     
     res.set({
         'Content-Type': 'application/pdf',
@@ -364,7 +343,7 @@ const downloadCvPdf = async (req, res) => {
     res.end(pdfBuffer);
     
   } catch (error) {
-    console.error("Puppeteer PDF Error:", error);
+    console.error("Handlebars PDF Error:", error);
     res.status(500).json({ success: false, message: "PDF oluşturulurken hata meydana geldi." });
   }
 };
@@ -406,11 +385,12 @@ const getTailoringProposals = async (req, res) => {
 
 const createTailoredCV = async (req, res) => {
   try {
-    const { originalCvId, jobPostingId, improvedSummary, approvedProposals } = req.body;
+    const { originalCvId, jobPostingId, improvedSummary, approvedProposals, atsScore } = req.body;
     const userId = req.user.id;
     const tailoredCV = await userService.createTailoredCV(userId, originalCvId, jobPostingId, {
       improvedSummary,
-      approvedProposals
+      approvedProposals,
+      atsScore
     });
     res.json({ success: true, message: "Uyarlanmış CV başarıyla oluşturuldu!", data: tailoredCV });
   } catch (error) {
@@ -452,7 +432,6 @@ module.exports = {
   downloadCV,
   getAllActiveCVs,
   optimizeCVFormat,
-  getCvRenderData,
   downloadCvPdf,
   getATSStatus,
   getATSStatus,

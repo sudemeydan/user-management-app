@@ -1,53 +1,98 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
+const Handlebars = require('handlebars');
 
-const generateATSPDF = async (cvData, entries) => {
-    let html = fs.readFileSync(path.join(__dirname, '../templates/ats_cv.html'), 'utf8');
-
-    // Simple replacement logic (can be replaced with a real template engine like Handlebars)
-    html = html.replace('{{name}}', cvData.userName || 'İsim Belirtilmemiş');
-    html = html.replace('{{email}}', cvData.userEmail || '');
-    html = html.replace('{{summary}}', cvData.summary || '');
+// Markdown benzeri metinleri HTML bullet point listesine çeviren süper yardımcı
+Handlebars.registerHelper('bulletPoints', function(text) {
+    if (!text) return '';
     
-    // Extract contact info from entries if not present in cvData
-    const contactInfo = entries.find(e => e.category === 'CONTACT_INFO');
-    html = html.replace('{{phone}}', contactInfo?.metadata?.phone || '');
-    html = html.replace('{{address}}', contactInfo?.metadata?.address || '');
-    html = html.replace('{{linkedin}}', contactInfo?.metadata?.linkedin || '');
+    // Satır sonlarına (newline), yıldızlara, veya bullet karakterlerine göre böl
+    const lines = text.split(/\n|\*|•|·/g).map(l => l.trim()).filter(l => l.length > 0);
+    
+    if (lines.length === 1 && text.indexOf(':') === -1) {
+       return new Handlebars.SafeString(`<p class="text-[10pt] text-gray-800 leading-snug">${Handlebars.Utils.escapeExpression(lines[0])}</p>`);
+    }
+    
+    const listItems = lines.map(l => {
+       // "Data Preprocessing: did something" gibi metinlerde iki nokta üstüsteye kadar olan kısmı bold yap
+       const colonIndex = l.indexOf(':');
+       if (colonIndex !== -1 && colonIndex < 50) { 
+           const boldPart = l.substring(0, colonIndex + 1);
+           const rest = l.substring(colonIndex + 1);
+           return `<li class="mb-0.5"><span class="font-bold text-gray-900">${Handlebars.Utils.escapeExpression(boldPart)}</span>${Handlebars.Utils.escapeExpression(rest)}</li>`;
+       }
+       return `<li class="mb-0.5">${Handlebars.Utils.escapeExpression(l)}</li>`;
+    }).join('');
+    
+    return new Handlebars.SafeString(`<ul class="list-disc ml-4 text-[10pt] text-gray-800 space-y-0">${listItems}</ul>`);
+});
 
-    // Handle Sections
-    const categories = {
-        '#experiences': 'EXPERIENCE',
-        '#educations': 'EDUCATION',
-        '#skills': 'SKILL',
-        '#projects': 'PROJECT'
-    };
+// Güvenli HTML render etmek için helper (Subtitle gibi yerlerde)
+Handlebars.registerHelper('safe', function(text) {
+    if (!text) return '';
+    return new Handlebars.SafeString(text);
+});
 
-    for (const [selector, category] of Object.entries(categories)) {
-        const categoryEntries = entries.filter(e => e.category === category);
-        let sectionHtml = '';
-        
-        if (category === 'SKILL') {
-            sectionHtml = categoryEntries.map(e => `<span class="skill-item">${e.title}</span>`).join('');
-            html = html.replace('{{#skills}}', '').replace('{{/skills}}', '').replace(/<span class="skill-item">\{\{title\}\}<\/span>/g, sectionHtml);
-        } else {
-            sectionHtml = categoryEntries.map(e => `
-                <div class="entry">
-                    <div class="entry-header">
-                        <span>${e.title}</span>
-                        <span>${e.startDate || ''} - ${e.endDate || 'Present'}</span>
-                    </div>
-                    ${e.subtitle ? `<div class="entry-subtitle">${e.subtitle}</div>` : ''}
-                    <div class="description">${e.description || ''}</div>
-                </div>
-            `).join('');
-            
-            // This is a rough replacement, real template engine would be better
-            const regex = new RegExp(`{{#${category.toLowerCase()}s}}[\\s\\S]*?{{\\/${category.toLowerCase()}s}}`, 'g');
-            html = html.replace(regex, sectionHtml);
+// Template verisini şablonun beklediği formata (Flatten) dönüştüren yardımcı fonksiyon
+const prepareTemplateData = (cvData, entries) => {
+    const contactInfo = entries.find(e => e.category === 'CONTACT_INFO') || {};
+    const personalInfo = entries.find(e => e.category === 'PERSONAL_INFO') || {};
+    
+    // Veritabanındaki isim 'MEYDAN' olarak geldiyse veya parçalandıysa
+    // Contact Info metadata veya personal info içinden tam ismi kurtarmaya çalışalım
+    const rawName = cvData.userName || '';
+    let fullName = personalInfo?.metadata?.fullName || contactInfo?.metadata?.fullName || rawName;
+
+    const email = cvData.userEmail || contactInfo?.metadata?.email || '';
+
+    // EĞER isim sadece küçük harf, tek kelime veya soyisim gibi duruyorsa (MEYDAN) 
+    // ve e-posta adresinden (sude.meydan35@gmail.com) daha anlamlı bir ad-soyad çıkarabiliyorsak:
+    if (fullName === rawName && email) {
+        const emailPrefix = email.split('@')[0]; // "sude.meydan35"
+        // rakamları sil ve noktalama işaretlerinden böl
+        const nameParts = emailPrefix.replace(/[0-9]/g, '').split(/[\._]/).filter(p => p.length > 0);
+        if (nameParts.length >= 2) {
+            // "sude" "meydan" -> "Sude Meydan"
+            fullName = nameParts.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
+        } else if (rawName === rawName.toUpperCase() && rawName.length > 2) {
+            // MEYDAN -> Meydan
+            fullName = rawName.charAt(0) + rawName.slice(1).toLowerCase();
         }
     }
+
+    return {
+        name: fullName || 'İsim Belirtilmemiş',
+        email: email,
+        phone: contactInfo?.metadata?.phone || '',
+        linkedin: contactInfo?.metadata?.linkedin || '',
+        github: contactInfo?.metadata?.github || '',
+        portfolio: contactInfo?.metadata?.portfolio || '',
+        address: contactInfo?.metadata?.address || '',
+        birthDate: personalInfo?.metadata?.birthDate || contactInfo?.metadata?.birthDate || '',
+        summary: cvData.summary || '',
+        experiences: entries.filter(e => e.category === 'EXPERIENCE'),
+        educations: entries.filter(e => e.category === 'EDUCATION'),
+        skills: entries.filter(e => e.category === 'SKILL'),
+        projects: entries.filter(e => e.category === 'PROJECT'),
+        languages: entries.filter(e => e.category === 'LANGUAGE'),
+        certificates: entries.filter(e => e.category === 'CERTIFICATE')
+    };
+};
+
+const generateATSPDF = async (cvData, entries, templateName = 'classic') => {
+    const templatePath = path.join(__dirname, `../templates/${templateName}.hbs`);
+    
+    // Fallback to classic if requested template doesn't exist
+    const finalTemplatePath = fs.existsSync(templatePath) 
+        ? templatePath 
+        : path.join(__dirname, '../templates/classic.hbs');
+
+    const templateSource = fs.readFileSync(finalTemplatePath, 'utf8');
+    const template = Handlebars.compile(templateSource);
+    
+    const templateData = prepareTemplateData(cvData, entries);
+    const html = template(templateData);
 
     const browser = await puppeteer.launch({
         args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -57,7 +102,7 @@ const generateATSPDF = async (cvData, entries) => {
     
     const pdfBuffer = await page.pdf({
         format: 'A4',
-        margin: { top: '20mm', right: '20mm', bottom: '20mm', left: '20mm' },
+        margin: { top: '0', right: '0', bottom: '0', left: '0' },
         printBackground: true
     });
 
@@ -65,81 +110,46 @@ const generateATSPDF = async (cvData, entries) => {
     return pdfBuffer;
 };
 
-const generateTailoredPDF = async (cvData, tailoredData) => {
-    let html = fs.readFileSync(path.join(__dirname, '../templates/ats_cv.html'), 'utf8');
+const generateTailoredPDF = async (cvData, tailoredData, templateName = 'classic') => {
+    const templatePath = path.join(__dirname, `../templates/${templateName}.hbs`);
+    const finalTemplatePath = fs.existsSync(templatePath) 
+        ? templatePath 
+        : path.join(__dirname, '../templates/classic.hbs');
 
-    // Başlık ve Temel Bilgiler
-    html = html.replace('{{name}}', cvData.userName || 'İsim Belirtilmemiş');
-    html = html.replace('{{email}}', cvData.userEmail || '');
-    // YZ tarafından iyileştirilmiş özeti kullan, yoksa orijinalini kullan
-    html = html.replace('{{summary}}', tailoredData.improvedSummary || cvData.summary || '');
-    
-    // İletişim Bilgileri (Orijinal CV'den)
-    const contactInfo = cvData.entries.find(e => e.category === 'CONTACT_INFO');
-    html = html.replace('{{phone}}', contactInfo?.metadata?.phone || '');
-    html = html.replace('{{address}}', contactInfo?.metadata?.address || '');
-    html = html.replace('{{linkedin}}', contactInfo?.metadata?.linkedin || '');
+    const templateSource = fs.readFileSync(finalTemplatePath, 'utf8');
+    const template = Handlebars.compile(templateSource);
 
-    // Bölümler
-    const categories = {
-        '#experiences': 'EXPERIENCE',
-        '#educations': 'EDUCATION',
-        '#skills': 'SKILL',
-        '#projects': 'PROJECT'
+    // Orijinal verileri kopyala
+    let mixedEntries = [...cvData.entries];
+
+    // Üzerine tailored verileri yaz (Eğer ID olsaydı daha iyi olurdu ama name eşleştiriyoruz)
+    if (tailoredData.entries && tailoredData.entries.length > 0) {
+        tailoredData.entries.forEach(te => {
+            const existingIdx = mixedEntries.findIndex(ce => ce.title === te.name && ce.category === te.category);
+            if (existingIdx !== -1) {
+                mixedEntries[existingIdx] = {
+                    ...mixedEntries[existingIdx],
+                    title: te.name,
+                    description: te.description
+                };
+            } else {
+                mixedEntries.push({
+                    title: te.name,
+                    description: te.description,
+                    category: te.category
+                });
+            }
+        });
+    }
+
+    // YZ özetini al
+    const finalCvData = {
+        ...cvData,
+        summary: tailoredData.improvedSummary || cvData.summary
     };
 
-    for (const [selector, category] of Object.entries(categories)) {
-        // Orijinal entryleri al
-        let categoryEntries = cvData.entries.filter(e => e.category === category);
-        
-        // Eğer bu kategori için tailored (uyarlanmış) bir teklif varsa, orijinal listedekini bulup güncelle veya ekle
-        if (tailoredData.entries && tailoredData.entries.length > 0) {
-            const tailoredInCategory = tailoredData.entries.filter(te => te.category === category);
-            
-            tailoredInCategory.forEach(te => {
-                // Not: TailoredCVEntry'de originalEntryId saklamıyoruz ama 'name' (title) üzerinden eşleştirebiliriz 
-                // ya da direkt hepsini tailored'dan alabiliriz. 
-                // Ancak tailoredData sadece DEĞİŞENLERİ içeriyor olabilir.
-                // Şimdilik basitleştirmek adına: Eğer tailored'da varsa onu kullan, yoksa orijinali kalsın.
-                const existingIdx = categoryEntries.findIndex(ce => ce.title === te.name);
-                if (existingIdx !== -1) {
-                    categoryEntries[existingIdx] = {
-                        ...categoryEntries[existingIdx],
-                        title: te.name,
-                        description: te.description
-                    };
-                } else {
-                    // Yeni bir entry olarak ekle (eğer tailored'da varsa ve orijinalde yoksa)
-                    categoryEntries.push({
-                        title: te.name,
-                        description: te.description,
-                        category: te.category
-                    });
-                }
-            });
-        }
-
-        let sectionHtml = '';
-        if (category === 'SKILL') {
-            sectionHtml = categoryEntries.map(e => `<span class="skill-item">${e.title}</span>`).join('');
-            // HTML temizleme
-            html = html.replace('{{#skills}}', '').replace('{{/skills}}', '').replace(/<span class="skill-item">\{\{title\}\}<\/span>/g, sectionHtml);
-        } else {
-            sectionHtml = categoryEntries.map(e => `
-                <div class="entry">
-                    <div class="entry-header">
-                        <span>${e.title}</span>
-                        <span>${e.startDate || ''} - ${e.endDate || 'Present'}</span>
-                    </div>
-                    ${e.subtitle ? `<div class="entry-subtitle">${e.subtitle}</div>` : ''}
-                    <div class="description">${e.description || ''}</div>
-                </div>
-            `).join('');
-            
-            const regex = new RegExp(`{{#${category.toLowerCase()}s}}[\\s\\S]*?{{\\/${category.toLowerCase()}s}}`, 'g');
-            html = html.replace(regex, sectionHtml);
-        }
-    }
+    const templateData = prepareTemplateData(finalCvData, mixedEntries);
+    const html = template(templateData);
 
     const browser = await puppeteer.launch({
         args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -149,7 +159,7 @@ const generateTailoredPDF = async (cvData, tailoredData) => {
     
     const pdfBuffer = await page.pdf({
         format: 'A4',
-        margin: { top: '20mm', right: '20mm', bottom: '20mm', left: '20mm' },
+        margin: { top: '0', right: '0', bottom: '0', left: '0' },
         printBackground: true
     });
 
