@@ -1,5 +1,5 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const postRepository = require('../repositories/postRepository');
+const prisma = require('../utils/prisma'); // still needed for user check
 const driveClient = require('../utils/driveClient');
 const fs = require('fs');
 
@@ -23,35 +23,12 @@ const createPostWithImages = async (authorId, content, files) => {
     uploadedImagesData = await Promise.all(uploadPromises);
   }
 
-  const newPost = await prisma.post.create({
-    data: {
-      content: content,
-      authorId: authorId,
-      images: {
-        create: uploadedImagesData
-      }
-    },
-    include: {
-      images: true,
-      author: {
-        select: { id: true, name: true, profileImage: true }
-      }
-    }
-  });
-
+  const newPost = await postRepository.createPostWithImages(authorId, content, uploadedImagesData);
   return newPost;
 };
 
 const getAllPosts = async (currentUserId) => {
-  const posts = await prisma.post.findMany({
-    orderBy: { createdAt: 'desc' },
-    include: {
-      images: true,
-      author: {
-        select: { id: true, name: true, role: true, profileImage: true }
-      }
-    }
-  });
+  const posts = await postRepository.findAllPosts();
 
   if (!currentUserId) return posts;
 
@@ -73,10 +50,7 @@ const getAllPosts = async (currentUserId) => {
 };
 
 const deletePost = async (postId, userId, userRole) => {
-  const post = await prisma.post.findUnique({
-    where: { id: postId },
-    include: { images: true }
-  });
+  const post = await postRepository.findPostById(postId);
 
   if (!post) throw new Error("Gönderi bulunamadı!");
 
@@ -89,9 +63,7 @@ const deletePost = async (postId, userId, userRole) => {
     await Promise.all(deletePromises);
   }
 
-  await prisma.post.delete({
-    where: { id: postId }
-  });
+  await postRepository.deletePost(postId);
 
   return true;
 };

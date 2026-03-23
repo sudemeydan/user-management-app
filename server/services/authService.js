@@ -1,0 +1,148 @@
+const userRepository = require('../repositories/userRepository');
+const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+const emailService = require('./emailService');
+const AppError = require('../utils/AppError');
+const prisma = require('../utils/prisma');
+
+const registerUser = async (userData) => {
+  const { email, password, confirmPassword, address, ...otherData } = userData;
+
+  if (!email || !password || !confirmPassword || !address) {
+    throw new Error("Lütfen e-posta, şifre, şifre tekrarı ve şehir (adres) alanlarını doldurun.");
+  }
+
+  if (password !== confirmPassword) {
+    throw new Error("Girdiğiniz şifreler eşleşmiyor.");
+  }
+
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/;
+  if (!passwordRegex.test(password)) {
+    throw new Error("Şifre en az 8 karakter olmalı; en az bir büyük harf, bir küçük harf ve bir rakam içermelidir.");
+  }
+
+  const validCities = ["İstanbul", "Ankara", "İzmir", "Bursa", "Antalya"];
+  if (!validCities.includes(address)) {
+    throw new Error("Lütfen geçerli bir şehir seçiniz.");
+  }
+
+  const existingUser = await userRepository.findUserByEmail(email);
+  if (existingUser) {
+    throw new Error("Bu e-posta adresi zaten kullanımda.");
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const verificationToken = crypto.randomBytes(32).toString('hex');
+
+  const newUser = await userRepository.createUser({
+    ...otherData,
+    email,
+    address,
+    password: hashedPassword,
+    emailVerificationToken: verificationToken,
+    isEmailVerified: false
+  });
+
+  try {
+    await emailService.sendVerificationEmail(newUser.email, verificationToken);
+    console.log(`Onay maili gönderildi: ${newUser.email}`);
+  } catch (error) {
+    console.error("Mail gönderme hatası:", error);
+  }
+
+  return newUser;
+};
+
+const verifyEmail = async (token) => {
+  const user = await prisma.user.findUnique({
+    where: { emailVerificationToken: token }
+  });
+
+  if (!user) {
+    throw new Error("Geçersiz veya süresi dolmuş onay kodu.");
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      isEmailVerified: true,
+      emailVerificationToken: null
+    }
+  });
+
+  return true;
+};
+
+const loginUser = async (email, password) => {
+  const user = await userRepository.findUserByEmail(email);
+
+  if (!user) {
+    throw new AppError("E-posta adresi veya şifre hatalı.", 401);
+  }
+
+  if (!user.isEmailVerified) {
+    throw new AppError("Lütfen giriş yapmadan önce e-posta adresinize gönderilen linkten hesabınızı onaylayın.", 403);
+  }
+
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!isPasswordValid) {
+    throw new AppError("E-posta adresi veya şifre hatalı.", 401);
+  }
+
+  return user;
+};
+
+const forgotPassword = async (email) => {
+  const user = await userRepository.findUserByEmail(email);
+  if (!user) {
+    throw new Error("Bu e-posta adresiyle kayıtlı bir kullanıcı bulunamadı.");
+  }
+
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  const resetPasswordExpires = new Date(Date.now() + 3600000); // 1 saat geçerli
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      resetPasswordToken: resetToken,
+      resetPasswordExpires: resetPasswordExpires
+    }
+  });
+
+  await emailService.sendPasswordResetEmail(user.email, resetToken);
+  return true;
+};
+
+const resetPassword = async (token, newPassword) => {
+  const user = await prisma.user.findFirst({
+    where: {
+      resetPasswordToken: token,
+      resetPasswordExpires: { gt: new Date() }
+    }
+  });
+
+  if (!user) {
+    throw new Error("Geçersiz veya süresi dolmuş şifre sıfırlama bağlantısı.");
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      password: hashedPassword,
+      resetPasswordToken: null,
+      resetPasswordExpires: null
+    }
+  });
+
+  return true;
+};
+
+module.exports = {
+  registerUser,
+  verifyEmail,
+  loginUser,
+  forgotPassword,
+  resetPassword
+};

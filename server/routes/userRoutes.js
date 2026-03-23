@@ -29,14 +29,6 @@ const cvUpload = multer({
 });
 
 
-// --- AUTH VE KAYIT ROTALARI ---
-router.post('/register', userController.createUser);
-router.get('/verify-email/:token', userController.verifyEmail);
-router.post('/login', userController.login);
-router.post('/refresh', userController.refresh);
-router.post('/forgot-password', userController.forgotPassword);
-router.post('/reset-password/:token', userController.resetPassword);
-
 // --- KULLANICI İŞLEMLERİ ROTALARI ---
 router.get('/', authMiddleware, userController.getUsers);
 router.post('/request-upgrade', authMiddleware, userController.requestUpgrade);
@@ -70,31 +62,6 @@ router.post(
   userController.uploadAvatar
 );
 
-router.post(
-  '/upload-cv',
-  authMiddleware,
-  cvUpload.single('cvFile'), // Frontend'den dosyayı 'cvFile' adıyla bekliyoruz
-  userController.uploadCV
-);
-
-// CV Yönetim Rotaları
-router.get('/all-active-cvs', authMiddleware, userController.getAllActiveCVs);
-router.get('/:id/cvs', authMiddleware, userController.getUserCVs);
-router.put('/cvs/:cvId/activate', authMiddleware, userController.activateCV);
-router.delete('/cvs/:cvId', authMiddleware, userController.deleteCV);
-router.get('/cvs/:cvId/download-pdf', authMiddleware, userController.downloadCvPdf);
-
-// ATS Rotaları
-router.post('/cvs/:cvId/optimize', authMiddleware, userController.optimizeCVFormat);
-router.get('/cvs/:cvId/ats-status', authMiddleware, userController.getATSStatus);
-
-// İş İlanı & Tailoring Rotaları
-router.post('/job-postings', authMiddleware, userController.createJobPosting);
-router.get('/cvs/:cvId/tailor/:jobPostingId', authMiddleware, userController.getTailoringProposals);
-router.post('/tailored-cvs', authMiddleware, userController.createTailoredCV);
-router.post('/tailored-cvs/:tailoredCvId/optimize', authMiddleware, userController.optimizeTailoredCV);
-
-// İndirme rotasında token gönderilmesini istiyoruz ki gizli belge indirilmesin
-router.get('/cv-download/:fileId', authMiddleware, userController.downloadCV);
+// Get User CVs (Still logically belongs to users/:id/cvs, but we can route to cvController directly from index.js or here. To avoid circular deps, let's keep it in index.js or cvRoutes. We will mount it on index.js)
 
 module.exports = router;

@@ -1,8 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const postRoutes = require('./routes/postRoutes');
 const userRoutes = require('./routes/userRoutes');
+const authRoutes = require('./routes/authRoutes');
+const cvRoutes = require('./routes/cvRoutes');
+const atsRoutes = require('./routes/atsRoutes');
+const tailoringRoutes = require('./routes/tailoringRoutes');
+const postRoutes = require('./routes/postRoutes');
 const connectionRoutes = require('./routes/connectionRoutes');
 const app = express();
 const PORT = 3001;
@@ -45,7 +49,12 @@ app.use((req, res, next) => {
 });
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// 1. Yeni Domain Router'ları (Geriye dönük uyumluluk için hepsi /users altında birleştiriyoruz)
 app.use('/users', userRoutes);
+app.use('/users', authRoutes);
+app.use('/users', cvRoutes); 
+app.use('/users', atsRoutes);
+app.use('/users', tailoringRoutes);
 
 app.use('/connections', connectionRoutes);
 app.use('/posts', postRoutes);
