@@ -1,17 +1,24 @@
 const prisma = require('../utils/prisma');
 
-const findAllUsers = async () => {
+const findAllUsers = async (currentUserId) => {
+  const whereClause = currentUserId ? {
+    blockingUsers: {
+      none: { blockedId: parseInt(currentUserId) }
+    }
+  } : undefined;
+
   return await prisma.user.findMany({
+    where: whereClause,
     orderBy: { createdAt: 'desc' },
     include: {
       upgradeRequests: true,
       profileImage: true,
       sentConnections: true,
       receivedConnections: true,
-      blockingUsers: true,
-      blockedUsers: true
+      blockedUsers: currentUserId ? {
+        where: { blockerId: parseInt(currentUserId) }
+      } : false
     }
-
   });
 };
 

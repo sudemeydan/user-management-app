@@ -13,24 +13,14 @@ const { uploadBufferToDrive } = require('../utils/driveClient');
 const { extractJobDetails, generateTailoringProposals } = require('./geminiService');
 
 const getAllUsers = async (currentUserId) => {
-  const users = await userRepository.findAllUsers();
+  const users = await userRepository.findAllUsers(currentUserId);
 
   if (!currentUserId) return users;
 
-  const filteredUsers = [];
-  for (const user of users) {
-    const hasBlockedMe = user.blockingUsers?.some(block => block.blockedId === parseInt(currentUserId));
-    if (hasBlockedMe) continue;
-
-    const iHaveBlocked = user.blockedUsers?.some(block => block.blockerId === parseInt(currentUserId));
-
-    filteredUsers.push({
-      ...user,
-      isBlockedByMe: iHaveBlocked
-    });
-  }
-
-  return filteredUsers;
+  return users.map(user => ({
+    ...user,
+    isBlockedByMe: user.blockedUsers && user.blockedUsers.length > 0
+  }));
 };
 
 const registerUser = async (userData) => {

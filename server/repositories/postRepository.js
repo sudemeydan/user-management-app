@@ -18,8 +18,16 @@ const createPostWithImages = async (authorId, content, uploadedImagesData) => {
   });
 };
 
-const findAllPosts = async () => {
+const findAllPosts = async (currentUserId) => {
+  const whereClause = currentUserId ? {
+    author: {
+      blockingUsers: { none: { blockedId: parseInt(currentUserId) } },
+      blockedUsers: { none: { blockerId: parseInt(currentUserId) } }
+    }
+  } : undefined;
+
   return await prisma.post.findMany({
+    where: whereClause,
     orderBy: { createdAt: 'desc' },
     include: {
       images: true,

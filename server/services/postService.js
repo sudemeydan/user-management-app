@@ -28,25 +28,7 @@ const createPostWithImages = async (authorId, content, files) => {
 };
 
 const getAllPosts = async (currentUserId) => {
-  const posts = await postRepository.findAllPosts();
-
-  if (!currentUserId) return posts;
-
-  const user = await prisma.user.findUnique({
-    where: { id: parseInt(currentUserId) },
-    include: {
-      blockingUsers: true,
-      blockedUsers: true
-    }
-  });
-
-  if (!user) return posts;
-
-  const excludedIds = new Set();
-  user.blockingUsers?.forEach(b => excludedIds.add(b.blockedId));
-  user.blockedUsers?.forEach(b => excludedIds.add(b.blockerId));
-
-  return posts.filter(p => !excludedIds.has(p.authorId));
+  return await postRepository.findAllPosts(currentUserId);
 };
 
 const deletePost = async (postId, userId, userRole) => {
