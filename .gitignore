@@ -1,3 +1,4 @@
 node_modules/
 .env
 yedek.sql
+yedek_utf8.sql
