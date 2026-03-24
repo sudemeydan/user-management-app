@@ -3,6 +3,15 @@ const amqp = require('amqplib');
 const prisma = require('../utils/prisma');
 const { parseCVText, analyzeATSCompatibility } = require('./geminiService');
 
+function calculateJaccardSimilarity(str1, str2) {
+    if (!str1 || !str2) return 0;
+    const set1 = new Set(str1.toLowerCase().split(/\s+/));
+    const set2 = new Set(str2.toLowerCase().split(/\s+/));
+    const intersection = new Set([...set1].filter(x => set2.has(x)));
+    const union = new Set([...set1, ...set2]);
+    return intersection.size === 0 ? 0 : intersection.size / union.size;
+}
+
 let connection = null;
 let channel = null;
 
@@ -72,6 +81,42 @@ const startResultConsumer = async () => {
                             rawText: rawText
                         }
                     });
+
+                    // SPAM/DUPLICATE CHECK
+                    console.log(`[x] Spam kontrolü yapılıyor (CV ID: ${cvId})...`);
+                    const currentCV = await prisma.cV.findUnique({ where: { id: parseInt(cvId) }, select: { userId: true } });
+                    
+                    if (currentCV) {
+                        const otherUsersCVs = await prisma.cV.findMany({
+                            where: {
+                                userId: { not: currentCV.userId },
+                                rawText: { not: null }
+                            },
+                            select: { id: true, userId: true, rawText: true }
+                        });
+
+                        let isSpam = false;
+                        for (const existingCV of otherUsersCVs) {
+                            const similarity = calculateJaccardSimilarity(rawText, existingCV.rawText);
+                            if (similarity > 0.85) {
+                                console.warn(`[!] SPAM veya KOPYA tespit edildi! Mevcut CV: ${cvId}, Eşleşen CV: ${existingCV.id}, Benzerlik: ${Math.round(similarity * 100)}%`);
+                                isSpam = true;
+                                break;
+                            }
+                        }
+
+                        if (isSpam) {
+                            await prisma.cV.update({
+                                where: { id: parseInt(cvId) },
+                                data: {
+                                    status: 'FAILED',
+                                    atsFormatFeedback: "SPAM/KOPYA CV: Bu CV sistemde başka bir kullanıcı tarafından zaten kullanılıyor. Spam engelleme sistemi nedeniyle işlem iptal edildi."
+                                }
+                            });
+                            channel.ack(msg);
+                            return; // Gemini'ye gönderme
+                        }
+                    }
 
                     // 1. Gemini'ye ham metni gönder ve JSON al
                     console.log(`[x] Gemini'ye gönderiliyor (CV ID: ${cvId})...`);

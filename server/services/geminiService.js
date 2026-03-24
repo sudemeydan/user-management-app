@@ -139,36 +139,55 @@ const extractJobDetails = async (jobText) => {
   }
 };
 
-const generateTailoringProposals = async (cvData, jobData) => {
+const generateTailoringProposals = async (cv, jobDescription) => {
   try {
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
       generationConfig: { responseMimeType: "application/json" },
     });
 
+    // Sadece Gemini'ye anlamlı alanları gönder (ham DB objesi değil)
+    const cleanEntries = (cv.entries || [])
+      .filter(e => e.category !== 'CONTACT_INFO')
+      .map(e => ({
+        id: e.id,
+        category: e.category,
+        title: e.title || '',
+        subtitle: e.subtitle || '',
+        description: e.description || ''
+      }));
+
     const prompt = `
-    Bir İK uzmanı gibi davran. Adayın CV'sini hedef iş ilanı ile karşılaştır. 
-    Hangi bölümlerde (summary, experience, skills) değişiklik yapılırsa adayın işe girme şansı artar?
+    Sen deneyimli bir İK uzmanı ve CV danışmanısın. Adayın mevcut CV entry'lerini analiz et ve hedef iş ilanıyla karşılaştırarak somut iyileştirme önerileri sun.
+
+    GÖREV:
+    1. İş ilanındaki anahtar kelimeler, gereksinimler ve beklentileri tespit et.
+    2. CV'deki hangi entry'lerin ilanla örtüştüğünü veya güçlendirilebileceğini belirle.
+    3. Her entry için; ilandaki anahtar kelimeleri doğal şekilde yansıtan, ATS sistemleri için optimize edilmiş yeni açıklamalar yaz.
+    4. Genel bir profil özeti öner.
+
+    KRİTİK KURAL: 'entryId' alanına MUTLAKA aşağıdaki CV listesindeki 'id' değerini integer olarak yaz.
+    Asla uydurma/random ID kullanma. Listede olmayan bir ID yazma.
     
-    Her değişiklik önerisi için bir neden (aiComment) belirt. 
+    Mevcut ATS skoru hakkında: İş ilanıyla örtüşme oranına, anahtar kelime kullanımına ve CV yapısına bakarak 0-100 arası gerçekçi bir skor ver.
 
-    Adayın CV Verileri (JSON):
-    ${JSON.stringify(cvData)}
+    CV Entry Listesi (id değerlerini proposal'larda kullan):
+    ${JSON.stringify(cleanEntries, null, 2)}
 
-    Hedef İş İlanı Verileri (JSON):
-    ${JSON.stringify(jobData)}
+    İş İlanı:
+    """${jobDescription}"""
 
-    İstenen Çıktı Formatı:
+    İstenen JSON Çıktısı:
     {
-      "improvedSummary": "CV'nin başındaki özet kısmının işe uygun hali",
-      "atsScore": 95, 
+      "improvedSummary": "Profil özeti — ilandaki pozisyona yönelik, güçlü ve ATS uyumlu",
+      "atsScore": 75,
       "proposals": [
         {
-          "entryId": "CV'deki entry'nin ID'si",
-          "category": "BUNLARDAN YALNIZCA BİRİ: EXPERIENCE, EDUCATION, SKILL, PROJECT, LANGUAGE, CERTIFICATE, OTHER",
-          "suggestedTitle": "Önerilen Başlık (gerekirse)",
-          "suggestedDescription": "Önerilen yeni açıklama (ilandaki anahtar kelimeleri içeren)",
-          "aiComment": "Açıklama"
+          "entryId": 123,
+          "category": "EXPERIENCE | EDUCATION | SKILL | PROJECT | CERTIFICATE | OTHER",
+          "suggestedTitle": "Yeni başlık (değiştirilmeyecekse orijinali yaz)",
+          "suggestedDescription": "İlandaki anahtar kelimeleri içeren, 3-5 madde halinde güçlendirilmiş açıklama",
+          "aiComment": "Bu değişikliği neden önerdiğini kısaca açıkla"
         }
       ]
     }
@@ -176,7 +195,17 @@ const generateTailoringProposals = async (cvData, jobData) => {
 
     const result = await withRetry(() => model.generateContent(prompt));
     const response = await result.response;
-    return cleanAndParseJSON(response.text());
+    const parsed = cleanAndParseJSON(response.text());
+
+    // Güvenlik: entryId'leri integer'a çevir ve null olanları çıkar
+    if (parsed.proposals) {
+      const validIds = new Set(cleanEntries.map(e => e.id));
+      parsed.proposals = parsed.proposals
+        .map(p => ({ ...p, entryId: parseInt(p.entryId) || null }))
+        .filter(p => p.entryId !== null && validIds.has(p.entryId));
+    }
+
+    return parsed;
   } catch (error) {
     console.error("Gemini Tailoring Proposal Hatası:", error);
     throw new Error("Uyarlama önerileri oluşturulamadı.");

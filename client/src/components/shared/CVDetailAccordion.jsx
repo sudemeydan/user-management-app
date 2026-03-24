@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axiosInstance from '../../axiosInstance';
 import {
-    BrainCircuit, UserCheck, Zap, Crown, Briefcase, FileSignature, ChevronDown, ChevronUp, Download, Loader2
+    BrainCircuit, UserCheck, Zap, Crown, Briefcase, FileSignature, ChevronDown, ChevronUp, Download, Loader2, XCircle
 } from 'lucide-react';
 
 const CVDetailAccordion = ({ cv, fetchMyCVs }) => {
@@ -50,6 +50,15 @@ const CVDetailAccordion = ({ cv, fetchMyCVs }) => {
             setLoadingIds(prev => prev.filter(id => id !== tailoredCvId));
         }
     };
+    if (cv.status === 'FAILED') {
+        return (
+            <div className="p-6 bg-red-50 border-t border-red-100 rounded-b-xl shadow-inner text-red-700 text-sm">
+                <p className="font-bold flex items-center gap-2 mb-1"><XCircle size={16} /> İşlem Başarısız</p>
+                <p>{cv.atsFormatFeedback || 'CV ayrıştırılırken bir hata oluştu veya işlem tamamlanamadı.'}</p>
+            </div>
+        );
+    }
+
     if (!cv.entries || cv.entries.length === 0) {
         return <div className="p-6 text-center text-gray-500 text-sm">Ayrıştırılmış detay bulunamadı veya işlenemedi.</div>;
     }

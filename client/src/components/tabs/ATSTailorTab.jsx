@@ -62,6 +62,7 @@ const ATSTailorTab = ({ myCvs }) => {
                 originalCvId: parseInt(selectedCvId),
                 jobPostingId: jobPosting.id,
                 improvedSummary: proposals.improvedSummary,
+                atsScore: proposals.atsScore || null,  // ATS skoru da kaydet
                 approvedProposals
             });
             setStep(STEPS.DONE);
@@ -197,12 +198,24 @@ const ATSTailorTab = ({ myCvs }) => {
                     {/* Öneri Kartları */}
                     {proposals.proposals && proposals.proposals.length > 0 && (
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-lg font-bold text-gray-800">İçerik Önerileri</h3>
-                                <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                                    {approvedIndexes.size}/{proposals.proposals.length} onaylandı
+                    {/* Proposals Header with ATS Score */}
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-bold text-gray-800">İçerik Önerileri</h3>
+                        <div className="flex items-center gap-2">
+                            {proposals.atsScore !== undefined && (
+                                <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                                    proposals.atsScore >= 75 ? 'bg-green-100 text-green-700' :
+                                    proposals.atsScore >= 50 ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-red-100 text-red-700'
+                                }`}>
+                                    ATS Uyum: {proposals.atsScore}/100
                                 </span>
-                            </div>
+                            )}
+                            <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                                {approvedIndexes.size}/{proposals.proposals.length} onaylandı
+                            </span>
+                        </div>
+                    </div>
 
                             <div className="space-y-4">
                                 {proposals.proposals.map((proposal, index) => {

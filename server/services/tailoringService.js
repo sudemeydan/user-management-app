@@ -73,16 +73,21 @@ const createTailoredCV = async (userId, cvId, jobPostingId, tailoredData) => {
     userId: parseInt(userId),
     originalCvId: parseInt(cvId),
     jobPostingId: parseInt(jobPostingId),
-    improvedSummary: tailoredData.improvedSummary || tailoredData.newSummary || cv.summary
+    improvedSummary: tailoredData.improvedSummary || cv.summary,
+    // ATS skoru varsa kaydet
+    ...(tailoredData.atsScore ? { atsScore: tailoredData.atsScore } : {})
   });
 
   const adaptedEntries = cv.entries.map(entry => {
-    const updatedEntry = tailoredData.updatedEntries?.find(e => e.originalEntryId === entry.id);
+    // BUG FIX: parseInt ile karşılaştır — entryId string gelir, entry.id number olur
+    const updatedEntry = tailoredData.updatedEntries?.find(
+      e => parseInt(e.originalEntryId) === parseInt(entry.id)
+    );
     return {
       tailoredCvId: newTailoredCv.id,
       category: entry.category,
-      name: updatedEntry?.title || updatedEntry?.name || entry.title,
-      description: updatedEntry?.content || updatedEntry?.description || entry.description,
+      name: updatedEntry?.title || entry.title,
+      description: updatedEntry?.content || entry.description,
       isModified: !!updatedEntry,
       aiComment: updatedEntry?.aiComment || null
     };

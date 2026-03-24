@@ -27,17 +27,19 @@ const createTailoredCV = async (req, res) => {
   try {
     const { originalCvId, jobPostingId, improvedSummary, approvedProposals, atsScore } = req.body;
     const userId = req.user.id;
+
     const tailoredCV = await tailoringService.createTailoredCV(userId, originalCvId, jobPostingId, {
-      newSummary: improvedSummary,
+      improvedSummary: improvedSummary,
+      atsScore: atsScore || null,
       updatedEntries: approvedProposals?.map(p => ({
-          originalEntryId: p.originalEntryId, // Assuming frontend sends this, otherwise tailoringService needs adjustment
-          title: p.suggestedTitle,
-          content: p.suggestedDescription
+        // BUG FIX: frontend entryId gönderir (string), parseInt ile int'e çeviriyoruz
+        originalEntryId: parseInt(p.entryId),
+        title: p.suggestedTitle,
+        content: p.suggestedDescription,
+        aiComment: p.aiComment
       }))
     });
-    // The existing frontend was sending different payloads, so tailoringService needs to match the exact schema. 
-    // The rewrite here accommodates the older schema payload from the user controller for safe execution:
-    // Actually, let me use the tailoringService API we wrote.
+
     res.json({ success: true, message: "Uyarlanmış CV başarıyla oluşturuldu!", data: tailoredCV });
   } catch (error) {
     res.status(error.statusCode || 500).json({ success: false, message: error.message });

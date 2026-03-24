@@ -81,113 +81,117 @@ const Login = ({ onLogin, onRegister, onForgotPassword }) => {
   };
 
   return (
-    <div className="min-h-screen flex bg-gray-50 font-sans">
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-16 bg-white shadow-2xl z-10 overflow-y-auto">
-        <div className="w-full max-w-md space-y-8">
+    <div className="min-h-screen flex font-sans" style={{background: 'var(--bg)'}}>
+      {/* LEFT: Form Panel */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-16 overflow-y-auto" style={{background: 'var(--surface)', borderRight: '1px solid var(--border)'}}>
+        <div className="w-full max-w-md space-y-7">
+          {/* Logo */}
           <div className="text-center">
-            <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl mb-4 shadow-lg" style={{background: 'linear-gradient(135deg, #6c63ff, #9c8fff)'}}>
+              <span className="text-white font-bold text-sm" style={{fontFamily: 'Syne, sans-serif', letterSpacing: '1px'}}>CV</span>
+            </div>
+            <h1 className="text-3xl font-extrabold mb-1" style={{fontFamily: 'Syne, sans-serif', color: 'var(--text)', letterSpacing: '-0.5px'}}>
               {isForgotPasswordMode ? 'Şifremi Unuttum' : (isRegisterMode ? 'Hesap Oluştur' : 'Tekrar Hoşgeldin!')}
             </h1>
-            <p className="mt-2 text-gray-500">
-              {isForgotPasswordMode ? 'Şifre sıfırlama bağlantısı göndermek için e-posta adresini gir.' : (isRegisterMode ? 'Yönetim paneline katılmak için bilgilerini gir.' : 'Devam etmek için lütfen giriş yap.')}
+            <p className="text-sm" style={{color: 'var(--muted)'}}>
+              {isForgotPasswordMode ? 'Şifre sıfırlama bağlantısı için e-postanı gir.' : (isRegisterMode ? 'Bilgilerini gir ve aramıza katıl.' : 'Devam etmek için giriş yap.')}
             </p>
           </div>
 
           {error && (
-            <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl flex items-start gap-3 text-sm animate-fadeIn">
-              <AlertCircle size={18} className="shrink-0 mt-0.5" />
+            <div className="p-4 rounded-xl flex items-start gap-3 text-sm animate-fadeIn" style={{background: 'rgba(255,101,132,0.08)', border: '1px solid rgba(255,101,132,0.25)', color: '#ff6584'}}>
+              <AlertCircle size={16} className="shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-
+          <form onSubmit={handleSubmit} className="space-y-4">
             {!isForgotPasswordMode && isRegisterMode && (
-              <div className="space-y-4 animate-fadeIn">
-                <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3 animate-fadeIn">
+                <div className="grid grid-cols-2 gap-3">
                   <div className="relative">
-                    <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                    <input name="name" type="text" placeholder="Ad Soyad" value={formData.name} onChange={handleChange} className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition bg-gray-50 hover:bg-white" required />
+                    <User className="absolute left-3 top-3.5 h-4 w-4" style={{color: 'var(--muted)'}} />
+                    <input name="name" type="text" placeholder="Ad Soyad" value={formData.name} onChange={handleChange}
+                      className="w-full pl-10 pr-4 py-3 rounded-xl outline-none transition text-sm"
+                      style={{background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)'}} required />
                   </div>
                   <div className="relative">
-                    <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                    <input name="username" type="text" placeholder="Kullanıcı Adı" value={formData.username} onChange={handleChange} className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition bg-gray-50 hover:bg-white" required />
+                    <User className="absolute left-3 top-3.5 h-4 w-4" style={{color: 'var(--muted)'}} />
+                    <input name="username" type="text" placeholder="Kullanıcı Adı" value={formData.username} onChange={handleChange}
+                      className="w-full pl-10 pr-4 py-3 rounded-xl outline-none transition text-sm"
+                      style={{background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)'}} required />
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-3 gap-3">
                   <div className="relative col-span-1">
-                    <Calendar className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                    <input name="age" type="number" placeholder="Yaş" value={formData.age} onChange={handleChange} className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition bg-gray-50 hover:bg-white" />
+                    <Calendar className="absolute left-3 top-3.5 h-4 w-4" style={{color: 'var(--muted)'}} />
+                    <input name="age" type="number" placeholder="Yaş" value={formData.age} onChange={handleChange}
+                      className="w-full pl-10 pr-4 py-3 rounded-xl outline-none transition text-sm"
+                      style={{background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)'}} />
                   </div>
-
-                  {/* ŞEHİR SEÇİMİ BURADA (Kayıt Modunda Görünür) */}
                   <div className="relative col-span-2">
-                    <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                    <select
-                      name="address"
-                      value={formData.address}
-                      onChange={handleChange}
-                      className={`w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition bg-gray-50 hover:bg-white appearance-none cursor-pointer ${!formData.address ? 'text-gray-400' : 'text-gray-900'}`}
-                      required
-                    >
+                    <MapPin className="absolute left-3 top-3.5 h-4 w-4" style={{color: 'var(--muted)'}} />
+                    <select name="address" value={formData.address} onChange={handleChange} required
+                      className="w-full pl-10 pr-10 py-3 rounded-xl outline-none transition text-sm appearance-none cursor-pointer"
+                      style={{background: 'var(--surface2)', border: '1px solid var(--border)', color: formData.address ? 'var(--text)' : 'var(--muted)'}}>
                       <option value="" disabled>Şehir Seçiniz</option>
                       {validCities.map((city, index) => (
-                        <option key={index} value={city} className="text-gray-900">{city}</option>
+                        <option key={index} value={city} style={{background: 'var(--surface2)', color: 'var(--text)'}}>{city}</option>
                       ))}
                     </select>
-                    <ChevronDown className="absolute right-3 top-3 h-5 w-5 text-gray-400 pointer-events-none" />
+                    <ChevronDown className="absolute right-3 top-3.5 h-4 w-4 pointer-events-none" style={{color: 'var(--muted)'}} />
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="relative">
-                <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <input name="email" type="email" placeholder="E-posta Adresi" value={formData.email} onChange={handleChange} className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition bg-gray-50 hover:bg-white" required />
+                <Mail className="absolute left-3 top-3.5 h-4 w-4" style={{color: 'var(--muted)'}} />
+                <input name="email" type="email" placeholder="E-posta Adresi" value={formData.email} onChange={handleChange}
+                  className="w-full pl-10 pr-4 py-3 rounded-xl outline-none transition text-sm"
+                  style={{background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)'}} required />
               </div>
 
               {!isForgotPasswordMode && (
                 <div className="relative animate-fadeIn">
-                  <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                  <input name="password" type="password" placeholder="Şifre" value={formData.password} onChange={handleChange} className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition bg-gray-50 hover:bg-white" required={!isForgotPasswordMode} />
+                  <Lock className="absolute left-3 top-3.5 h-4 w-4" style={{color: 'var(--muted)'}} />
+                  <input name="password" type="password" placeholder="Şifre" value={formData.password} onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl outline-none transition text-sm"
+                    style={{background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)'}} required={!isForgotPasswordMode} />
                 </div>
               )}
 
-              {/* ŞİFREMİ UNUTTUM LİNKİ BURADA (Sadece Giriş Modunda Görünür) */}
               {!isForgotPasswordMode && !isRegisterMode && (
-                <div className="flex items-center justify-between mt-2">
-                  <div className="flex items-center">
-                    <input id="remember-me" name="remember-me" type="checkbox" className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer" />
-                    <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900 cursor-pointer">
-                      Beni Hatırla
-                    </label>
-                  </div>
-                  <div className="text-sm">
-                    <button
-                      type="button"
-                      onClick={handleForgotPassword}
-                      className="font-medium text-indigo-600 hover:text-indigo-500 hover:underline transition"
-                    >
-                      Şifremi unuttum
-                    </button>
-                  </div>
+                <div className="flex items-center justify-between text-sm">
+                  <label className="flex items-center gap-2 cursor-pointer" style={{color: 'var(--muted)'}}>
+                    <input id="remember-me" name="remember-me" type="checkbox" className="rounded" />
+                    Beni Hatırla
+                  </label>
+                  <button type="button" onClick={handleForgotPassword} className="font-medium transition" style={{color: 'var(--accent)'}}>
+                    Şifremi unuttum
+                  </button>
                 </div>
               )}
 
               {!isForgotPasswordMode && isRegisterMode && (
                 <div className="relative animate-fadeIn">
-                  <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                  <input name="confirmPassword" type="password" placeholder="Şifre Tekrar" value={formData.confirmPassword} onChange={handleChange} className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition bg-gray-50 hover:bg-white" required />
+                  <Lock className="absolute left-3 top-3.5 h-4 w-4" style={{color: 'var(--muted)'}} />
+                  <input name="confirmPassword" type="password" placeholder="Şifre Tekrar" value={formData.confirmPassword} onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl outline-none transition text-sm"
+                    style={{background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)'}} required />
                 </div>
               )}
             </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-indigo-500/30 transform transition hover:-translate-y-0.5 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-70 disabled:hover:translate-y-0"
-            >
+            <button type="submit" disabled={isLoading}
+              className="w-full flex items-center justify-center font-bold py-3 px-4 rounded-xl transition-all"
+              style={{
+                background: isLoading ? 'rgba(108,99,255,0.5)' : 'linear-gradient(135deg, #6c63ff, #9c8fff)',
+                color: 'white', fontFamily: 'Syne, sans-serif', fontSize: '15px',
+                boxShadow: isLoading ? 'none' : '0 8px 30px rgba(108,99,255,0.35)',
+                transform: isLoading ? 'none' : undefined
+              }}>
               {isLoading ? <Loader2 className="animate-spin h-5 w-5" /> : (
                 <>
                   {isForgotPasswordMode ? 'Bağlantı Gönder' : (isRegisterMode ? 'Kayıt Ol' : 'Giriş Yap')}
@@ -198,29 +202,17 @@ const Login = ({ onLogin, onRegister, onForgotPassword }) => {
           </form>
 
           {!isForgotPasswordMode ? (
-            <div className="text-center animate-fadeIn">
-              <p className="text-sm text-gray-600">
-                {isRegisterMode ? 'Zaten bir hesabın var mı?' : 'Henüz hesabın yok mu?'}
-                <button
-                  onClick={() => {
-                    setIsRegisterMode(!isRegisterMode);
-                    setError('');
-                  }}
-                  className="ml-2 font-medium text-indigo-600 hover:text-indigo-500 transition underline decoration-2 underline-offset-4"
-                >
-                  {isRegisterMode ? 'Giriş Yap' : 'Hemen Kaydol'}
-                </button>
-              </p>
+            <div className="text-center animate-fadeIn text-sm" style={{color: 'var(--muted)'}}>
+              {isRegisterMode ? 'Zaten bir hesabın var mı?' : 'Henüz hesabın yok mu?'}
+              <button onClick={() => { setIsRegisterMode(!isRegisterMode); setError(''); }}
+                className="ml-2 font-semibold transition" style={{color: 'var(--accent)'}}>
+                {isRegisterMode ? 'Giriş Yap' : 'Hemen Kaydol'}
+              </button>
             </div>
           ) : (
             <div className="text-center animate-fadeIn">
-              <button
-                onClick={() => {
-                  setIsForgotPasswordMode(false);
-                  setError('');
-                }}
-                className="mt-4 font-medium text-sm text-indigo-600 hover:text-indigo-500 transition underline decoration-2 underline-offset-4"
-              >
+              <button onClick={() => { setIsForgotPasswordMode(false); setError(''); }}
+                className="text-sm font-semibold transition" style={{color: 'var(--accent)'}}>
                 Giriş Ekranına Dön
               </button>
             </div>
@@ -228,19 +220,25 @@ const Login = ({ onLogin, onRegister, onForgotPassword }) => {
         </div>
       </div>
 
-      <div className="hidden lg:block w-1/2 bg-indigo-900 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-purple-800 opacity-90"></div>
-        <img
-          src="https://images.unsplash.com/photo-1557683316-973673baf926?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
-          alt="Background"
-          className="absolute inset-0 w-full h-full object-cover mix-blend-overlay"
-        />
-        <div className="absolute inset-0 flex items-center justify-center p-12 text-white">
-          <div className="max-w-md text-center">
-            <h2 className="text-4xl font-bold mb-6">Profesyonel Yönetim</h2>
-            <p className="text-lg text-indigo-100 leading-relaxed">
-              Kullanıcılarını, verilerini ve tüm süreçlerini tek bir yerden güvenle yönet. Modern altyapı, güçlü güvenlik.
-            </p>
+      {/* RIGHT: Brand Panel */}
+      <div className="hidden lg:flex w-1/2 relative overflow-hidden items-center justify-center p-12"
+        style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)'}}>
+        {/* Mesh overlay */}
+        <div className="absolute inset-0" style={{background: 'radial-gradient(ellipse 70% 60% at 30% 30%, rgba(108,99,255,0.25) 0%, transparent 60%), radial-gradient(ellipse 50% 50% at 70% 70%, rgba(255,101,132,0.15) 0%, transparent 60%)'}}></div>
+        {/* Floating orb */}
+        <div className="absolute top-1/4 right-1/4 w-64 h-64 rounded-full opacity-20" style={{background: 'radial-gradient(circle, #6c63ff, transparent)', filter: 'blur(40px)'}}></div>
+        <div className="relative z-10 max-w-md text-center text-white">
+          <div className="text-6xl mb-6">🚀</div>
+          <h2 className="text-4xl font-bold mb-4" style={{fontFamily: 'Syne, sans-serif', letterSpacing: '-1px'}}>Profesyonel Yönetim</h2>
+          <p className="text-lg leading-relaxed" style={{color: 'rgba(255,255,255,0.65)'}}>
+            CV'lerini analiz et, iş ilanlarına göre uyarla ve kariyerini bir üst seviyeye taşı.
+          </p>
+          <div className="mt-8 flex justify-center gap-4">
+            {['ATS Analizi', 'AI Önerileri', 'PDF Export'].map(tag => (
+              <span key={tag} className="text-xs font-semibold px-3 py-1.5 rounded-full" style={{background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)'}}>
+                {tag}
+              </span>
+            ))}
           </div>
         </div>
       </div>

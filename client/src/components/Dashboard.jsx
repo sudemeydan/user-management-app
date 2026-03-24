@@ -195,26 +195,40 @@ const Dashboard = ({ user, onLogout }) => {
     const profileImgUrl = currentUserData.profileImage?.url;
 
     return (
-        <div className="min-h-screen bg-gray-100 flex font-sans">
+        <div className="min-h-screen flex font-sans" style={{background: 'var(--bg)'}}>
             {/* SIDEBAR */}
-            <aside className="w-64 bg-indigo-900 text-white flex flex-col fixed h-full shadow-2xl z-20">
-                <div className="p-6 flex items-center gap-3 border-b border-indigo-800">
-                    <div className="w-10 h-10 bg-indigo-500 rounded-lg flex items-center justify-center font-bold text-xl shadow-lg">YD</div>
-                    <div><h1 className="font-bold text-lg tracking-wide">Ağımız</h1><p className="text-xs text-indigo-300">Sosyal Panel</p></div>
+            <aside className="w-64 fixed h-full flex flex-col z-20 shadow-2xl" style={{background: 'var(--surface)', borderRight: '1px solid var(--border)'}}>
+                {/* Logo */}
+                <div className="p-6 flex items-center gap-3" style={{borderBottom: '1px solid var(--border)'}}>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm text-white shadow-lg" style={{background: 'linear-gradient(135deg, #6c63ff, #9c8fff)', fontFamily: 'Syne, sans-serif', fontSize: '11px', letterSpacing: '1px'}}>CV·AI</div>
+                    <div>
+                        <h1 className="font-bold text-base tracking-wide" style={{fontFamily: 'Syne, sans-serif', color: 'var(--text)'}}>Ağımız</h1>
+                        <p className="text-xs" style={{color: 'var(--muted)'}}>Sosyal Panel</p>
+                    </div>
                 </div>
 
-                <nav className="flex-1 p-4 space-y-2 mt-4">
+                <nav className="flex-1 p-4 space-y-1 mt-2">
                     {[
-                        { key: 'feed', icon: <LayoutDashboard size={20} />, label: 'Akış (Feed)' },
-                        { key: 'users', icon: <Users size={20} />, label: 'Kişiler' },
-                        { key: 'cvs', icon: <FileText size={20} />, label: 'Özgeçmişlerim' },
-                        { key: 'all-cvs', icon: <Briefcase size={20} />, label: 'Tüm Özgeçmişler' },
-                        { key: 'ats-tailor', icon: <BrainCircuit size={20} />, label: 'İlana Göre Uyarla' },
+                        { key: 'feed', icon: <LayoutDashboard size={18} />, label: 'Akış (Feed)' },
+                        { key: 'users', icon: <Users size={18} />, label: 'Kişiler' },
+                        { key: 'cvs', icon: <FileText size={18} />, label: 'Özgeçmişlerim' },
+                        { key: 'all-cvs', icon: <Briefcase size={18} />, label: 'Tüm Özgeçmişler' },
+                        { key: 'ats-tailor', icon: <BrainCircuit size={18} />, label: 'İlana Göre Uyarla' },
                     ].map(tab => (
                         <button
                             key={tab.key}
                             onClick={() => setActiveTab(tab.key)}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${activeTab === tab.key ? 'bg-indigo-800 text-white shadow-sm' : 'text-indigo-200 hover:bg-indigo-800/50 hover:text-white'}`}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-sm"
+                            style={activeTab === tab.key ? {
+                                background: 'rgba(108,99,255,0.18)',
+                                color: '#a09dff',
+                                border: '1px solid rgba(108,99,255,0.3)',
+                                boxShadow: '0 0 16px rgba(108,99,255,0.15)'
+                            } : {
+                                background: 'transparent',
+                                color: 'var(--muted)',
+                                border: '1px solid transparent'
+                            }}
                         >
                             {tab.icon}<span className="font-medium">{tab.label}</span>
                         </button>
@@ -222,55 +236,59 @@ const Dashboard = ({ user, onLogout }) => {
                 </nav>
 
                 {/* Alt Profil Alanı */}
-                <div className="p-4 border-t border-indigo-800">
-                    <div className="flex items-center gap-3 mb-2 px-2">
+                <div className="p-4" style={{borderTop: '1px solid var(--border)'}}>
+                    <div className="flex items-center gap-3 mb-3 px-1">
                         <div className="relative group cursor-pointer" onClick={handleImageClick}>
                             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-yellow-400 to-orange-500 flex items-center justify-center font-bold text-xs text-white overflow-hidden border-2 border-indigo-700">
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-white overflow-hidden" style={{background: 'linear-gradient(135deg, #f6d365, #fda085)', border: '2px solid var(--border)'}}>
                                 {uploadingImg ? <Loader2 className="animate-spin w-4 h-4" />
                                     : profileImgUrl
                                         ? <img src={currentUserData.profileImage?.fileId ? `${axiosInstance.defaults.baseURL}/posts/image/${currentUserData.profileImage.fileId}` : profileImgUrl} alt="Profil" className="w-full h-full object-cover" />
                                         : currentUserData.name?.charAt(0).toUpperCase()
                                 }
                             </div>
+                            <div className="absolute inset-0 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition" style={{background: 'rgba(0,0,0,0.5)'}}>
+                                <Camera size={12} className="text-white" />
+                            </div>
                         </div>
                         <div className="overflow-hidden">
-                            <p className="text-sm font-medium truncate">{currentUserData.name}</p>
-                            <p className="text-xs text-indigo-300 truncate">{currentUserData.role}</p>
+                            <p className="text-sm font-semibold truncate" style={{color: 'var(--text)', fontFamily: 'Syne, sans-serif'}}>{currentUserData.name}</p>
+                            <p className="text-xs truncate" style={{color: 'var(--muted)'}}>{currentUserData.role}</p>
                         </div>
                     </div>
 
-                    <button onClick={handleTogglePrivacy} className="w-full flex items-center justify-between px-3 py-2 mb-4 bg-indigo-950/50 rounded-lg border border-indigo-700 hover:bg-indigo-800 transition">
-                        <span className="flex items-center gap-2 text-sm text-indigo-200">
-                            {currentUserData.isPrivate ? <Lock size={14} className="text-amber-400" /> : <Unlock size={14} className="text-green-400" />}
+                    <button onClick={handleTogglePrivacy} className="w-full flex items-center justify-between px-3 py-2 mb-2 rounded-xl transition-all" style={{background: 'var(--surface2)', border: '1px solid var(--border)'}}>
+                        <span className="flex items-center gap-2 text-xs font-medium" style={{color: 'var(--muted)'}}>
+                            {currentUserData.isPrivate ? <Lock size={13} style={{color: '#f6a623'}} /> : <Unlock size={13} style={{color: 'var(--accent3)'}} />}
                             {currentUserData.isPrivate ? 'Gizli Hesap' : 'Açık Hesap'}
                         </span>
-                        <div className={`w-8 h-4 rounded-full relative transition-colors ${currentUserData.isPrivate ? 'bg-amber-500' : 'bg-gray-500'}`}>
+                        <div className={`w-8 h-4 rounded-full relative transition-colors`} style={{background: currentUserData.isPrivate ? '#f6a623' : '#3a3a55'}}>
                             <div className={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-all ${currentUserData.isPrivate ? 'right-0.5' : 'left-0.5'}`}></div>
                         </div>
                     </button>
 
-                    <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500 hover:text-white text-red-200 py-2 rounded-lg transition text-sm font-medium border border-red-500/20">
-                        <LogOut size={16} /> Çıkış Yap
+                    <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 py-2 rounded-xl transition-all text-sm font-medium" style={{background: 'rgba(255,101,132,0.08)', border: '1px solid rgba(255,101,132,0.2)', color: '#ff6584'}}>
+                        <LogOut size={15} /> Çıkış Yap
                     </button>
                 </div>
             </aside>
 
             {/* MAIN CONTENT */}
-            <main className="flex-1 ml-64 p-8">
+            <main className="flex-1 ml-64 p-8 relative" style={{zIndex: 1}}>
                 {/* PRO Upgrade Banner */}
                 {user.role === 'FREE_USER' && (
-                    <div className="mb-8 relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white shadow-xl p-8 flex items-center justify-between">
-                        <div>
-                            <h3 className="text-3xl font-extrabold mb-2">PRO Paketine Geçiş Yap!</h3>
-                            <p className="text-indigo-100 max-w-xl text-lg">Daha fazla kişiye ulaşmak ve tüm gönderileri görmek için yükseltme talep et.</p>
+                    <div className="mb-8 relative overflow-hidden rounded-2xl text-white p-7 flex items-center justify-between" style={{background: 'linear-gradient(135deg, #6c63ff 0%, #9c8fff 50%, #ff6584 100%)', boxShadow: '0 8px 40px rgba(108,99,255,0.3)'}}>
+                        <div className="absolute inset-0 opacity-20" style={{background: 'radial-gradient(ellipse at top left, rgba(255,255,255,0.3), transparent 60%)'}}></div>
+                        <div style={{position: 'relative'}}>
+                            <h3 className="text-2xl font-extrabold mb-1" style={{fontFamily: 'Syne, sans-serif'}}>PRO Paketine Geçiş Yap! ✨</h3>
+                            <p className="text-sm opacity-80 max-w-lg">Daha fazla kişiye ulaşmak ve tüm gönderileri görmek için yükseltme talep et.</p>
                         </div>
-                        <div className="flex flex-col items-center gap-3">
+                        <div className="flex flex-col items-center gap-3" style={{position: 'relative'}}>
                             {hasPendingRequest ? (
-                                <div className="bg-white/20 px-6 py-3 rounded-xl font-bold flex items-center gap-2 cursor-not-allowed"><Clock className="animate-pulse" /> İnceleniyor...</div>
+                                <div className="px-6 py-3 rounded-xl font-bold flex items-center gap-2 cursor-not-allowed" style={{background: 'rgba(255,255,255,0.2)', fontFamily: 'Syne, sans-serif'}}><Clock className="animate-pulse" size={16} /> İnceleniyor...</div>
                             ) : (
-                                <button onClick={handleRequestUpgrade} disabled={isLoadingAction} className="bg-white text-indigo-600 hover:bg-indigo-50 font-bold py-3 px-8 rounded-xl shadow-lg transition-all flex items-center gap-2">
-                                    {isLoadingAction ? <Loader2 className="animate-spin" /> : 'YÜKSELTME TALEP ET'}
+                                <button onClick={handleRequestUpgrade} disabled={isLoadingAction} className="font-bold py-3 px-8 rounded-xl shadow-lg transition-all flex items-center gap-2" style={{background: 'rgba(255,255,255,0.95)', color: '#6c63ff', fontFamily: 'Syne, sans-serif'}}>
+                                    {isLoadingAction ? <Loader2 className="animate-spin" size={16} /> : <><Crown size={16} /> YÜKSELTME TALEP ET</>}
                                 </button>
                             )}
                         </div>
