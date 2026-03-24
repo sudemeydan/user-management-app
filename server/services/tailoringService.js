@@ -24,11 +24,24 @@ const createJobPosting = async (url, description, role) => {
     throw new appError("Lütfen bir iş ilanı URL'si veya metni giriniz.", 400);
   }
 
+  // finalDescription'dan başlık çıkar (varsa)
+  let title = role || "Belirtilmedi";
+  const titleMatch = finalDescription.match(/Başlık:\s*(.+)/);
+  if (titleMatch) {
+    title = titleMatch[1].trim();
+  }
+
+  let company = null;
+  const companyMatch = finalDescription.match(/Şirket:\s*(.+)/);
+  if (companyMatch) {
+    company = companyMatch[1].trim();
+  }
+
   const jobPosting = await jobPostingRepository.createJobPosting({
-    url: url || null,
+    title: title,
     description: finalDescription,
-    targetRole: role || "Belirtilmedi",
-    isActive: true
+    company: company,
+    url: url || null
   });
 
   return jobPosting;
@@ -60,18 +73,18 @@ const createTailoredCV = async (userId, cvId, jobPostingId, tailoredData) => {
     userId: parseInt(userId),
     originalCvId: parseInt(cvId),
     jobPostingId: parseInt(jobPostingId),
-    newSummary: tailoredData.newSummary || cv.summary
+    improvedSummary: tailoredData.improvedSummary || tailoredData.newSummary || cv.summary
   });
 
   const adaptedEntries = cv.entries.map(entry => {
     const updatedEntry = tailoredData.updatedEntries?.find(e => e.originalEntryId === entry.id);
     return {
       tailoredCvId: newTailoredCv.id,
-      originalEntryId: entry.id,
-      type: entry.type,
-      title: updatedEntry?.title || entry.title,
-      organization: entry.organization,
-      content: updatedEntry?.content || entry.content
+      category: entry.category,
+      name: updatedEntry?.title || updatedEntry?.name || entry.title,
+      description: updatedEntry?.content || updatedEntry?.description || entry.description,
+      isModified: !!updatedEntry,
+      aiComment: updatedEntry?.aiComment || null
     };
   });
 
@@ -89,11 +102,22 @@ const optimizeTailoredCV = async (userId, tailoredCvId) => {
     throw new appError("Uyarlanmış CV bulunamadı veya yetkiniz yok.", 404);
   }
 
-  const pdfBuffer = await generateTailoredPDF(
-    tailoredCv.originalCv.user,
-    tailoredCv.newSummary,
-    tailoredCv.entries
-  );
+  // pdfService.generateTailoredPDF beklediği format:
+  // cvData = { summary, userName, userEmail, entries: [...originalEntries] }
+  // tailoredData = { improvedSummary, entries: [...tailoredEntries] }
+  const cvData = {
+    summary: tailoredCv.originalCv.summary,
+    userName: tailoredCv.originalCv.user.name,
+    userEmail: tailoredCv.originalCv.user.email,
+    entries: tailoredCv.originalCv.entries
+  };
+
+  const tailoredData = {
+    improvedSummary: tailoredCv.improvedSummary,
+    entries: tailoredCv.entries
+  };
+
+  const pdfBuffer = await generateTailoredPDF(cvData, tailoredData, 'modern');
 
   const tempPath = path.join(os.tmpdir(), `Tailored-${tailoredCv.id}-${Date.now()}.pdf`);
   fs.writeFileSync(tempPath, pdfBuffer);

@@ -3,66 +3,186 @@ const fs = require('fs');
 const path = require('path');
 const Handlebars = require('handlebars');
 
-// Markdown benzeri metinleri HTML bullet point listesine çeviren süper yardımcı
+// ==================== HANDLEBARS HELPERS ====================
+
+// Markdown benzeri metinleri HTML bullet point listesine çeviren helper
 Handlebars.registerHelper('bulletPoints', function(text) {
     if (!text) return '';
     
-    // Satır sonlarına (newline), yıldızlara, veya bullet karakterlerine göre böl
-    const lines = text.split(/\n|\*|•|·/g).map(l => l.trim()).filter(l => l.length > 0);
+    const lines = text.split(/\n|(?:^|\s)\*\s|•|·|(?:^|\s)-\s/g)
+        .map(l => l.trim())
+        .filter(l => l.length > 0);
     
-    if (lines.length === 1 && text.indexOf(':') === -1) {
-       return new Handlebars.SafeString(`<p class="text-[10pt] text-gray-800 leading-snug">${Handlebars.Utils.escapeExpression(lines[0])}</p>`);
+    if (lines.length === 1) {
+       return new Handlebars.SafeString(`<p>${Handlebars.Utils.escapeExpression(lines[0])}</p>`);
     }
     
     const listItems = lines.map(l => {
-       // "Data Preprocessing: did something" gibi metinlerde iki nokta üstüsteye kadar olan kısmı bold yap
        const colonIndex = l.indexOf(':');
        if (colonIndex !== -1 && colonIndex < 50) { 
            const boldPart = l.substring(0, colonIndex + 1);
            const rest = l.substring(colonIndex + 1);
-           return `<li class="mb-0.5"><span class="font-bold text-gray-900">${Handlebars.Utils.escapeExpression(boldPart)}</span>${Handlebars.Utils.escapeExpression(rest)}</li>`;
+           return `<li><strong>${Handlebars.Utils.escapeExpression(boldPart)}</strong>${Handlebars.Utils.escapeExpression(rest)}</li>`;
        }
-       return `<li class="mb-0.5">${Handlebars.Utils.escapeExpression(l)}</li>`;
+       return `<li>${Handlebars.Utils.escapeExpression(l)}</li>`;
     }).join('');
     
-    return new Handlebars.SafeString(`<ul class="list-disc ml-4 text-[10pt] text-gray-800 space-y-0">${listItems}</ul>`);
+    return new Handlebars.SafeString(`<ul>${listItems}</ul>`);
 });
 
-// Güvenli HTML render etmek için helper (Subtitle gibi yerlerde)
+// Güvenli HTML render helper
 Handlebars.registerHelper('safe', function(text) {
     if (!text) return '';
     return new Handlebars.SafeString(text);
 });
 
-// Template verisini şablonun beklediği formata (Flatten) dönüştüren yardımcı fonksiyon
+// İsmin baş harflerini çıkaran helper (Avatar için)
+Handlebars.registerHelper('initials', function(name) {
+    if (!name) return '';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return parts[0].substring(0, 2).toUpperCase();
+});
+
+// Link'leri düzgün URL formatına çeviren helper
+Handlebars.registerHelper('formatLink', function(value, type) {
+    if (!value) return '#';
+    
+    const v = value.trim();
+    
+    if (v.startsWith('http://') || v.startsWith('https://')) {
+        return v;
+    }
+    
+    switch(type) {
+        case 'linkedin':
+            if (v.includes('linkedin.com')) return `https://${v}`;
+            return `https://linkedin.com/in/${v}`;
+        case 'github':
+            if (v.includes('github.com')) return `https://${v}`;
+            return `https://github.com/${v}`;
+        case 'url':
+            return `https://${v}`;
+        default:
+            return v;
+    }
+});
+
+// ==================== LANGUAGE DETECTION ====================
+
+// CV içeriğinin dilini tespit eden fonksiyon
+const detectLanguage = (entries, summary) => {
+    // Tüm metinleri birleştir
+    let allText = (summary || '').toLowerCase();
+    entries.forEach(e => {
+        if (e.description) allText += ' ' + e.description.toLowerCase();
+        if (e.title) allText += ' ' + e.title.toLowerCase();
+        if (e.subtitle) allText += ' ' + e.subtitle.toLowerCase();
+    });
+
+    // Türkçeye özgü kelimeler ve harfler
+    const turkishIndicators = [
+        'deneyim', 'eğitim', 'üniversite', 'proje', 'yetenek', 
+        'şirket', 'staj', 'lisans', 'mühendis', 'geliştirici',
+        'bölüm', 'fakülte', 'öğrenci', 'devam ediyor', 'sorumlu',
+        'olarak', 'görev', 'çalış', 'oluştur', 'geliştir',
+        'ğ', 'ş', 'ç', 'ı', 'ö', 'ü'
+    ];
+
+    const englishIndicators = [
+        'experience', 'education', 'university', 'project', 'skill',
+        'company', 'internship', 'bachelor', 'engineer', 'developer',
+        'department', 'faculty', 'student', 'present', 'responsible',
+        'worked', 'developed', 'created', 'managed', 'implemented',
+        'proficiency', 'achieved', 'collaborated'
+    ];
+
+    let turkishScore = 0;
+    let englishScore = 0;
+
+    turkishIndicators.forEach(word => {
+        const regex = new RegExp(word, 'gi');
+        const matches = allText.match(regex);
+        if (matches) turkishScore += matches.length;
+    });
+
+    englishIndicators.forEach(word => {
+        const regex = new RegExp(word, 'gi');
+        const matches = allText.match(regex);
+        if (matches) englishScore += matches.length;
+    });
+
+    return englishScore > turkishScore ? 'en' : 'tr';
+};
+
+// Dile göre bölüm başlıkları
+const getLabels = (lang) => {
+    if (lang === 'en') {
+        return {
+            contact: 'Contact',
+            skills: 'Skills',
+            languages: 'Languages',
+            certificates: 'Certificates',
+            profile: 'Professional Summary',
+            experience: 'Experience',
+            education: 'Education',
+            projects: 'Projects',
+            present: 'Present',
+            nameNotProvided: 'Name Not Provided'
+        };
+    }
+    return {
+        contact: 'İletişim',
+        skills: 'Yetenekler',
+        languages: 'Diller',
+        certificates: 'Sertifikalar',
+        profile: 'Profesyonel Özet',
+        experience: 'Deneyim',
+        education: 'Eğitim',
+        projects: 'Projeler',
+        present: 'Devam Ediyor',
+        nameNotProvided: 'İsim Belirtilmemiş'
+    };
+};
+
+// ==================== DATA PREPARATION ====================
+
 const prepareTemplateData = (cvData, entries) => {
     const contactInfo = entries.find(e => e.category === 'CONTACT_INFO') || {};
     const personalInfo = entries.find(e => e.category === 'PERSONAL_INFO') || {};
     
-    // Veritabanındaki isim 'MEYDAN' olarak geldiyse veya parçalandıysa
-    // Contact Info metadata veya personal info içinden tam ismi kurtarmaya çalışalım
-    const rawName = cvData.userName || '';
-    let fullName = personalInfo?.metadata?.fullName || contactInfo?.metadata?.fullName || rawName;
+    // 1. Öncelik: CV içindeki metadata'dan isim al
+    let fullName = contactInfo?.metadata?.fullName 
+        || personalInfo?.metadata?.fullName 
+        || null;
 
     const email = cvData.userEmail || contactInfo?.metadata?.email || '';
+    const rawName = cvData.userName || '';
 
-    // EĞER isim sadece küçük harf, tek kelime veya soyisim gibi duruyorsa (MEYDAN) 
-    // ve e-posta adresinden (sude.meydan35@gmail.com) daha anlamlı bir ad-soyad çıkarabiliyorsak:
-    if (fullName === rawName && email) {
-        const emailPrefix = email.split('@')[0]; // "sude.meydan35"
-        // rakamları sil ve noktalama işaretlerinden böl
+    // 2. Eğer metadata'da isim yoksa, kullanıcı adını kullan
+    if (!fullName) {
+        fullName = rawName;
+    }
+
+    // 3. Son çare: e-postadan isim çıkar
+    if ((!fullName || fullName === rawName) && email && (!rawName || rawName.length <= 3 || rawName === rawName.toUpperCase())) {
+        const emailPrefix = email.split('@')[0];
         const nameParts = emailPrefix.replace(/[0-9]/g, '').split(/[\._]/).filter(p => p.length > 0);
         if (nameParts.length >= 2) {
-            // "sude" "meydan" -> "Sude Meydan"
             fullName = nameParts.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
-        } else if (rawName === rawName.toUpperCase() && rawName.length > 2) {
-            // MEYDAN -> Meydan
+        } else if (rawName && rawName === rawName.toUpperCase() && rawName.length > 2) {
             fullName = rawName.charAt(0) + rawName.slice(1).toLowerCase();
         }
     }
 
+    // Dil tespiti
+    const lang = detectLanguage(entries, cvData.summary);
+    const labels = getLabels(lang);
+
     return {
-        name: fullName || 'İsim Belirtilmemiş',
+        name: fullName || labels.nameNotProvided,
         email: email,
         phone: contactInfo?.metadata?.phone || '',
         linkedin: contactInfo?.metadata?.linkedin || '',
@@ -76,14 +196,18 @@ const prepareTemplateData = (cvData, entries) => {
         skills: entries.filter(e => e.category === 'SKILL'),
         projects: entries.filter(e => e.category === 'PROJECT'),
         languages: entries.filter(e => e.category === 'LANGUAGE'),
-        certificates: entries.filter(e => e.category === 'CERTIFICATE')
+        certificates: entries.filter(e => e.category === 'CERTIFICATE'),
+        // Dil etiketleri
+        labels: labels,
+        lang: lang
     };
 };
+
+// ==================== PDF GENERATION ====================
 
 const generateATSPDF = async (cvData, entries, templateName = 'classic') => {
     const templatePath = path.join(__dirname, `../templates/${templateName}.hbs`);
     
-    // Fallback to classic if requested template doesn't exist
     const finalTemplatePath = fs.existsSync(templatePath) 
         ? templatePath 
         : path.join(__dirname, '../templates/classic.hbs');
@@ -119,10 +243,8 @@ const generateTailoredPDF = async (cvData, tailoredData, templateName = 'classic
     const templateSource = fs.readFileSync(finalTemplatePath, 'utf8');
     const template = Handlebars.compile(templateSource);
 
-    // Orijinal verileri kopyala
     let mixedEntries = [...cvData.entries];
 
-    // Üzerine tailored verileri yaz (Eğer ID olsaydı daha iyi olurdu ama name eşleştiriyoruz)
     if (tailoredData.entries && tailoredData.entries.length > 0) {
         tailoredData.entries.forEach(te => {
             const existingIdx = mixedEntries.findIndex(ce => ce.title === te.name && ce.category === te.category);
@@ -142,7 +264,6 @@ const generateTailoredPDF = async (cvData, tailoredData, templateName = 'classic
         });
     }
 
-    // YZ özetini al
     const finalCvData = {
         ...cvData,
         summary: tailoredData.improvedSummary || cvData.summary

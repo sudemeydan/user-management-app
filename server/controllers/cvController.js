@@ -9,6 +9,25 @@ const uploadCV = async (req, res) => {
       return res.status(400).json({ success: false, message: "Lütfen geçerli bir PDF veya DOCX dosyası seçin." });
     }
 
+    // YENİ: Kullanıcı Limiti Kontrolü
+    const prisma = require('../utils/prisma'); // Limit kontrolü için veritabanı erişimi
+    const userRole = req.user.role; // req.user.role auth middleware'den geliyor
+    const userId = req.user.id;
+    
+    // Kullanıcının mevcut CV sayısını kontrol et
+    const cvCount = await prisma.cV.count({
+      where: { userId: userId }
+    });
+
+    if (userRole === 'FREE_USER' && cvCount >= 1) {
+      return res.status(403).json({ success: false, message: "Ücretsiz kullanıcılar en fazla 1 adet CV yükleyip analiz ettirebilir. Lütfen Pro sürüme geçiş yapın." });
+    }
+
+    if (userRole === 'PRO_USER' && cvCount >= 5) {
+      return res.status(403).json({ success: false, message: "Pro kullanıcılar en fazla 5 adet CV yükleyip analiz ettirebilir." });
+    }
+    // SUPERADMIN için limit yok, devam et.
+
     let pdfBase64 = null;
 
     if (req.file.mimetype === 'application/pdf') {

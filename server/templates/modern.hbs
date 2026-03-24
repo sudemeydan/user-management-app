@@ -1,222 +1,227 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{lang}}">
 
 <head>
     <meta charset="UTF-8">
-    <title>Modern Premium CV</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome for identical icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>{{name}} - CV</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700;800&family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        @page {
-            size: A4;
-            margin: 15mm 20mm 15mm 20mm;
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { size: A4; margin: 0; }
+        html, body {
+            width: 210mm; min-height: 297mm;
+            font-family: 'Open Sans', 'Segoe UI', Arial, sans-serif;
+            font-size: 9pt; color: #2d3748; line-height: 1.45;
+            -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #fff;
         }
+        a { color: inherit; text-decoration: none; }
+        h1, h2, h3, h4, h5 { font-family: 'Raleway', 'Segoe UI', sans-serif; }
 
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            font-size: 9pt;
-            color: #111;
-            line-height: 1.35;
-        }
+        .cv-container { display: flex; min-height: 297mm; width: 100%; }
 
-        .avoid-break {
-            page-break-inside: avoid;
-            break-inside: avoid;
+        /* SIDEBAR */
+        .sidebar {
+            width: 72mm; background: linear-gradient(180deg, #1a202c 0%, #2d3748 100%);
+            color: #e2e8f0; padding: 28px 18px 24px 18px; flex-shrink: 0;
         }
+        .sidebar .avatar {
+            width: 80px; height: 80px; border-radius: 50%;
+            background: rgba(255,255,255,0.12); border: 3px solid rgba(255,255,255,0.25);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 16px auto; font-family: 'Raleway', sans-serif;
+            font-size: 26pt; font-weight: 700; color: #fff; letter-spacing: 1px;
+        }
+        .sidebar .sidebar-section { margin-bottom: 20px; }
+        .sidebar .sidebar-title {
+            font-family: 'Raleway', sans-serif; font-size: 8.5pt; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1.8px; color: #90cdf4;
+            border-bottom: 1px solid rgba(255,255,255,0.12); padding-bottom: 5px; margin-bottom: 10px;
+        }
+        .sidebar .contact-item {
+            display: flex; align-items: flex-start; gap: 9px; margin-bottom: 7px;
+            font-size: 8pt; line-height: 1.4; word-break: break-all;
+        }
+        .sidebar .contact-item i { color: #90cdf4; font-size: 9pt; width: 14px; text-align: center; margin-top: 1px; flex-shrink: 0; }
+        .sidebar .contact-item a { color: #e2e8f0; text-decoration: none; }
+        .skill-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+        .skill-tag {
+            background: rgba(255,255,255,0.1); color: #e2e8f0; font-size: 7.5pt;
+            padding: 3px 8px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.08); font-weight: 500;
+        }
+        .lang-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 8pt; }
+        .lang-item .lang-name { font-weight: 600; color: #e2e8f0; }
+        .lang-item .lang-level { font-size: 7.5pt; color: #90cdf4; font-weight: 500; }
+        .cert-item { margin-bottom: 8px; font-size: 7.5pt; line-height: 1.35; }
+        .cert-item .cert-name { font-weight: 600; color: #e2e8f0; font-size: 8pt; }
+        .cert-item .cert-desc { color: #a0aec0; margin-top: 1px; }
 
-        a {
-            color: #333;
-            text-decoration: none;
-        }
+        /* MAIN */
+        .main-content { flex: 1; padding: 28px 26px 24px 26px; background: #fff; }
+        .main-name { font-family: 'Raleway', sans-serif; font-size: 22pt; font-weight: 800; color: #1a202c; line-height: 1.1; margin-bottom: 2px; letter-spacing: -0.3px; }
+        .main-subtitle { font-size: 9pt; color: #718096; font-weight: 500; margin-bottom: 16px; }
 
-        .section-title {
-            font-size: 11pt;
-            font-weight: 800;
-            color: #1f2937;
-            border-bottom: 2px solid #000;
-            padding-bottom: 2px;
-            margin-bottom: 8px;
-            margin-top: 16px;
-        }
+        .section-heading { display: flex; align-items: center; gap: 8px; margin-top: 18px; margin-bottom: 10px; page-break-after: avoid; }
+        .section-heading .icon-circle { width: 22px; height: 22px; border-radius: 50%; background: #edf2f7; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .section-heading .icon-circle i { font-size: 9pt; color: #4a5568; }
+        .section-heading h2 { font-family: 'Raleway', sans-serif; font-size: 11pt; font-weight: 700; color: #1a202c; text-transform: uppercase; letter-spacing: 1px; }
+        .section-heading::after { content: ''; flex: 1; height: 1.5px; background: linear-gradient(90deg, #cbd5e0, transparent); }
+
+        .summary-text { font-size: 8.5pt; color: #4a5568; line-height: 1.55; text-align: justify; }
+
+        .entry { margin-bottom: 12px; page-break-inside: avoid; break-inside: avoid; }
+        .entry-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1px; }
+        .entry-title { font-family: 'Raleway', sans-serif; font-size: 9.5pt; font-weight: 700; color: #1a202c; }
+        .entry-date { font-size: 7.5pt; color: #718096; font-weight: 600; white-space: nowrap; flex-shrink: 0; margin-left: 12px; }
+        .entry-subtitle { font-size: 8.5pt; color: #4299e1; font-weight: 600; font-style: italic; margin-bottom: 3px; }
+        .entry-desc { font-size: 8pt; color: #4a5568; line-height: 1.5; }
+        .entry-desc ul { margin: 0; padding-left: 14px; }
+        .entry-desc ul li { margin-bottom: 1.5px; }
+        .entry-desc ul li::marker { color: #a0aec0; }
+
+        .edu-entry { margin-bottom: 8px; page-break-inside: avoid; }
+        .edu-entry .entry-header { margin-bottom: 0; }
+        .edu-subtitle-line { font-size: 8pt; color: #718096; font-style: italic; }
     </style>
 </head>
 
-<body class="bg-white">
+<body>
+    <div class="cv-container">
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="avatar">{{initials name}}</div>
 
-    <!-- Header Section -->
-    <div class="mb-4">
-        <h1 class="text-[18pt] font-extrabold text-black leading-none mb-1">{{name}}</h1>
-        {{#if summary}}
+            <div class="sidebar-section">
+                <div class="sidebar-title">{{labels.contact}}</div>
+                {{#if email}}
+                <div class="contact-item"><i class="fa-solid fa-envelope"></i><a href="mailto:{{email}}">{{email}}</a></div>
+                {{/if}}
+                {{#if phone}}
+                <div class="contact-item"><i class="fa-solid fa-phone"></i><span>{{phone}}</span></div>
+                {{/if}}
+                {{#if address}}
+                <div class="contact-item"><i class="fa-solid fa-location-dot"></i><span>{{address}}</span></div>
+                {{/if}}
+                {{#if birthDate}}
+                <div class="contact-item"><i class="fa-solid fa-calendar-days"></i><span>{{birthDate}}</span></div>
+                {{/if}}
+                {{#if linkedin}}
+                <div class="contact-item"><i class="fa-brands fa-linkedin"></i><a href="{{formatLink linkedin 'linkedin'}}" target="_blank">{{linkedin}}</a></div>
+                {{/if}}
+                {{#if github}}
+                <div class="contact-item"><i class="fa-brands fa-github"></i><a href="{{formatLink github 'github'}}" target="_blank">{{github}}</a></div>
+                {{/if}}
+                {{#if portfolio}}
+                <div class="contact-item"><i class="fa-solid fa-globe"></i><a href="{{formatLink portfolio 'url'}}" target="_blank">{{portfolio}}</a></div>
+                {{/if}}
+            </div>
 
-        {{/if}}
-
-        <div class="flex flex-wrap text-[8.5pt] font-semibold text-gray-800 gap-x-4 gap-y-1 mt-2">
-            {{#if email}}
-            <div class="flex items-center gap-1.5">
-                <i class="fa-solid fa-envelope"></i><span>{{email}}</span>
-            </div>
-            {{/if}}
-            {{#if phone}}
-            <div class="flex items-center gap-1.5">
-                <i class="fa-solid fa-phone"></i><span>{{phone}}</span>
-            </div>
-            {{/if}}
-            {{#if address}}
-            <div class="flex items-center gap-1.5">
-                <i class="fa-solid fa-location-dot"></i><span>{{address}}</span>
-            </div>
-            {{/if}}
-            {{#if birthDate}}
-            <div class="flex items-center gap-1.5">
-                <i class="fa-solid fa-calendar-days"></i><span>{{birthDate}}</span>
-            </div>
-            {{/if}}
-        </div>
-        <div class="flex flex-wrap text-[8.5pt] font-semibold text-gray-800 gap-x-4 gap-y-1 mt-1">
-            {{#if github}}
-            <div class="flex items-center gap-1.5">
-                <i class="fa-brands fa-github"></i><span>github.com/{{github}}</span>
-            </div>
-            {{/if}}
-            {{#if linkedin}}
-            <div class="flex items-center gap-1.5">
-                <i class="fa-brands fa-linkedin"></i><span>linkedin.com/in/{{linkedin}}</span>
-            </div>
-            {{/if}}
-            {{#if portfolio}}
-            <div class="flex items-center gap-1.5">
-                <i class="fa-solid fa-link"></i><span>{{portfolio}}</span>
-            </div>
-            {{/if}}
-        </div>
-    </div>
-
-    <!-- Profile -->
-    {{#if summary}}
-    <div class="avoid-break mb-1">
-        <h2 class="section-title">Profile</h2>
-        <p class="text-[9pt] text-gray-800 text-justify">{{summary}}</p>
-    </div>
-    {{/if}}
-
-    <!-- Education -->
-    {{#if educations.length}}
-    <div class="avoid-break mb-1">
-        <h2 class="section-title">Education</h2>
-        <div class="space-y-2">
-            {{#each educations}}
-            <div>
-                <div class="flex justify-between items-baseline">
-                    <div>
-                        <span class="font-bold text-[9pt]">{{this.subtitle}}</span>{{#if this.subtitle}}{{#if
-                        this.title}}, {{/if}}{{/if}}<span class="italic text-[9pt]">{{this.title}}</span>
-                    </div>
-                    <span class="text-[8.5pt] font-semibold text-gray-700 whitespace-nowrap">{{this.startDate}} - {{#if
-                        this.endDate}}{{this.endDate}}{{else}}Present{{/if}}</span>
+            {{#if skills.length}}
+            <div class="sidebar-section">
+                <div class="sidebar-title">{{labels.skills}}</div>
+                <div class="skill-tags">
+                    {{#each skills}}
+                    <span class="skill-tag">{{this.title}}</span>
+                    {{/each}}
                 </div>
-                {{#if this.description}}{{bulletPoints this.description}}{{/if}}
             </div>
-            {{/each}}
-        </div>
-    </div>
-    {{/if}}
+            {{/if}}
 
-    <!-- Skills (2 Column Grid) -->
-    {{#if skills.length}}
-    <div class="avoid-break mb-1">
-        <h2 class="section-title">Skills</h2>
-        <div class="grid grid-cols-2 gap-x-8 gap-y-3">
-            {{#each skills}}
-            <div>
-                <div class="font-extrabold text-[9pt] mb-0.5">{{this.title}}</div>
-                <div class="text-[8.5pt] text-gray-800 leading-snug">{{this.description}}</div>
+            {{#if languages.length}}
+            <div class="sidebar-section">
+                <div class="sidebar-title">{{labels.languages}}</div>
+                {{#each languages}}
+                <div class="lang-item">
+                    <span class="lang-name">{{this.title}}</span>
+                    <span class="lang-level">{{this.description}}</span>
+                </div>
+                {{/each}}
             </div>
-            {{/each}}
-        </div>
-    </div>
-    {{/if}}
+            {{/if}}
 
-    <!-- Languages -->
-    {{#if languages.length}}
-    <div class="avoid-break mb-1">
-        <h2 class="section-title">Languages</h2>
-        <div class="grid grid-cols-2 gap-x-8 gap-y-3">
-            {{#each languages}}
-            <div>
-                <div class="font-bold text-[9pt] mb-0.5">{{this.title}}</div>
-                <div class="text-[8.5pt] text-gray-800">{{this.description}}</div>
+            {{#if certificates.length}}
+            <div class="sidebar-section">
+                <div class="sidebar-title">{{labels.certificates}}</div>
+                {{#each certificates}}
+                <div class="cert-item">
+                    <div class="cert-name">{{this.title}}</div>
+                    {{#if this.description}}<div class="cert-desc">{{this.description}}</div>{{/if}}
+                </div>
+                {{/each}}
             </div>
-            {{/each}}
+            {{/if}}
         </div>
-    </div>
-    {{/if}}
 
-    <!-- Certificates -->
-    {{#if certificates.length}}
-    <div class="avoid-break mb-1">
-        <h2 class="section-title">Certificates</h2>
-        <div class="grid grid-cols-2 gap-x-8 gap-y-3">
-            {{#each certificates}}
-            <div>
-                <div class="font-bold text-[9pt] mb-0.5">{{this.title}}</div>
-                <div class="text-[8.5pt] text-gray-800">{{this.description}}</div>
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
+            <div class="main-name">{{name}}</div>
+            {{#if summary}}
+            <div class="main-subtitle">{{labels.profile}}</div>
+            <div class="summary-text">{{summary}}</div>
+            {{/if}}
+
+            {{#if experiences.length}}
+            <div class="section-heading">
+                <div class="icon-circle"><i class="fa-solid fa-briefcase"></i></div>
+                <h2>{{labels.experience}}</h2>
             </div>
-            {{/each}}
-        </div>
-    </div>
-    {{/if}}
-
-    <!-- Experience -->
-    {{#if experiences.length}}
-    <div class="mb-1">
-        <h2 class="section-title">Experience</h2>
-        <div class="space-y-4">
             {{#each experiences}}
-            <div class="avoid-break">
-                <div class="flex justify-between items-baseline mb-0.5">
-                    <span class="font-bold text-[9.5pt]">{{this.title}}</span>
-                    <span class="text-[8.5pt] font-semibold text-gray-700 whitespace-nowrap">{{this.startDate}} - {{#if
-                        this.endDate}}{{this.endDate}}{{else}}Present{{/if}}</span>
+            <div class="entry">
+                <div class="entry-header">
+                    <span class="entry-title">{{this.title}}</span>
+                    <span class="entry-date">{{this.startDate}} – {{#if this.endDate}}{{this.endDate}}{{else}}{{../labels.present}}{{/if}}</span>
                 </div>
-                {{#if this.subtitle}}<div class="italic text-[9pt] mb-1.5 text-gray-800">{{this.subtitle}}</div>{{/if}}
+                {{#if this.subtitle}}<div class="entry-subtitle">{{this.subtitle}}</div>{{/if}}
                 {{#if this.description}}
-                <div class="pl-2">
-                    {{bulletPoints this.description}}
-                </div>
+                <div class="entry-desc">{{bulletPoints this.description}}</div>
                 {{/if}}
             </div>
             {{/each}}
-        </div>
-    </div>
-    {{/if}}
+            {{/if}}
 
-    <!-- Projects -->
-    {{#if projects.length}}
-    <div class="mb-1">
-        <h2 class="section-title">Projects</h2>
-        <div class="space-y-4">
+            {{#if educations.length}}
+            <div class="section-heading">
+                <div class="icon-circle"><i class="fa-solid fa-graduation-cap"></i></div>
+                <h2>{{labels.education}}</h2>
+            </div>
+            {{#each educations}}
+            <div class="edu-entry">
+                <div class="entry-header">
+                    <span class="entry-title">{{this.title}}</span>
+                    <span class="entry-date">{{this.startDate}} – {{#if this.endDate}}{{this.endDate}}{{else}}{{../labels.present}}{{/if}}</span>
+                </div>
+                {{#if this.subtitle}}<div class="edu-subtitle-line">{{this.subtitle}}</div>{{/if}}
+                {{#if this.description}}
+                <div class="entry-desc">{{bulletPoints this.description}}</div>
+                {{/if}}
+            </div>
+            {{/each}}
+            {{/if}}
+
+            {{#if projects.length}}
+            <div class="section-heading">
+                <div class="icon-circle"><i class="fa-solid fa-diagram-project"></i></div>
+                <h2>{{labels.projects}}</h2>
+            </div>
             {{#each projects}}
-            <div class="avoid-break">
-                <div class="flex justify-between items-baseline mb-0.5">
-                    <span class="font-bold text-[9pt]">{{this.title}}</span>
-                    <span class="text-[8.5pt] font-semibold text-gray-700 whitespace-nowrap">{{#if
-                        this.startDate}}{{this.startDate}}{{/if}}{{#if this.endDate}} - {{this.endDate}}{{/if}}</span>
+            <div class="entry">
+                <div class="entry-header">
+                    <span class="entry-title">{{this.title}}</span>
+                    <span class="entry-date">{{#if this.startDate}}{{this.startDate}}{{/if}}{{#if this.endDate}} – {{this.endDate}}{{/if}}</span>
                 </div>
-                {{#if this.subtitle}}<div class="italic text-[8.5pt] mb-1.5 text-gray-800">{{this.subtitle}}</div>
-                {{/if}}
+                {{#if this.subtitle}}<div class="entry-subtitle">{{this.subtitle}}</div>{{/if}}
                 {{#if this.description}}
-                <div class="pl-2">
-                    {{bulletPoints this.description}}
-                </div>
+                <div class="entry-desc">{{bulletPoints this.description}}</div>
                 {{/if}}
             </div>
             {{/each}}
+            {{/if}}
         </div>
     </div>
-    {{/if}}
-
 </body>
 
 </html>

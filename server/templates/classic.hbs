@@ -1,127 +1,223 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{lang}}">
+
 <head>
     <meta charset="UTF-8">
-    <title>ATS CV - Classic</title>
-    <!-- Include Tailwind CSS for easy styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>{{name}} - CV</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        /* PDF specific print media logic */
-        @page {
-            size: A4;
-            margin: 20mm;
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { size: A4; margin: 18mm 20mm 18mm 20mm; }
+        html, body {
+            font-family: 'EB Garamond', 'Georgia', 'Times New Roman', serif;
+            font-size: 10.5pt; color: #1a1a1a; line-height: 1.4; background: #fff;
+            -webkit-print-color-adjust: exact; print-color-adjust: exact;
         }
-        body {
-            font-family: 'Times New Roman', Times, serif;
-            font-size: 11pt;
-            color: black;
-            line-height: 1.4;
+        a { color: #1a1a1a; text-decoration: none; }
+        .avoid-break { page-break-inside: avoid; break-inside: avoid; }
+        h1, h2, h3 { page-break-after: avoid; }
+
+        /* HEADER */
+        .header { text-align: center; padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid #1a1a1a; }
+        .header h1 {
+            font-family: 'EB Garamond', Georgia, serif;
+            font-size: 24pt; font-weight: 700; letter-spacing: 3px;
+            text-transform: uppercase; color: #1a1a1a; margin-bottom: 6px;
         }
-        /* Prevents breaking a section across pages if possible */
-        .avoid-break {
-            page-break-inside: avoid;
-            break-inside: avoid;
+        .contact-row {
+            display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 4px 0;
+            font-family: 'Inter', 'Segoe UI', sans-serif; font-size: 8.5pt; color: #444;
         }
-        a {
-            color: #2563eb;
-            text-decoration: none;
+        .contact-row .contact-item { display: inline-flex; align-items: center; gap: 4px; }
+        .contact-row .contact-item i { font-size: 8pt; color: #555; }
+        .contact-row .separator { margin: 0 8px; color: #999; font-weight: 300; }
+        .contact-row a { color: #2b5797; }
+
+        /* SECTION */
+        .section { margin-top: 14px; margin-bottom: 4px; }
+        .section-title {
+            font-family: 'EB Garamond', Georgia, serif;
+            font-size: 12pt; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1.5px; color: #1a1a1a;
+            border-bottom: 1px solid #444; padding-bottom: 3px; margin-bottom: 8px;
         }
-        h1, h2, h3 {
-            page-break-after: avoid;
+
+        .summary-text { font-size: 10pt; color: #333; line-height: 1.5; text-align: justify; }
+
+        /* ENTRY */
+        .entry { margin-bottom: 10px; page-break-inside: avoid; break-inside: avoid; }
+        .entry-row { display: flex; justify-content: space-between; align-items: baseline; }
+        .entry-title { font-size: 10.5pt; font-weight: 700; color: #1a1a1a; }
+        .entry-date {
+            font-family: 'Inter', sans-serif; font-size: 8pt; color: #666;
+            font-weight: 500; white-space: nowrap; flex-shrink: 0; margin-left: 10px;
         }
+        .entry-subtitle { font-size: 10pt; font-style: italic; color: #444; margin-bottom: 2px; }
+        .entry-desc { font-size: 9.5pt; color: #333; line-height: 1.45; }
+        .entry-desc ul { margin: 2px 0 0 0; padding-left: 16px; }
+        .entry-desc ul li { margin-bottom: 1px; }
+        .entry-desc ul li::marker { color: #888; }
+
+        /* SKILLS */
+        .skills-list { font-size: 9.5pt; line-height: 1.6; color: #333; }
+        .skills-list .skill-group { margin-bottom: 2px; }
+        .skills-list .skill-group-title { font-weight: 700; color: #1a1a1a; }
+
+        /* LANGUAGES */
+        .languages-inline { font-size: 9.5pt; color: #333; }
+        .languages-inline .lang-name { font-weight: 600; }
+        .languages-inline .lang-level { font-style: italic; color: #555; }
+
+        /* CERTIFICATES */
+        .cert-entry { margin-bottom: 4px; font-size: 9.5pt; }
+        .cert-entry .cert-title { font-weight: 600; }
+        .cert-entry .cert-detail { font-style: italic; color: #555; }
     </style>
 </head>
-<body class="bg-white text-black bg-white">
-    <!-- Header -->
-    <div class="text-center border-b-2 border-black pb-4 mb-4">
-        <h1 class="text-3xl font-bold uppercase mb-2">{{name}}</h1>
-        <div class="text-sm space-x-2 flex justify-center flex-wrap">
-            {{#if email}}<span><a href="mailto:{{email}}">{{email}}</a></span>{{/if}}
-            {{#if phone}}<span>|</span><span>{{phone}}</span>{{/if}}
-            {{#if linkedin}}<span>|</span><span><a href="{{linkedin}}">LinkedIn</a></span>{{/if}}
-            {{#if github}}<span>|</span><span><a href="{{github}}">GitHub</a></span>{{/if}}
-            {{#if portfolio}}<span>|</span><span><a href="{{portfolio}}">Portfolio</a></span>{{/if}}
-            {{#if address}}<span>|</span><span>{{address}}</span>{{/if}}
+
+<body>
+
+    <!-- HEADER -->
+    <div class="header">
+        <h1>{{name}}</h1>
+        <div class="contact-row">
+            {{#if email}}
+            <span class="contact-item"><i class="fa-solid fa-envelope"></i><a href="mailto:{{email}}">{{email}}</a></span>
+            {{/if}}
+            {{#if phone}}
+            <span class="separator">|</span>
+            <span class="contact-item"><i class="fa-solid fa-phone"></i><span>{{phone}}</span></span>
+            {{/if}}
+            {{#if address}}
+            <span class="separator">|</span>
+            <span class="contact-item"><i class="fa-solid fa-location-dot"></i><span>{{address}}</span></span>
+            {{/if}}
+            {{#if linkedin}}
+            <span class="separator">|</span>
+            <span class="contact-item"><i class="fa-brands fa-linkedin"></i><a href="{{formatLink linkedin 'linkedin'}}" target="_blank">LinkedIn</a></span>
+            {{/if}}
+            {{#if github}}
+            <span class="separator">|</span>
+            <span class="contact-item"><i class="fa-brands fa-github"></i><a href="{{formatLink github 'github'}}" target="_blank">GitHub</a></span>
+            {{/if}}
+            {{#if portfolio}}
+            <span class="separator">|</span>
+            <span class="contact-item"><i class="fa-solid fa-globe"></i><a href="{{formatLink portfolio 'url'}}" target="_blank">Portfolio</a></span>
+            {{/if}}
         </div>
     </div>
 
-    <!-- Summary -->
+    <!-- SUMMARY -->
     {{#if summary}}
-    <div class="mb-5 avoid-break">
-        <h2 class="text-lg font-bold uppercase border-b border-gray-400 mb-2 pb-1">Professional Summary</h2>
-        <p class="text-sm">{{summary}}</p>
+    <div class="section avoid-break">
+        <div class="section-title">{{labels.profile}}</div>
+        <p class="summary-text">{{summary}}</p>
     </div>
     {{/if}}
 
-    <!-- Experience -->
+    <!-- EXPERIENCE -->
     {{#if experiences.length}}
-    <div class="mb-5">
-        <h2 class="text-lg font-bold uppercase border-b border-gray-400 mb-2 pb-1">Experience</h2>
-        <div class="space-y-4">
-            {{#each experiences}}
-            <div class="avoid-break">
-                <div class="flex justify-between items-baseline mb-1">
-                    <h3 class="text-sm font-bold">{{this.title}}</h3>
-                    <span class="text-xs font-semibold">{{this.startDate}} - {{#if this.endDate}}{{this.endDate}}{{else}}Present{{/if}}</span>
-                </div>
-                {{#if this.subtitle}}<div class="text-xs font-semibold italic mb-1">{{this.subtitle}}</div>{{/if}}
-                {{#if this.description}}<p class="text-xs whitespace-pre-line">{{this.description}}</p>{{/if}}
+    <div class="section">
+        <div class="section-title">{{labels.experience}}</div>
+        {{#each experiences}}
+        <div class="entry">
+            <div class="entry-row">
+                <span class="entry-title">{{this.title}}</span>
+                <span class="entry-date">{{this.startDate}} – {{#if this.endDate}}{{this.endDate}}{{else}}{{../labels.present}}{{/if}}</span>
             </div>
-            {{/each}}
+            {{#if this.subtitle}}<div class="entry-subtitle">{{this.subtitle}}</div>{{/if}}
+            {{#if this.description}}
+            <div class="entry-desc">{{bulletPoints this.description}}</div>
+            {{/if}}
         </div>
+        {{/each}}
     </div>
     {{/if}}
 
-    <!-- Education -->
+    <!-- EDUCATION -->
     {{#if educations.length}}
-    <div class="mb-5">
-        <h2 class="text-lg font-bold uppercase border-b border-gray-400 mb-2 pb-1">Education</h2>
-        <div class="space-y-3">
-            {{#each educations}}
-            <div class="avoid-break">
-                <div class="flex justify-between items-baseline mb-1">
-                    <h3 class="text-sm font-bold">{{this.title}}</h3>
-                    <span class="text-xs font-semibold">{{this.startDate}} - {{this.endDate}}</span>
-                </div>
-                {{#if this.subtitle}}<div class="text-xs italic mb-1">{{this.subtitle}}</div>{{/if}}
-                {{#if this.description}}<p class="text-xs whitespace-pre-line">{{this.description}}</p>{{/if}}
+    <div class="section">
+        <div class="section-title">{{labels.education}}</div>
+        {{#each educations}}
+        <div class="entry avoid-break">
+            <div class="entry-row">
+                <span class="entry-title">{{this.title}}</span>
+                <span class="entry-date">{{this.startDate}} – {{#if this.endDate}}{{this.endDate}}{{else}}{{../labels.present}}{{/if}}</span>
             </div>
-            {{/each}}
+            {{#if this.subtitle}}<div class="entry-subtitle">{{this.subtitle}}</div>{{/if}}
+            {{#if this.description}}
+            <div class="entry-desc">{{bulletPoints this.description}}</div>
+            {{/if}}
         </div>
+        {{/each}}
     </div>
     {{/if}}
 
-    <!-- Projects -->
+    <!-- PROJECTS -->
     {{#if projects.length}}
-    <div class="mb-5">
-        <h2 class="text-lg font-bold uppercase border-b border-gray-400 mb-2 pb-1">Projects</h2>
-        <div class="space-y-3">
-            {{#each projects}}
-            <div class="avoid-break">
-                <div class="flex justify-between items-baseline mb-1">
-                    <h3 class="text-sm font-bold">{{this.title}}</h3>
-                    <span class="text-xs font-semibold">{{this.startDate}} - {{this.endDate}}</span>
-                </div>
-                {{#if this.subtitle}}<div class="text-xs italic mb-1">{{this.subtitle}}</div>{{/if}}
-                {{#if this.description}}<p class="text-xs whitespace-pre-line">{{this.description}}</p>{{/if}}
+    <div class="section">
+        <div class="section-title">{{labels.projects}}</div>
+        {{#each projects}}
+        <div class="entry">
+            <div class="entry-row">
+                <span class="entry-title">{{this.title}}</span>
+                <span class="entry-date">{{#if this.startDate}}{{this.startDate}}{{/if}}{{#if this.endDate}} – {{this.endDate}}{{/if}}</span>
+            </div>
+            {{#if this.subtitle}}<div class="entry-subtitle">{{this.subtitle}}</div>{{/if}}
+            {{#if this.description}}
+            <div class="entry-desc">{{bulletPoints this.description}}</div>
+            {{/if}}
+        </div>
+        {{/each}}
+    </div>
+    {{/if}}
+
+    <!-- SKILLS -->
+    {{#if skills.length}}
+    <div class="section avoid-break">
+        <div class="section-title">{{labels.skills}}</div>
+        <div class="skills-list">
+            {{#each skills}}
+            <div class="skill-group">
+                <span class="skill-group-title">{{this.title}}:</span>
+                <span>{{this.description}}</span>
             </div>
             {{/each}}
         </div>
     </div>
     {{/if}}
 
-    <!-- Skills -->
-    {{#if skills.length}}
-    <div class="mb-5 avoid-break">
-        <h2 class="text-lg font-bold uppercase border-b border-gray-400 mb-2 pb-1">Skills</h2>
-        <div class="text-sm">
-            <p>
-                {{#each skills}}
-                {{this.title}}{{#if this.subtitle}} ({{this.subtitle}}){{/if}}{{#unless @last}}, {{/unless}}
-                {{/each}}
-            </p>
+    <!-- LANGUAGES -->
+    {{#if languages.length}}
+    <div class="section avoid-break">
+        <div class="section-title">{{labels.languages}}</div>
+        <div class="languages-inline">
+            {{#each languages}}
+            <span class="lang-name">{{this.title}}</span>
+            {{#if this.description}}<span class="lang-level"> ({{this.description}})</span>{{/if}}{{#unless @last}}<span style="margin: 0 6px; color: #999;">•</span>{{/unless}}
+            {{/each}}
         </div>
     </div>
     {{/if}}
+
+    <!-- CERTIFICATES -->
+    {{#if certificates.length}}
+    <div class="section avoid-break">
+        <div class="section-title">{{labels.certificates}}</div>
+        {{#each certificates}}
+        <div class="cert-entry">
+            <span class="cert-title">{{this.title}}</span>
+            {{#if this.description}}<span class="cert-detail"> — {{this.description}}</span>{{/if}}
+        </div>
+        {{/each}}
+    </div>
+    {{/if}}
+
 </body>
+
 </html>

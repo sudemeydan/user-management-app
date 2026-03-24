@@ -7,6 +7,7 @@ import {
 const CVDetailAccordion = ({ cv, fetchMyCVs }) => {
     const [openTailoredId, setOpenTailoredId] = useState(null);
     const [loadingIds, setLoadingIds] = useState([]);
+    const [selectedTemplate, setSelectedTemplate] = useState('modern');
 
     const toggleTailored = (id) => {
         setOpenTailoredId(openTailoredId === id ? null : id);
@@ -25,7 +26,7 @@ const CVDetailAccordion = ({ cv, fetchMyCVs }) => {
     const handleDownloadOriginalCV = async () => {
         setLoadingIds(prev => [...prev, 'original-' + cv.id]);
         try {
-            const res = await axiosInstance.get(`/users/cvs/${cv.id}/download-pdf?template=modern`, { responseType: 'blob' });
+            const res = await axiosInstance.get(`/users/cvs/${cv.id}/download-pdf?template=${selectedTemplate}`, { responseType: 'blob' });
             const blob = new Blob([res.data]);
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -95,17 +96,27 @@ const CVDetailAccordion = ({ cv, fetchMyCVs }) => {
                     <BrainCircuit size={14} /> Yapay Zeka Analizi
                 </span>
 
-                <button 
-                    onClick={handleDownloadOriginalCV}
-                    disabled={loadingIds.includes('original-' + cv.id)}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-1.5 px-4 rounded-lg transition-colors shadow-sm disabled:bg-blue-300"
-                >
-                    {loadingIds.includes('original-' + cv.id) ? (
-                        <> <Loader2 size={16} className="animate-spin" /> Hazırlanıyor... </>
-                    ) : (
-                        <> <Download size={16} /> PDF Olarak İndir </>
-                    )}
-                </button>
+                <div className="flex items-center gap-2">
+                    <select 
+                        value={selectedTemplate}
+                        onChange={(e) => setSelectedTemplate(e.target.value)}
+                        className="bg-gray-100 border border-gray-300 text-gray-700 text-xs font-semibold py-1.5 px-2 rounded-lg focus:ring-2 focus:ring-blue-300 focus:outline-none"
+                    >
+                        <option value="modern">Modern (İki Sütun)</option>
+                        <option value="classic">Klasik (Tek Sütun)</option>
+                    </select>
+                    <button 
+                        onClick={handleDownloadOriginalCV}
+                        disabled={loadingIds.includes('original-' + cv.id)}
+                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-1.5 px-4 rounded-lg transition-colors shadow-sm disabled:bg-blue-300"
+                    >
+                        {loadingIds.includes('original-' + cv.id) ? (
+                            <> <Loader2 size={16} className="animate-spin" /> Hazırlanıyor... </>
+                        ) : (
+                            <> <Download size={16} /> PDF İndir </>
+                        )}
+                    </button>
+                </div>
             </div>
 
             {/* Özet */}
