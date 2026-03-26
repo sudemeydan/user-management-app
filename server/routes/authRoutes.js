@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
+const { authLimiter } = require('../middlewares/rateLimiter');
 
-router.post('/register', authController.registerUser);
-router.post('/login', authController.login);
+router.post('/register', authLimiter, authController.registerUser);
+router.post('/login', authLimiter, authController.login);
 router.post('/refresh', authController.refresh);
-router.post('/forgot-password', authController.forgotPassword);
+router.post('/forgot-password', authLimiter, authController.forgotPassword);
 router.post('/reset-password/:token', authController.resetPassword);
 
 // Email Verification (Using GET typically, but keeping original POST from existing router logic)

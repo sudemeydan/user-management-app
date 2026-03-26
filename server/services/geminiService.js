@@ -69,6 +69,14 @@ const parseCVText = async (rawText) => {
 
     const result = await withRetry(() => model.generateContent(prompt));
     const response = await result.response;
+    
+    // TOKEN KULLANIM LOGU
+    const usage = response.usageMetadata;
+    if (usage) {
+        console.log(`📊 TOKEN KULLANIMI (CV Ayrıştırma)`);
+        console.log(`   - Prompt: ${usage.promptTokenCount} | Cevap: ${usage.candidatesTokenCount} | Toplam: ${usage.totalTokenCount}`);
+    }
+
     return cleanAndParseJSON(response.text());
   } catch (error) {
     console.error("Gemini Parse Hatası:", error);
@@ -100,6 +108,14 @@ const analyzeATSCompatibility = async (rawText) => {
 
     const result = await withRetry(() => model.generateContent(prompt));
     const response = await result.response;
+
+    // TOKEN KULLANIM LOGU
+    const usage = response.usageMetadata;
+    if (usage) {
+        console.log(`📊 TOKEN KULLANIMI (ATS Analizi)`);
+        console.log(`   - Prompt: ${usage.promptTokenCount} | Cevap: ${usage.candidatesTokenCount} | Toplam: ${usage.totalTokenCount}`);
+    }
+
     return cleanAndParseJSON(response.text());
   } catch (error) {
     console.error("Gemini ATS Analiz Hatası:", error);
@@ -132,6 +148,14 @@ const extractJobDetails = async (jobText) => {
 
     const result = await withRetry(() => model.generateContent(prompt));
     const response = await result.response;
+    
+    // TOKEN KULLANIM LOGU
+    const usage = response.usageMetadata;
+    if (usage) {
+        console.log(`📊 TOKEN KULLANIMI (İş İlanı Analizi)`);
+        console.log(`   - Prompt: ${usage.promptTokenCount} | Cevap: ${usage.candidatesTokenCount} | Toplam: ${usage.totalTokenCount}`);
+    }
+
     return cleanAndParseJSON(response.text());
   } catch (error) {
     console.error("Gemini Job Extraction Hatası:", error);
@@ -195,6 +219,14 @@ const generateTailoringProposals = async (cv, jobDescription) => {
 
     const result = await withRetry(() => model.generateContent(prompt));
     const response = await result.response;
+    
+    // TOKEN KULLANIM LOGU
+    const usage = response.usageMetadata;
+    if (usage) {
+        console.log(`📊 TOKEN KULLANIMI (CV Uyarlama / Tailoring)`);
+        console.log(`   - Prompt: ${usage.promptTokenCount} | Cevap: ${usage.candidatesTokenCount} | Toplam: ${usage.totalTokenCount}`);
+    }
+
     const parsed = cleanAndParseJSON(response.text());
 
     // Güvenlik: entryId'leri integer'a çevir ve null olanları çıkar

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axiosInstance from '../../axiosInstance';
 import CVDetailAccordion from '../shared/CVDetailAccordion';
 import {
@@ -12,6 +12,17 @@ const MyCVsTab = ({ user, myCvs, fetchMyCVs }) => {
     const [atsLoading, setAtsLoading] = useState(null); // CV ID'si loading ise
     const [expandedCvId, setExpandedCvId] = useState(null);
     const cvFileInputRef = React.useRef(null);
+
+    useEffect(() => {
+        const hasProcessingCVs = myCvs.some(cv => cv.status === 'PENDING' || cv.status === 'PROCESSING');
+        if (!hasProcessingCVs) return;
+
+        const intervalId = setInterval(() => {
+            if (fetchMyCVs) fetchMyCVs();
+        }, 5000);
+
+        return () => clearInterval(intervalId);
+    }, [myCvs, fetchMyCVs]);
 
     const handleCVUploadChange = async (e) => {
         const file = e.target.files[0];

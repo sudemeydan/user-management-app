@@ -3,6 +3,7 @@ const router = express.Router();
 const cvController = require('../controllers/cvController');
 const verifyToken = require('../middlewares/authMiddleware');
 const multer = require('multer');
+const { uploadLimiter } = require('../middlewares/rateLimiter');
 
 const upload = multer({
   dest: 'uploads/',
@@ -27,7 +28,7 @@ router.get('/cvs/:cvId/download-pdf', verifyToken, cvController.downloadCvPdf);
 router.get('/cv-download/:fileId', verifyToken, cvController.downloadCV);
 
 // POST /api/users/upload-cv
-router.post('/upload-cv', verifyToken, upload.single('cvFile'), cvController.uploadCV);
+router.post('/upload-cv', verifyToken, uploadLimiter, upload.single('cvFile'), cvController.uploadCV);
 
 // GET /api/cvs/:cvId/pdf (ATS/Classic formats download buffer)
 router.get('/:cvId/pdf', cvController.downloadCvPdf);

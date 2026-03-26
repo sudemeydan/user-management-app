@@ -85,15 +85,19 @@ const startResultConsumer = async () => {
                     // SPAM/DUPLICATE CHECK
                     console.log(`[x] Spam kontrolü yapılıyor (CV ID: ${cvId})...`);
                     const currentCV = await prisma.cV.findUnique({ where: { id: parseInt(cvId) }, select: { userId: true } });
-                    
+
                     if (currentCV) {
-                        const otherUsersCVs = await prisma.cV.findMany({
-                            where: {
-                                userId: { not: currentCV.userId },
-                                rawText: { not: null }
-                            },
-                            select: { id: true, userId: true, rawText: true }
-                        });
+                        const textLength = rawText.length;
+                        const minLength = Math.floor(textLength * 0.90);
+                        const maxLength = Math.ceil(textLength * 1.10);  
+
+                        const otherUsersCVs = await prisma.$queryRaw`
+                            SELECT id, "userId", "rawText"
+                            FROM "CV"
+                            WHERE "userId" != ${currentCV.userId}
+                              AND "rawText" IS NOT NULL
+                              AND LENGTH("rawText") BETWEEN ${minLength} AND ${maxLength}
+                        `;
 
                         let isSpam = false;
                         for (const existingCV of otherUsersCVs) {
@@ -110,74 +114,74 @@ const startResultConsumer = async () => {
                                 where: { id: parseInt(cvId) },
                                 data: {
                                     status: 'FAILED',
-                                    atsFormatFeedback: "SPAM/KOPYA CV: Bu CV sistemde başka bir kullanıcı tarafından zaten kullanılıyor. Spam engelleme sistemi nedeniyle işlem iptal edildi."
+                                    atsFormatFeedback: 'Güvenlik Politikası: Sistemimizde tamamen aynı kariyere sahip bir CV zaten mevcut olduğundan mükerrer yükleme işleminiz durdurulmuştur.'
                                 }
                             });
                             channel.ack(msg);
-                            return; // Gemini'ye gönderme
+                            return;
                         }
-                    }
 
-                    // 1. Gemini'ye ham metni gönder ve JSON al
-                    console.log(`[x] Gemini'ye gönderiliyor (CV ID: ${cvId})...`);
-                    const parsedData = await parseCVText(rawText);
+                        // 1. Gemini'ye ham metni gönder ve JSON al
+                        console.log(`[x] Gemini'ye gönderiliyor (CV ID: ${cvId})...`);
+                        const parsedData = await parseCVText(rawText);
 
-                    // 2. Gemini'den gelen verileri DB'ye kaydet
-                    // YENİ: ATS format analizi yap
-                    console.log(`[x] ATS Analizi yapılıyor (CV ID: ${cvId})...`);
-                    const atsAnalysis = await analyzeATSCompatibility(rawText);
+                        // 2. Gemini'den gelen verileri DB'ye kaydet
+                        // YENİ: ATS format analizi yap
+                        console.log(`[x] ATS Analizi yapılıyor (CV ID: ${cvId})...`);
+                        const atsAnalysis = await analyzeATSCompatibility(rawText);
 
-                    await prisma.cV.update({
-                        where: { id: parseInt(cvId) },
-                        data: {
-                            summary: parsedData.summary,
-                            atsFormatScore: atsAnalysis.score,
-                            atsFormatFeedback: atsAnalysis.feedback,
-                            status: 'COMPLETED'
-                        }
-                    });
-
-                    // 3. Entries (Yetenekler, Eğitimler vb.) tablosuna kayıt at
-                    if (parsedData.entries && parsedData.entries.length > 0) {
-                        const entriesToCreate = parsedData.entries.map(entry => ({
-                            cvId: parseInt(cvId),
-                            category: entry.category,
-                            title: entry.title || "Belirtilmemiş",
-                            subtitle: entry.subtitle,
-                            startDate: entry.startDate,
-                            endDate: entry.endDate,
-                            description: entry.description,
-                            metadata: entry.metadata ? entry.metadata : null
-                        }));
-
-                        await prisma.cVEntry.createMany({
-                            data: entriesToCreate
+                        await prisma.cV.update({
+                            where: { id: parseInt(cvId) },
+                            data: {
+                                summary: parsedData.summary,
+                                atsFormatScore: atsAnalysis.score,
+                                atsFormatFeedback: atsAnalysis.feedback,
+                                status: 'COMPLETED'
+                            }
                         });
+
+                        // 3. Entries (Yetenekler, Eğitimler vb.) tablosuna kayıt at
+                        if (parsedData.entries && parsedData.entries.length > 0) {
+                            const entriesToCreate = parsedData.entries.map(entry => ({
+                                cvId: parseInt(cvId),
+                                category: entry.category,
+                                title: entry.title || "Belirtilmemiş",
+                                subtitle: entry.subtitle,
+                                startDate: entry.startDate,
+                                endDate: entry.endDate,
+                                description: entry.description,
+                                metadata: entry.metadata ? entry.metadata : null
+                            }));
+
+                            await prisma.cVEntry.createMany({
+                                data: entriesToCreate
+                            });
+                        }
+                        console.log(`✅ CV (ID: ${cvId}) başarıyla işlendi ve veritabanına kaydedildi!`);
                     }
-                    console.log(`✅ CV (ID: ${cvId}) başarıyla işlendi ve veritabanına kaydedildi!`);
                 }
 
                 channel.ack(msg); // Mesaj işlendi, kuyruktan sil
             } catch (error) {
                 console.error("❌ Consumer işleme hatası:", error);
 
-                // Hata durumunda veritabanındaki CV durumunu FAILED yap
-                try {
-                    const resultData = JSON.parse(msg.content.toString());
-                    if (resultData && resultData.cvId) {
-                        await prisma.cV.update({
-                            where: { id: parseInt(resultData.cvId) },
-                            data: { status: 'FAILED' }
-                        });
-                        console.log(`[!] CV ID: ${resultData.cvId} durumu FAILED olarak güncellendi.`);
+                    // Hata durumunda veritabanındaki CV durumunu FAILED yap
+                    try {
+                        const resultData = JSON.parse(msg.content.toString());
+                        if (resultData && resultData.cvId) {
+                            await prisma.cV.update({
+                                where: { id: parseInt(resultData.cvId) },
+                                data: { status: 'FAILED' }
+                            });
+                            console.log(`[!] CV ID: ${resultData.cvId} durumu FAILED olarak güncellendi.`);
+                        }
+                    } catch (dbError) {
+                        console.error("❌ Durum güncellenirken ikincil hata oluştu:", dbError);
                     }
-                } catch (dbError) {
-                    console.error("❌ Durum güncellenirken ikincil hata oluştu:", dbError);
-                }
 
-                channel.ack(msg); // Hata olsa bile diğer mesajları tıkamamak için onayla
+                    channel.ack(msg); // Hata olsa bile diğer mesajları tıkamamak için onayla
+                }
             }
-        }
     });
 };
 
