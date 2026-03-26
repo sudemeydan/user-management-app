@@ -1,6 +1,6 @@
 const tailoringService = require('../services/tailoringService');
 
-const createJobPosting = async (req, res) => {
+const createJobPosting = async (req, res, next) => {
   try {
     const { jobText, url } = req.body;
     if (!jobText && !url) {
@@ -9,21 +9,21 @@ const createJobPosting = async (req, res) => {
     const jobPosting = await tailoringService.createJobPosting(url, jobText, req.body.role);
     res.json({ success: true, message: "İş ilanı başarıyla kaydedildi ve analiz edildi!", data: jobPosting });
   } catch (error) {
-    res.status(error.statusCode || 500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-const getTailoringProposals = async (req, res) => {
+const getTailoringProposals = async (req, res, next) => {
   try {
     const { cvId, jobPostingId } = req.params;
     const proposals = await tailoringService.getTailoringProposals(req.user.id, cvId, jobPostingId);
     res.json({ success: true, data: proposals });
   } catch (error) {
-    res.status(error.statusCode || 500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-const createTailoredCV = async (req, res) => {
+const createTailoredCV = async (req, res, next) => {
   try {
     const { originalCvId, jobPostingId, improvedSummary, approvedProposals, atsScore } = req.body;
     const userId = req.user.id;
@@ -42,18 +42,18 @@ const createTailoredCV = async (req, res) => {
 
     res.json({ success: true, message: "Uyarlanmış CV başarıyla oluşturuldu!", data: tailoredCV });
   } catch (error) {
-    res.status(error.statusCode || 500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-const optimizeTailoredCV = async (req, res) => {
+const optimizeTailoredCV = async (req, res, next) => {
   try {
     const { tailoredCvId } = req.params;
     const userId = req.user.id;
     const result = await tailoringService.optimizeTailoredCV(userId, tailoredCvId);
     res.json({ success: true, message: "Uyarlanmış CV PDF'i başarıyla oluşturuldu!", data: result });
   } catch (error) {
-    res.status(error.statusCode || 500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 

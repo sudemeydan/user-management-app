@@ -111,6 +111,16 @@ const unblockUser = async (blockerId, blockedId) => {
   });
 };
 
+const findUserWithConnections = async (targetUserId, requesterId) => {
+  return await prisma.user.findUnique({
+    where: { id: parseInt(targetUserId) },
+    include: {
+      sentConnections: { where: { receiverId: parseInt(requesterId), status: 'ACCEPTED' } },
+      receivedConnections: { where: { senderId: parseInt(requesterId), status: 'ACCEPTED' } }
+    }
+  });
+};
+
 module.exports = {
   findAllUsers,
   findUserById,
@@ -122,5 +132,6 @@ module.exports = {
   findLatestUpgradeRequest,
   updateUpgradeRequestStatus,
   blockUser,
-  unblockUser
+  unblockUser,
+  findUserWithConnections
 };

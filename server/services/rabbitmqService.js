@@ -178,8 +178,7 @@ const startResultConsumer = async () => {
                     } catch (dbError) {
                         console.error("❌ Durum güncellenirken ikincil hata oluştu:", dbError);
                     }
-
-                    channel.ack(msg); // Hata olsa bile diğer mesajları tıkamamak için onayla
+                    channel.nack(msg, false, false); // Mesaj tamamlanamadı (başarısız olarak reddedildi)
                 }
             }
     });

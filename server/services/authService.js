@@ -13,22 +13,22 @@ const registerUser = async (userData) => {
   }
 
   if (password !== confirmPassword) {
-    throw new Error("Girdiğiniz şifreler eşleşmiyor.");
+    throw new AppError("Girdiğiniz şifreler eşleşmiyor.", 400);
   }
 
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/;
   if (!passwordRegex.test(password)) {
-    throw new Error("Şifre en az 8 karakter olmalı; en az bir büyük harf, bir küçük harf ve bir rakam içermelidir.");
+    throw new AppError("Şifre en az 8 karakter olmalı; en az bir büyük harf, bir küçük harf ve bir rakam içermelidir.", 400);
   }
 
   const validCities = ["İstanbul", "Ankara", "İzmir", "Bursa", "Antalya"];
   if (!validCities.includes(address)) {
-    throw new Error("Lütfen geçerli bir şehir seçiniz.");
+    throw new AppError("Lütfen geçerli bir şehir seçiniz.", 400);
   }
 
   const existingUser = await userRepository.findUserByEmail(email);
   if (existingUser) {
-    throw new Error("Bu e-posta adresi zaten kullanımda.");
+    throw new AppError("Bu e-posta adresi zaten kullanımda.", 400);
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -59,7 +59,7 @@ const verifyEmail = async (token) => {
   });
 
   if (!user) {
-    throw new Error("Geçersiz veya süresi dolmuş onay kodu.");
+    throw new AppError("Geçersiz veya süresi dolmuş onay kodu.", 400);
   }
 
   await prisma.user.update({
@@ -95,7 +95,7 @@ const loginUser = async (email, password) => {
 const forgotPassword = async (email) => {
   const user = await userRepository.findUserByEmail(email);
   if (!user) {
-    throw new Error("Bu e-posta adresiyle kayıtlı bir kullanıcı bulunamadı.");
+    throw new AppError("Bu e-posta adresiyle kayıtlı bir kullanıcı bulunamadı.", 400);
   }
 
   const resetToken = crypto.randomBytes(32).toString('hex');
@@ -122,7 +122,7 @@ const resetPassword = async (token, newPassword) => {
   });
 
   if (!user) {
-    throw new Error("Geçersiz veya süresi dolmuş şifre sıfırlama bağlantısı.");
+    throw new AppError("Geçersiz veya süresi dolmuş şifre sıfırlama bağlantısı.", 400);
   }
 
   const hashedPassword = await bcrypt.hash(newPassword, 10);

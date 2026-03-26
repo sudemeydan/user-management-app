@@ -1,5 +1,6 @@
 const { google } = require('googleapis');
 const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 
 const CLIENT_ID = process.env.GOOGLE_DRIVE_CLIENT_ID;
@@ -19,8 +20,23 @@ oauth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 // Yeni token alındığında (refresh sonrası) otomatik güncelleme
 oauth2Client.on('tokens', (tokens) => {
   if (tokens.refresh_token) {
-    console.log("🔄 Yeni Refresh Token Alındı!");
-    // Opsiyonel: .env dosyasını veya DB'yi güncelleyebilirsin
+    console.log("🔄 Yeni Refresh Token Alındı! .env dosyasına kalıcı olarak kaydediliyor...");
+    try {
+      const envPath = path.resolve(__dirname, '../.env');
+      if (fs.existsSync(envPath)) {
+        let envData = fs.readFileSync(envPath, 'utf8');
+        const regex = /^GOOGLE_DRIVE_REFRESH_TOKEN=.*$/m;
+        if (regex.test(envData)) {
+          envData = envData.replace(regex, `GOOGLE_DRIVE_REFRESH_TOKEN=${tokens.refresh_token}`);
+        } else {
+          envData += `\nGOOGLE_DRIVE_REFRESH_TOKEN=${tokens.refresh_token}`;
+        }
+        fs.writeFileSync(envPath, envData);
+        console.log("✅ Yeni Refresh Token başarıyla .env dosyasına kaydedildi.");
+      }
+    } catch (err) {
+      console.error("❌ Refresh Token .env dosyasına kaydedilirken hata:", err);
+    }
   }
   console.log("🔑 Access Token Yenilendi.");
 });

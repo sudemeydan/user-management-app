@@ -1,3 +1,4 @@
+const AppError = require("../utils/AppError");
 // server/services/geminiService.js
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
@@ -26,7 +27,7 @@ const cleanAndParseJSON = (jsonString) => {
     return JSON.parse(cleaned);
   } catch (error) {
     console.error("JSON Parse Hatası. Ham Metin:", jsonString);
-    throw new Error("Gemini yanıtı geçerli bir JSON formatında değil.");
+    throw new AppError("Gemini yanıtı geçerli bir JSON formatında değil.", 400);
   }
 };
 
@@ -80,7 +81,7 @@ const parseCVText = async (rawText) => {
     return cleanAndParseJSON(response.text());
   } catch (error) {
     console.error("Gemini Parse Hatası:", error);
-    throw new Error("CV ayrıştırılamadı.");
+    throw new AppError("CV ayrıştırılamadı.", 400);
   }
 };
 
@@ -159,7 +160,7 @@ const extractJobDetails = async (jobText) => {
     return cleanAndParseJSON(response.text());
   } catch (error) {
     console.error("Gemini Job Extraction Hatası:", error);
-    throw new Error("İş ilanı analiz edilemedi.");
+    throw new AppError("İş ilanı analiz edilemedi.", 400);
   }
 };
 
@@ -240,7 +241,7 @@ const generateTailoringProposals = async (cv, jobDescription) => {
     return parsed;
   } catch (error) {
     console.error("Gemini Tailoring Proposal Hatası:", error);
-    throw new Error("Uyarlama önerileri oluşturulamadı.");
+    throw new AppError("Uyarlama önerileri oluşturulamadı.", 400);
   }
 };
 

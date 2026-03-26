@@ -1,4 +1,5 @@
 const cvRepository = require('../repositories/cvRepository');
+const userRepository = require('../repositories/userRepository');
 const driveClient = require('../utils/driveClient');
 const AppError = require('../utils/AppError');
 const { generateATSPDF } = require('./pdfService'); // For downloadCvPdf logic
@@ -23,17 +24,9 @@ const uploadCV = async (userId, file) => {
 const getUserCVs = async (targetUserId, requesterId, requesterRole) => {
   const isOwner = parseInt(targetUserId) === parseInt(requesterId);
   const isAdmin = requesterRole === 'SUPERADMIN';
-  
-  // Need prisma check for connections and privacy, ideally through userRepo, 
-  // but using prisma import temporarily until userRepo is cleaned up further
-  const prisma = require('../utils/prisma');
-  const targetUser = await prisma.user.findUnique({
-    where: { id: parseInt(targetUserId) },
-    include: {
-      sentConnections: { where: { receiverId: parseInt(requesterId), status: 'ACCEPTED' } },
-      receivedConnections: { where: { senderId: parseInt(requesterId), status: 'ACCEPTED' } }
-    }
-  });
+
+
+  const targetUser = await userRepository.findUserWithConnections(targetUserId, requesterId);
 
   if (!targetUser) throw new Error("Kullanıcı bulunamadı.");
 
@@ -103,13 +96,13 @@ const getCVDataForRender = async (cvId) => {
   const cv = await cvRepository.findCVById(cvId, true);
 
   if (!cv) throw new Error("CV bulunamadı");
-  
+
   return {
     personalInfo: {
       firstName: cv.user.name.split(' ')[0],
       lastName: cv.user.name.split(' ').slice(1).join(' '),
       email: cv.user.email,
-      phone: '', 
+      phone: '',
       linkedin: '',
       github: '',
       portfolio: ''
@@ -120,20 +113,20 @@ const getCVDataForRender = async (cvId) => {
 };
 
 const generatePdfBufferForDownload = async (cvId, template) => {
-    const cv = await cvRepository.findCVById(cvId, true);
+  const cv = await cvRepository.findCVById(cvId, true);
 
-    if (!cv) {
-        throw new AppError("CV bulunamadı.", 404);
-    }
+  if (!cv) {
+    throw new AppError("CV bulunamadı.", 404);
+  }
 
-    const cvDataDetails = {
-        summary: cv.summary,
-        userName: cv.user.name,
-        userEmail: cv.user.email
-    };
+  const cvDataDetails = {
+    summary: cv.summary,
+    userName: cv.user.name,
+    userEmail: cv.user.email
+  };
 
-    const pdfBuffer = await generateATSPDF(cvDataDetails, cv.entries, template);
-    return pdfBuffer;
+  const pdfBuffer = await generateATSPDF(cvDataDetails, cv.entries, template);
+  return pdfBuffer;
 };
 
 module.exports = {

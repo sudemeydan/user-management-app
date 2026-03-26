@@ -98,6 +98,12 @@ const upsertAtsFormattedCV = async (cvId, fileId) => {
     });
 };
 
+const countUserCVs = async (userId) => {
+  return await prisma.cV.count({
+    where: { userId: parseInt(userId) }
+  });
+};
+
 module.exports = {
   createCV,
   findCVById,
@@ -107,5 +113,6 @@ module.exports = {
   activateCV,
   deleteCV,
   getCVATSStatus,
-  upsertAtsFormattedCV
+  upsertAtsFormattedCV,
+  countUserCVs
 };

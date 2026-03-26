@@ -1,3 +1,4 @@
+const AppError = require("../utils/AppError");
 const postRepository = require('../repositories/postRepository');
 const prisma = require('../utils/prisma'); // still needed for user check
 const driveClient = require('../utils/driveClient');
@@ -34,10 +35,10 @@ const getAllPosts = async (currentUserId) => {
 const deletePost = async (postId, userId, userRole) => {
   const post = await postRepository.findPostById(postId);
 
-  if (!post) throw new Error("Gönderi bulunamadı!");
+  if (!post) throw new AppError("Gönderi bulunamadı!", 400);
 
   if (post.authorId !== userId && userRole !== 'SUPERADMIN') {
-    throw new Error("Bu gönderiyi silme yetkiniz yok!");
+    throw new AppError("Bu gönderiyi silme yetkiniz yok!", 400);
   }
 
   if (post.images.length > 0) {

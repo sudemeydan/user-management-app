@@ -3,21 +3,19 @@ const { sendToQueue } = require('../services/rabbitmqService');
 const driveClient = require('../utils/driveClient');
 const fs = require('fs');
 
-const uploadCV = async (req, res) => {
+const uploadCV = async (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: "Lütfen geçerli bir PDF veya DOCX dosyası seçin." });
     }
 
     // YENİ: Kullanıcı Limiti Kontrolü
-    const prisma = require('../utils/prisma'); // Limit kontrolü için veritabanı erişimi
+    const cvRepository = require('../repositories/cvRepository'); // Limit kontrolü için veritabanı erişimi
     const userRole = req.user.role; // req.user.role auth middleware'den geliyor
     const userId = req.user.id;
     
     // Kullanıcının mevcut CV sayısını kontrol et
-    const cvCount = await prisma.cV.count({
-      where: { userId: userId }
-    });
+    const cvCount = await cvRepository.countUserCVs(userId);
 
     if (userRole === 'FREE_USER' && cvCount >= 1) {
       return res.status(403).json({ success: false, message: "Ücretsiz kullanıcılar en fazla 1 adet CV yükleyip analiz ettirebilir. Lütfen Pro sürüme geçiş yapın." });
@@ -51,12 +49,11 @@ const uploadCV = async (req, res) => {
 
     res.json({ success: true, message: "CV başarıyla yüklendi ve işleniyor!", data: savedCV });
   } catch (error) {
-    console.error("CV Yükleme Hatası:", error);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-const getUserCVs = async (req, res) => {
+const getUserCVs = async (req, res, next) => {
   try {
     const targetUserId = req.params.id;
     const requesterId = req.user.id;
@@ -65,33 +62,33 @@ const getUserCVs = async (req, res) => {
     const cvs = await cvService.getUserCVs(targetUserId, requesterId, requesterRole);
     res.json({ success: true, data: cvs });
   } catch (error) {
-    res.status(error.statusCode || 500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-const activateCV = async (req, res) => {
+const activateCV = async (req, res, next) => {
   try {
     const cvId = req.params.cvId;
     const userId = req.user.id;
     await cvService.activateCV(userId, cvId);
     res.json({ success: true, message: "CV başarıyla aktif edildi." });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-const deleteCV = async (req, res) => {
+const deleteCV = async (req, res, next) => {
   try {
     const cvId = req.params.cvId;
     const userId = req.user.id;
     await cvService.deleteCV(userId, cvId);
     res.json({ success: true, message: "CV başarıyla silindi." });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-const getAllActiveCVs = async (req, res) => {
+const getAllActiveCVs = async (req, res, next) => {
   try {
     const requesterId = req.user.id;
     const requesterRole = req.user.role;
@@ -99,22 +96,20 @@ const getAllActiveCVs = async (req, res) => {
     const cvs = await cvService.getAllActiveCVs(requesterId, requesterRole);
     res.json({ success: true, data: cvs });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-const downloadCV = async (req, res) => {
+const downloadCV = async (req, res, next) => {
   try {
     const { fileId } = req.params;
     await driveClient.streamFile(fileId, res);
   } catch (error) {
-    if (!res.headersSent) {
-      res.status(500).json({ success: false, message: "Dosya indirilemedi." });
-    }
+    next(error);
   }
 };
 
-const downloadCvPdf = async (req, res) => {
+const downloadCvPdf = async (req, res, next) => {
   try {
     const { cvId } = req.params;
     const { template = 'classic' } = req.query;
@@ -131,8 +126,7 @@ const downloadCvPdf = async (req, res) => {
     res.end(pdfBuffer);
     
   } catch (error) {
-    console.error("Handlebars PDF Error:", error);
-    res.status(error.statusCode || 500).json({ success: false, message: error.message || "PDF oluşturulurken hata meydana geldi." });
+    next(error);
   }
 };
 

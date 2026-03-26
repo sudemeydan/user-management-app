@@ -1,26 +1,26 @@
 const authService = require('../services/authService');
 const jwt = require('jsonwebtoken');
 
-const registerUser = async (req, res) => {
+const registerUser = async (req, res, next) => {
   try {
     const newUser = await authService.registerUser(req.body);
     res.status(201).json({ success: true, message: "Kayıt Başarılı! Lütfen e-postanızı onaylayın.", data: newUser });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-const verifyEmail = async (req, res) => {
+const verifyEmail = async (req, res, next) => {
   try {
     const { token } = req.params;
     await authService.verifyEmail(token);
     res.json({ success: true, message: "E-posta adresiniz başarıyla onaylandı! Artık giriş yapabilirsiniz." });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-const login = async (req, res) => {
+const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const user = await authService.loginUser(email, password);
@@ -45,32 +45,32 @@ const login = async (req, res) => {
       refreshToken: refreshToken
     });
   } catch (error) {
-    res.status(error.statusCode || 401).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-const forgotPassword = async (req, res) => {
+const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
     await authService.forgotPassword(email);
     res.json({ success: true, message: "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi." });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-const resetPassword = async (req, res) => {
+const resetPassword = async (req, res, next) => {
   try {
     const { token } = req.params;
     const { newPassword } = req.body;
     await authService.resetPassword(token, newPassword);
     res.json({ success: true, message: "Şifreniz başarıyla güncellendi. Artık yeni şifrenizle giriş yapabilirsiniz." });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-const refresh = async (req, res) => {
+const refresh = async (req, res, next) => {
   const { refreshToken } = req.body;
   if (!refreshToken) {
     return res.status(401).json({ success: false, message: "Refresh Token bulunamadı!" });
@@ -84,7 +84,7 @@ const refresh = async (req, res) => {
     );
     res.json({ success: true, accessToken: newAccessToken });
   } catch (error) {
-    res.status(403).json({ success: false, message: "Geçersiz Refresh Token, tekrar giriş yapın." });
+    next(error);
   }
 };
 

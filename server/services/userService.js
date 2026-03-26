@@ -34,25 +34,25 @@ const registerUser = async (userData) => {
 
   // 3. Şifre Eşleşme Kontrolü
   if (password !== confirmPassword) {
-    throw new Error("Girdiğiniz şifreler eşleşmiyor.");
+    throw new AppError("Girdiğiniz şifreler eşleşmiyor.", 400);
   }
 
   // 4. Güçlü Şifre Kontrolü (En az 8 karakter, 1 büyük, 1 küçük, 1 rakam)
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/;
   if (!passwordRegex.test(password)) {
-    throw new Error("Şifre en az 8 karakter olmalı; en az bir büyük harf, bir küçük harf ve bir rakam içermelidir.");
+    throw new AppError("Şifre en az 8 karakter olmalı; en az bir büyük harf, bir küçük harf ve bir rakam içermelidir.", 400);
   }
 
   // 5. Şehir (Adres) Kontrolü
   const validCities = ["İstanbul", "Ankara", "İzmir", "Bursa", "Antalya"];
   if (!validCities.includes(address)) {
-    throw new Error("Lütfen geçerli bir şehir seçiniz.");
+    throw new AppError("Lütfen geçerli bir şehir seçiniz.", 400);
   }
 
   // 6. Kullanıcı Zaten Var mı Kontrolü 
   const existingUser = await userRepository.findUserByEmail(email);
   if (existingUser) {
-    throw new Error("Bu e-posta adresi zaten kullanımda.");
+    throw new AppError("Bu e-posta adresi zaten kullanımda.", 400);
   }
 
   // 7. Şifreyi Hashleme ve Token Oluşturma 
@@ -86,7 +86,7 @@ const verifyEmail = async (token) => {
   });
 
   if (!user) {
-    throw new Error("Geçersiz veya süresi dolmuş onay kodu.");
+    throw new AppError("Geçersiz veya süresi dolmuş onay kodu.", 400);
   }
 
   await prisma.user.update({
@@ -122,7 +122,7 @@ const loginUser = async (email, password) => {
 const forgotPassword = async (email) => {
   const user = await userRepository.findUserByEmail(email);
   if (!user) {
-    throw new Error("Bu e-posta adresiyle kayıtlı bir kullanıcı bulunamadı.");
+    throw new AppError("Bu e-posta adresiyle kayıtlı bir kullanıcı bulunamadı.", 400);
   }
 
   const resetToken = crypto.randomBytes(32).toString('hex');
@@ -149,7 +149,7 @@ const resetPassword = async (token, newPassword) => {
   });
 
   if (!user) {
-    throw new Error("Geçersiz veya süresi dolmuş şifre sıfırlama bağlantısı.");
+    throw new AppError("Geçersiz veya süresi dolmuş şifre sıfırlama bağlantısı.", 400);
   }
 
   const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -182,7 +182,7 @@ const requestUpgrade = async (userId) => {
 
   if (!userRepository.createUpgradeRequest) {
     console.error("!!! HATA: userRepository.createUpgradeRequest fonksiyonu BULUNAMADI!");
-    throw new Error("Sunucu hatası: Repository fonksiyonu eksik.");
+    throw new AppError("Sunucu hatası: Repository fonksiyonu eksik.", 400);
   }
 
   const lastRequest = await userRepository.findLatestUpgradeRequest(userId);
@@ -190,7 +190,7 @@ const requestUpgrade = async (userId) => {
 
   if (lastRequest && lastRequest.status === 'PENDING') {
     console.log("3. Zaten bekleyen istek var, iptal ediliyor.");
-    throw new Error("Zaten incelenmeyi bekleyen bir talebiniz var.");
+    throw new AppError("Zaten incelenmeyi bekleyen bir talebiniz var.", 400);
   }
 
   console.log("4. Yeni kayıt oluşturuluyor...");
@@ -204,7 +204,7 @@ const handleUpgrade = async (userId, action) => {
   const lastRequest = await userRepository.findLatestUpgradeRequest(userId);
 
   if (!lastRequest || lastRequest.status !== 'PENDING') {
-    throw new Error("Bekleyen bir talep bulunamadı.");
+    throw new AppError("Bekleyen bir talep bulunamadı.", 400);
   }
 
   if (action === 'APPROVE') {
@@ -276,7 +276,7 @@ const getUserCVs = async (targetUserId, requesterId, requesterRole) => {
     }
   });
 
-  if (!targetUser) throw new Error("Kullanıcı bulunamadı.");
+  if (!targetUser) throw new AppError("Kullanıcı bulunamadı.", 400);
 
   const isOwner = parseInt(targetUserId) === parseInt(requesterId);
   const isAdmin = requesterRole === 'SUPERADMIN';
@@ -311,7 +311,7 @@ const activateCV = async (userId, cvId) => {
     where: { id: parseInt(cvId), userId: parseInt(userId) }
   });
 
-  if (!cv) throw new Error("CV bulunamadı veya yetkiniz yok.");
+  if (!cv) throw new AppError("CV bulunamadı veya yetkiniz yok.", 400);
 
   // Önce hepsi pasif, sonra seçilen aktif (Transaction ile)
   await prisma.$transaction([
@@ -333,7 +333,7 @@ const deleteCV = async (userId, cvId) => {
     where: { id: parseInt(cvId), userId: parseInt(userId) }
   });
 
-  if (!cv) throw new Error("CV bulunamadı veya yetkiniz yok.");
+  if (!cv) throw new AppError("CV bulunamadı veya yetkiniz yok.", 400);
 
   // Drive'dan sil
   try {
@@ -395,7 +395,7 @@ const getAllActiveCVs = async (requesterId, requesterRole) => {
 
 const blockUser = async (blockerId, blockedId) => {
   if (parseInt(blockerId) === parseInt(blockedId)) {
-    throw new Error("Kendinizi engelleyemezsiniz.");
+    throw new AppError("Kendinizi engelleyemezsiniz.", 400);
   }
   return await userRepository.blockUser(blockerId, blockedId);
 };
@@ -474,7 +474,7 @@ const getCVDataForRender = async (cvId) => {
     }
   });
 
-  if (!cv) throw new Error("CV bulunamadı");
+  if (!cv) throw new AppError("CV bulunamadı", 400);
 
   // Format data to match what the frontend expects
   return {
