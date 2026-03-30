@@ -1,5 +1,19 @@
-# 1. Altyapı
-FROM node:18-slim
+# --- BUILD STAGE ---
+FROM node:18-slim AS build-stage
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY prisma ./prisma/
+RUN npx prisma generate
+
+COPY . .
+RUN npm run build
+
+# --- PRODUCTION STAGE ---
+FROM node:18-slim AS production-stage
 
 # Puppeteer için gerekli sistem bağımlılıkları
 RUN apt-get update && apt-get install -y \
@@ -27,20 +41,12 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Paket dosyalarını kopyala
-COPY package*.json ./
-
-# Bağımlılıkları kur
-RUN npm install
-
-# Prisma şemasını kopyala ve Prisma Client'ı oluştur
-COPY prisma ./prisma/
-RUN npx prisma generate
-
-# Kodların geri kalanını kopyala
-COPY . .
+# Sadece gerekli dosyaları kopyala
+COPY --from=build-stage /app/dist ./dist
+COPY --from=build-stage /app/node_modules ./node_modules
+COPY --from=build-stage /app/package*.json ./
+COPY --from=build-stage /app/prisma ./prisma
 
 EXPOSE 3001
 
-# Geliştirme modu: nodemon + ts-node
-CMD ["npm", "run", "dev"]
+CMD ["node", "dist/index.js"]

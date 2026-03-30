@@ -3,7 +3,7 @@ version: '3.8'
 services:
   db:
     image: postgres:16-alpine
-    container_name: postgres-db
+    container_name: postgres-db-prod
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -11,36 +11,33 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata_prod:/var/lib/postgresql/data
     env_file:
       - ./.env
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
-    container_name: rabbitmq-broker
+    container_name: rabbitmq-broker-prod
     ports:
       - "5672:5672"   
       - "15672:15672" 
     volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+      - rabbitmq_data_prod:/var/lib/rabbitmq
 
   backend:
     build:
       context: ./server
-      dockerfile: Dockerfile
-    container_name: backend-api
+      dockerfile: Dockerfile.prod
+    container_name: backend-api-prod
     ports:
       - "3001:3001"
-    volumes:
-      - ./server:/app
-      - /app/node_modules
     environment:
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?schema=public
       - RABBITMQ_URL=${RABBITMQ_URL} 
     env_file:
       - ./server/.env
       - ./.env
-    command: sh -c "npx prisma generate && npx prisma db push && npm run dev"
+    command: sh -c "npx prisma db push && node dist/index.js"
     depends_on:
       - db
       - rabbitmq
@@ -48,16 +45,10 @@ services:
   frontend:
     build:
       context: ./client
-      dockerfile: Dockerfile
-    container_name: frontend-ui
+      dockerfile: Dockerfile.prod
+    container_name: frontend-ui-prod
     ports:
-      - "3000:3000"
-    environment:
-      - CHOKIDAR_USEPOLLING=true
-      - WATCHPACK_POLLING=true
-    volumes:
-      - ./client:/app
-      - /app/node_modules
+      - "80:80"
     depends_on:
       - backend
 
@@ -65,12 +56,12 @@ services:
     build:
       context: ./cv-parser
       dockerfile: Dockerfile
-    container_name: python-cv-worker
+    container_name: python-cv-worker-prod
     environment:
       - RABBITMQ_HOST=rabbitmq 
     depends_on:
       - rabbitmq
 
 volumes:
-  pgdata:
-  rabbitmq_data:
+  pgdata_prod:
+  rabbitmq_data_prod:

@@ -14,5 +14,5 @@ COPY . .
 # 5. React'in varsayılan portu
 EXPOSE 3000
 
-# 6. Başlatma komutu
+# 6. Başlatma komutu (Geliştirme Mode)
 CMD ["npm", "start"]
