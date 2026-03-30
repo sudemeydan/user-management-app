@@ -1,19 +1,25 @@
 import React, { useState } from 'react';
 import axiosInstance from '../../axiosInstance';
+import { CVData, TailoredCV, CVEntry } from '../../types/cv';
 import {
     BrainCircuit, UserCheck, Zap, Crown, Briefcase, FileSignature, ChevronDown, ChevronUp, Download, Loader2, XCircle
 } from 'lucide-react';
 
-const CVDetailAccordion = ({ cv, fetchMyCVs }) => {
-    const [openTailoredId, setOpenTailoredId] = useState(null);
-    const [loadingIds, setLoadingIds] = useState([]);
-    const [selectedTemplate, setSelectedTemplate] = useState('modern');
+interface CVDetailAccordionProps {
+    cv: CVData;
+    fetchMyCVs?: () => void;
+}
 
-    const toggleTailored = (id) => {
+const CVDetailAccordion: React.FC<CVDetailAccordionProps> = ({ cv, fetchMyCVs }) => {
+    const [openTailoredId, setOpenTailoredId] = useState<number | null>(null);
+    const [loadingIds, setLoadingIds] = useState<(string | number)[]>([]);
+    const [selectedTemplate, setSelectedTemplate] = useState<'modern' | 'classic'>('modern');
+
+    const toggleTailored = (id: number) => {
         setOpenTailoredId(openTailoredId === id ? null : id);
     };
 
-    const handleDownloadTailoredCV = async (fileId, fileName) => {
+    const handleDownloadTailoredCV = async (fileId: string, fileName: string) => {
         try {
             const res = await axiosInstance.get(`/users/cv-download/${fileId}`, { responseType: 'blob' });
             const blob = new Blob([res.data]);
@@ -38,13 +44,13 @@ const CVDetailAccordion = ({ cv, fetchMyCVs }) => {
         }
     };
 
-    const handleGenerateTailoredPDF = async (tailoredCvId) => {
+    const handleGenerateTailoredPDF = async (tailoredCvId: number) => {
         setLoadingIds(prev => [...prev, tailoredCvId]);
         try {
             const res = await axiosInstance.post(`/users/tailored-cvs/${tailoredCvId}/optimize`);
             alert(res.data.message);
             if (fetchMyCVs) fetchMyCVs();
-        } catch (error) {
+        } catch (error: any) {
             alert("Dosya hazırlama hatası: " + (error.response?.data?.message || error.message));
         } finally {
             setLoadingIds(prev => prev.filter(id => id !== tailoredCvId));
@@ -63,12 +69,12 @@ const CVDetailAccordion = ({ cv, fetchMyCVs }) => {
         return <div className="p-6 text-center text-gray-500 text-sm">Ayrıştırılmış detay bulunamadı veya işlenemedi.</div>;
     }
 
-    const skills = cv.entries.filter(e => e.category === 'SKILL');
-    const experiences = cv.entries.filter(e => e.category === 'EXPERIENCE');
-    const education = cv.entries.filter(e => e.category === 'EDUCATION');
+    const skills = cv.entries.filter((e: CVEntry) => e.category === 'SKILL');
+    const experiences = cv.entries.filter((e: CVEntry) => e.category === 'EXPERIENCE');
+    const education = cv.entries.filter((e: CVEntry) => e.category === 'EDUCATION');
 
     // ATS Skor renklendirmesi
-    const getScoreColor = (score) => {
+    const getScoreColor = (score: number) => {
         if (score >= 70) return { bg: 'bg-green-100', text: 'text-green-700', bar: 'bg-green-500', label: 'Uyumlu' };
         if (score >= 40) return { bg: 'bg-amber-100', text: 'text-amber-700', bar: 'bg-amber-500', label: 'İyileştirilebilir' };
         return { bg: 'bg-red-100', text: 'text-red-700', bar: 'bg-red-500', label: 'Format Değiştirmeli' };
@@ -108,7 +114,7 @@ const CVDetailAccordion = ({ cv, fetchMyCVs }) => {
                 <div className="flex items-center gap-2">
                     <select 
                         value={selectedTemplate}
-                        onChange={(e) => setSelectedTemplate(e.target.value)}
+                        onChange={(e) => setSelectedTemplate(e.target.value as 'modern' | 'classic')}
                         className="bg-gray-100 border border-gray-300 text-gray-700 text-xs font-semibold py-1.5 px-2 rounded-lg focus:ring-2 focus:ring-blue-300 focus:outline-none"
                     >
                         <option value="modern">Modern (İki Sütun)</option>
@@ -142,7 +148,7 @@ const CVDetailAccordion = ({ cv, fetchMyCVs }) => {
                     <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                         <h4 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2"><Zap size={16} className="text-amber-500" /> Yetenekler & Teknolojiler</h4>
                         <div className="flex flex-wrap gap-2">
-                            {skills.map((skill, idx) => (
+                            {skills.map((skill: CVEntry, idx: number) => (
                                 <span key={idx} className="bg-gray-100 text-gray-700 text-xs font-medium px-2.5 py-1 rounded-md border border-gray-200">
                                     {skill.title} {skill.subtitle && <span className="text-gray-400">({skill.subtitle})</span>}
                                 </span>
@@ -156,7 +162,7 @@ const CVDetailAccordion = ({ cv, fetchMyCVs }) => {
                     <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                         <h4 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2"><Crown size={16} className="text-blue-500" /> Eğitim Geçmişi</h4>
                         <div className="space-y-3">
-                            {education.map((edu, idx) => (
+                            {education.map((edu: CVEntry, idx: number) => (
                                 <div key={idx} className="border-l-2 border-blue-200 pl-3">
                                     <p className="font-semibold text-gray-800 text-sm">{edu.title}</p>
                                     <p className="text-indigo-600 text-xs font-medium">{edu.subtitle}</p>
@@ -174,7 +180,7 @@ const CVDetailAccordion = ({ cv, fetchMyCVs }) => {
                     <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm md:col-span-2">
                         <h4 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2"><Briefcase size={16} className="text-green-500" /> İş Deneyimleri</h4>
                         <div className="space-y-4">
-                            {experiences.map((exp, idx) => (
+                            {experiences.map((exp: CVEntry, idx: number) => (
                                 <div key={idx} className="relative pl-4 border-l-2 border-green-200">
                                     <div className="absolute w-2 h-2 bg-green-500 rounded-full -left-[5px] top-1.5"></div>
                                     <div className="flex justify-between items-start">
@@ -199,14 +205,14 @@ const CVDetailAccordion = ({ cv, fetchMyCVs }) => {
                         <h4 className="text-md font-bold text-gray-800 flex items-center gap-2 border-b border-gray-200 pb-2">
                             <FileSignature size={18} className="text-pink-500" /> Yapay Zeka ile Uyarlanmış Sürümler
                         </h4>
-                        {cv.tailoredCVs.map((tcv) => (
+                        {cv.tailoredCVs.map((tcv: TailoredCV) => (
                             <div key={tcv.id} className="bg-white rounded-xl border border-pink-200 overflow-hidden shadow-sm">
                                 <div
                                     className="p-4 bg-pink-50/50 flex justify-between items-center cursor-pointer hover:bg-pink-50 transition"
                                     onClick={() => toggleTailored(tcv.id)}
                                 >
                                     <div>
-                                        <p className="font-bold text-gray-800 text-sm">
+                                        <div className="font-bold text-gray-800 text-sm">
                                             {tcv.jobPosting?.title || 'Pozisyon Belirtilmemiş'}
                                             <span className="text-pink-600 ml-2 font-medium">({tcv.jobPosting?.company || 'Şirket Belirtilmemiş'})</span>
                                             {tcv.atsScore && (
@@ -214,12 +220,12 @@ const CVDetailAccordion = ({ cv, fetchMyCVs }) => {
                                                     ATS Skoru: {tcv.atsScore}/100
                                                 </span>
                                             )}
-                                        </p>
+                                        </div>
                                     </div>
                                     <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                                         {tcv.fileId ? (
                                             <button 
-                                                onClick={() => handleDownloadTailoredCV(tcv.fileId, `Tailored-${tcv.jobPosting?.title || 'CV'}.pdf`)}
+                                                onClick={() => handleDownloadTailoredCV(tcv.fileId!, `Tailored-${tcv.jobPosting?.title || 'CV'}.pdf`)}
                                                 className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition border border-indigo-100"
                                                 title="PDF İndir"
                                             >
@@ -257,7 +263,7 @@ const CVDetailAccordion = ({ cv, fetchMyCVs }) => {
                                             <div>
                                                 <h5 className="text-xs font-bold text-gray-700 mb-3">Değiştirilen / Eklenen Kayıtlar</h5>
                                                 <div className="space-y-3">
-                                                    {tcv.entries.map((entry, idx) => (
+                                                    {tcv.entries.map((entry: CVEntry, idx: number) => (
                                                         <div key={idx} className="bg-gray-50 p-3 rounded-lg border border-gray-100">
                                                             <div className="flex items-center gap-2 mb-2">
                                                                 <span className="bg-pink-100 text-pink-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
