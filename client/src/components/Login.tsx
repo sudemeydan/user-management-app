@@ -1,11 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, FormEvent, ChangeEvent } from 'react';
 import { Mail, Lock, User, MapPin, Calendar, ArrowRight, Loader2, AlertCircle, ChevronDown } from 'lucide-react';
 
-const Login = ({ onLogin, onRegister, onForgotPassword }) => {
-  const [isRegisterMode, setIsRegisterMode] = useState(false);
-  const [isForgotPasswordMode, setIsForgotPasswordMode] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+interface LoginProps {
+  onLogin: (email: string, password: string) => Promise<void> | void;
+  onRegister: (data: any) => Promise<void> | void;
+  onForgotPassword: (email: string) => Promise<boolean> | boolean;
+}
+
+const Login: React.FC<LoginProps> = ({ onLogin, onRegister, onForgotPassword }) => {
+  const [isRegisterMode, setIsRegisterMode] = useState<boolean>(false);
+  const [isForgotPasswordMode, setIsForgotPasswordMode] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
 
   const [formData, setFormData] = useState({
     email: '',
@@ -19,12 +25,12 @@ const Login = ({ onLogin, onRegister, onForgotPassword }) => {
 
   const validCities = ["İstanbul", "Ankara", "İzmir", "Bursa", "Antalya", "Eskişehir", "Kocaeli"];
 
-  const handleChange = (e) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     if (error) setError('');
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
@@ -74,7 +80,7 @@ const Login = ({ onLogin, onRegister, onForgotPassword }) => {
     }, 800);
   };
 
-  const handleForgotPassword = (e) => {
+  const handleForgotPassword = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     setIsForgotPasswordMode(true);
     setError('');
