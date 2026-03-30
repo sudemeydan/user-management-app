@@ -12,7 +12,7 @@ const createPostWithImages = async (authorId: number | string, content: string, 
       const result = await driveClient.uploadToDrive(file);
 
       fs.unlink(file.path, (err) => {
-        if (err) console.error("Geçici dosya silinemedi:", err);
+        if (err) console.error("GeÃ§ici dosya silinemedi:", err);
       });
 
       return {
@@ -35,10 +35,10 @@ const getAllPosts = async (currentUserId?: number | string) => {
 const deletePost = async (postId: number, userId: number | string, userRole?: string) => {
   const post: any = await postRepository.findPostById(postId);
 
-  if (!post) throw new AppError("Gönderi bulunamadı!", 400);
+  if (!post) throw new AppError("GÃ¶nderi bulunamadÄ±!", 400);
 
   if (post.authorId !== Number(userId) && userRole !== 'SUPERADMIN') {
-    throw new AppError("Bu gönderiyi silme yetkiniz yok!", 400);
+    throw new AppError("Bu gÃ¶nderiyi silme yetkiniz yok!", 400);
   }
 
   if (post.images.length > 0) {

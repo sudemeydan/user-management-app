@@ -20,7 +20,7 @@ oauth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 
 oauth2Client.on('tokens', (tokens) => {
   if (tokens.refresh_token) {
-    console.log("🔄 Yeni Refresh Token Alındı! .env dosyasına kalıcı olarak kaydediliyor...");
+    console.log("ğŸ”„ Yeni Refresh Token AlÄ±ndÄ±! .env dosyasÄ±na kalÄ±cÄ± olarak kaydediliyor...");
     try {
       const envPath = path.resolve(__dirname, '../.env');
       if (fs.existsSync(envPath)) {
@@ -32,13 +32,13 @@ oauth2Client.on('tokens', (tokens) => {
           envData += `\nGOOGLE_DRIVE_REFRESH_TOKEN=${tokens.refresh_token}`;
         }
         fs.writeFileSync(envPath, envData);
-        console.log("✅ Yeni Refresh Token başarıyla .env dosyasına kaydedildi.");
+        console.log("âœ… Yeni Refresh Token baÅŸarÄ±yla .env dosyasÄ±na kaydedildi.");
       }
     } catch (err) {
-      console.error("❌ Refresh Token .env dosyasına kaydedilirken hata:", err);
+      console.error("âŒ Refresh Token .env dosyasÄ±na kaydedilirken hata:", err);
     }
   }
-  console.log("🔑 Access Token Yenilendi.");
+  console.log("ğŸ”‘ Access Token Yenilendi.");
 });
 
 const drive = google.drive({ version: 'v3', auth: oauth2Client });
@@ -46,7 +46,7 @@ const drive = google.drive({ version: 'v3', auth: oauth2Client });
 export const uploadToDrive = async (fileObj: any, customFolderId: string | null = null) => {
   try {
     const targetFolderId = customFolderId || FOLDER_ID;
-    console.log("🚀 Yükleme Başlıyor... Hedef Klasör:", targetFolderId);
+    console.log("ğŸš€ YÃ¼kleme BaÅŸlÄ±yor... Hedef KlasÃ¶r:", targetFolderId);
 
     const fileMetadata = {
       name: `file-${Date.now()}-${fileObj.originalname}`,
@@ -66,7 +66,7 @@ export const uploadToDrive = async (fileObj: any, customFolderId: string | null 
     });
 
     const fileId = response.data.id;
-    console.log("✅ Dosya Drive'a Yüklendi! ID:", fileId);
+    console.log("âœ… Dosya Drive'a YÃ¼klendi! ID:", fileId);
 
     await drive.permissions.create({
       fileId: fileId as string,
@@ -81,17 +81,17 @@ export const uploadToDrive = async (fileObj: any, customFolderId: string | null 
     return { fileId, publicUrl };
 
   } catch (error: any) {
-    console.error('❌ Google Drive Yükleme Hatası:', error.message);
-    throw new Error('Dosya Drive\'a yüklenemedi.');
+    console.error('âŒ Google Drive YÃ¼kleme HatasÄ±:', error.message);
+    throw new Error('Dosya Drive\'a yÃ¼klenemedi.');
   }
 };
 
 export const deleteFromDrive = async (fileId: string) => {
   try {
     await drive.files.delete({ fileId: fileId });
-    console.log(`🗑️ Drive'dan silindi: ${fileId}`);
+    console.log(`ğŸ—‘ï¸ Drive'dan silindi: ${fileId}`);
   } catch (error) {
-    console.log('Silme işlemi pas geçildi.');
+    console.log('Silme iÅŸlemi pas geÃ§ildi.');
   }
 };
 

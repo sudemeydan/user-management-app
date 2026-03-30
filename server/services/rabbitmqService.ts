@@ -23,8 +23,8 @@ function calculateJaccardSimilarity(str1?: string | null, str2?: string | null):
     return intersection.size === 0 ? 0 : intersection.size / union.size;
 }
 
-let connection: Connection | null = null;
-let channel: Channel | null = null;
+let connection: any = null;
+let channel: any = null;
 
 export const connectRabbitMQ = async (): Promise<void> => {
     try {
@@ -36,11 +36,12 @@ export const connectRabbitMQ = async (): Promise<void> => {
         await channel.assertQueue('cv_parsing_queue', { durable: true });
         await channel.assertQueue('cv_result_queue', { durable: true });
 
-        console.log('✅ RabbitMQ Bağlantısı Başarılı');
+        console.log('âœ… RabbitMQ BaÄŸlantÄ±sÄ± BaÅŸarÄ±lÄ±');
 
         startResultConsumer();
 
     } catch (error: any) {
+        console.error('âŒ RabbitMQ BaÄŸlantÄ± HatasÄ±:', error.message);
         console.error('❌ RabbitMQ Bağlantı Hatası:', error.message);
         setTimeout(connectRabbitMQ, 5000);
     }
@@ -59,7 +60,7 @@ export const sendToQueue = async (queueName: string, message: RabbitMQMessagePay
 const startResultConsumer = async (): Promise<void> => {
     if (!channel) return;
 
-    console.log("📥 cv_result_queue dinleniyor...");
+    console.log("ğŸ“¥ cv_result_queue dinleniyor...");
 
     channel.consume('cv_result_queue', async (msg) => {
         if (msg !== null) {
@@ -74,7 +75,7 @@ const startResultConsumer = async (): Promise<void> => {
                         where: { id: parseInt(cvId as string) },
                         data: { status: 'FAILED' }
                     });
-                    console.error(`CV Ayrıştırma hatası (Python): ${error}`);
+                    console.error(`CV AyrÄ±ÅŸtÄ±rma hatasÄ± (Python): ${error}`);
                 }
                 else if (status === 'COMPLETED' && rawText) {
                     await prisma.cV.update({
@@ -85,7 +86,7 @@ const startResultConsumer = async (): Promise<void> => {
                         }
                     });
 
-                    console.log(`[x] Spam kontrolü yapılıyor (CV ID: ${cvId})...`);
+                    console.log(`[x] Spam kontrolÃ¼ yapÄ±lÄ±yor (CV ID: ${cvId})...`);
                     const currentCV = await prisma.cV.findUnique({ where: { id: parseInt(cvId as string) }, select: { userId: true } });
 
                     if (currentCV) {
@@ -116,14 +117,14 @@ const startResultConsumer = async (): Promise<void> => {
                                 where: { id: parseInt(cvId as string) },
                                 data: {
                                     status: 'FAILED',
-                                    atsFormatFeedback: 'Güvenlik Politikası: Mükerrer CV.'
+                                    atsFormatFeedback: 'GÃ¼venlik PolitikasÄ±: MÃ¼kerrer CV.'
                                 }
                             });
                             channel!.ack(msg);
                             return;
                         }
 
-                        console.log(`[x] Gemini'ye gönderiliyor (CV ID: ${cvId})...`);
+                        console.log(`[x] Gemini'ye gÃ¶nderiliyor (CV ID: ${cvId})...`);
                         const parsedData: any = await parseCVText(rawText);
 
                         const atsAnalysis: any = await analyzeATSCompatibility(rawText);
@@ -142,7 +143,7 @@ const startResultConsumer = async (): Promise<void> => {
                             const entriesToCreate = parsedData.entries.map((entry: any) => ({
                                 cvId: parseInt(cvId as string),
                                 category: entry.category,
-                                title: entry.title || "Belirtilmemiş",
+                                title: entry.title || "BelirtilmemiÅŸ",
                                 subtitle: entry.subtitle,
                                 startDate: entry.startDate,
                                 endDate: entry.endDate,
@@ -154,13 +155,13 @@ const startResultConsumer = async (): Promise<void> => {
                                 data: entriesToCreate
                             });
                         }
-                        console.log(`✅ CV (ID: ${cvId}) kaydedildi!`);
+                        console.log(`âœ… CV (ID: ${cvId}) kaydedildi!`);
                     }
                 }
 
                 channel!.ack(msg);
             } catch (error) {
-                console.error("❌ Consumer işleme hatası:", error);
+                console.error("âŒ Consumer iÅŸleme hatasÄ±:", error);
                 channel!.nack(msg, false, false);
             }
         }

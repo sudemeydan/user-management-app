@@ -15,7 +15,9 @@ const uploadCV = async (userId: number | string, file: Express.Multer.File) => {
     fileSize: file.size,
     mimeType: file.mimetype,
     isActive: false,
-    userId: Number(userId)
+    user: {
+      connect: { id: Number(userId) }
+    }
   });
 
   return newCV;
@@ -27,12 +29,12 @@ const getUserCVs = async (targetUserId: number | string, requesterId: number | s
 
   const targetUser: any = await userRepository.findUserWithConnections(targetUserId, requesterId);
 
-  if (!targetUser) throw new Error("Kullanıcı bulunamadı.");
+  if (!targetUser) throw new Error("KullanÄ±cÄ± bulunamadÄ±.");
 
   const isConnected = targetUser.sentConnections.length > 0 || targetUser.receivedConnections.length > 0;
 
   if (!isOwner && !isAdmin && targetUser.isPrivate && !isConnected) {
-    throw new AppError("Gizli profil olduğu için CV'leri göremezsiniz.", 403);
+    throw new AppError("Gizli profil olduÄŸu iÃ§in CV'leri gÃ¶remezsiniz.", 403);
   }
 
   const cvs = await cvRepository.findUserCVs(targetUserId, !(isOwner || isAdmin));
@@ -42,7 +44,7 @@ const getUserCVs = async (targetUserId: number | string, requesterId: number | s
 const activateCV = async (userId: number | string, cvId: number | string) => {
   const cv = await cvRepository.findCVByIdWithTailored(cvId, userId);
 
-  if (!cv) throw new Error("CV bulunamadı veya yetkiniz yok.");
+  if (!cv) throw new Error("CV bulunamadÄ± veya yetkiniz yok.");
 
   await cvRepository.activateCV(userId, cvId);
   return true;
@@ -51,12 +53,12 @@ const activateCV = async (userId: number | string, cvId: number | string) => {
 const deleteCV = async (userId: number | string, cvId: number | string) => {
   const cv: any = await cvRepository.findCVByIdWithTailored(cvId, userId);
 
-  if (!cv) throw new Error("CV bulunamadı veya yetkiniz yok.");
+  if (!cv) throw new Error("CV bulunamadÄ± veya yetkiniz yok.");
 
   try {
     await driveClient.deleteFromDrive(cv.fileId);
   } catch (error) {
-    console.error("Drive silme hatası (Yine de veritabanından kaldırılacak):", error);
+    console.error("Drive silme hatasÄ± (Yine de veritabanÄ±ndan kaldÄ±rÄ±lacak):", error);
   }
 
   await cvRepository.deleteCV(cvId);
@@ -94,7 +96,7 @@ const getAllActiveCVs = async (requesterId: number | string, requesterRole?: str
 const getCVDataForRender = async (cvId: number | string) => {
   const cv: any = await cvRepository.findCVById(cvId, true);
 
-  if (!cv) throw new Error("CV bulunamadı");
+  if (!cv) throw new Error("CV bulunamadÄ±");
 
   return {
     personalInfo: {
@@ -115,7 +117,7 @@ const generatePdfBufferForDownload = async (cvId: number | string, template?: st
   const cv: any = await cvRepository.findCVById(cvId, true);
 
   if (!cv) {
-    throw new AppError("CV bulunamadı.", 404);
+    throw new AppError("CV bulunamadÄ±.", 404);
   }
 
   const cvDataDetails = {

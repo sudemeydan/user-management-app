@@ -22,7 +22,7 @@ Handlebars.registerHelper('safe', function(text) {
 });
 Handlebars.registerHelper('bulletPoints', function(text) {
     if (!text) return '';
-    const lines = text.split(/\n|(?:^|\s)\*\s|•|·|(?:^|\s)-\s/g).map((l: string) => l.trim()).filter((l: string) => l.length > 0);
+    const lines = text.split(/\n|(?:^|\s)\*\s|â€¢|Â·|(?:^|\s)-\s/g).map((l: string) => l.trim()).filter((l: string) => l.length > 0);
     if (lines.length === 1) return new Handlebars.SafeString(`<p>${Handlebars.Utils.escapeExpression(lines[0])}</p>`);
     const listItems = lines.map((l: string) => `<li>${Handlebars.Utils.escapeExpression(l)}</li>`).join('');
     return new Handlebars.SafeString(`<ul>${listItems}</ul>`);

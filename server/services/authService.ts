@@ -5,7 +5,7 @@ import emailService from './emailService';
 import AppError from '../utils/AppError';
 import prisma from '../utils/prisma';
 
-// 1. Kullanıcı Kayıt isteklerinin tipleri
+// 1. KullanÄ±cÄ± KayÄ±t isteklerinin tipleri
 export interface RegisterUserData {
   email?: string;
   password?: string;
@@ -18,26 +18,26 @@ const registerUser = async (userData: RegisterUserData) => {
   const { email, password, confirmPassword, address, ...otherData } = userData;
 
   if (!email || !password || !confirmPassword || !address) {
-    throw new Error("Lütfen e-posta, şifre, şifre tekrarı ve şehir (adres) alanlarını doldurun.");
+    throw new Error("LÃ¼tfen e-posta, ÅŸifre, ÅŸifre tekrarÄ± ve ÅŸehir (adres) alanlarÄ±nÄ± doldurun.");
   }
 
   if (password !== confirmPassword) {
-    throw new AppError("Girdiğiniz şifreler eşleşmiyor.", 400);
+    throw new AppError("GirdiÄŸiniz ÅŸifreler eÅŸleÅŸmiyor.", 400);
   }
 
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/;
   if (!passwordRegex.test(password)) {
-    throw new AppError("Şifre en az 8 karakter olmalı; en az bir büyük harf, bir küçük harf ve bir rakam içermelidir.", 400);
+    throw new AppError("Åifre en az 8 karakter olmalÄ±; en az bir bÃ¼yÃ¼k harf, bir kÃ¼Ã§Ã¼k harf ve bir rakam iÃ§ermelidir.", 400);
   }
 
-  const validCities = ["İstanbul", "Ankara", "İzmir", "Bursa", "Antalya"];
+  const validCities = ["Ä°stanbul", "Ankara", "Ä°zmir", "Bursa", "Antalya"];
   if (!validCities.includes(address)) {
-    throw new AppError("Lütfen geçerli bir şehir seçiniz.", 400);
+    throw new AppError("LÃ¼tfen geÃ§erli bir ÅŸehir seÃ§iniz.", 400);
   }
 
   const existingUser = await userRepository.findUserByEmail(email);
   if (existingUser) {
-    throw new AppError("Bu e-posta adresi zaten kullanımda.", 400);
+    throw new AppError("Bu e-posta adresi zaten kullanÄ±mda.", 400);
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -50,13 +50,13 @@ const registerUser = async (userData: RegisterUserData) => {
     password: hashedPassword,
     emailVerificationToken: verificationToken,
     isEmailVerified: false
-  });
+  } as any);
 
   try {
     await emailService.sendVerificationEmail(newUser.email, verificationToken);
-    console.log(`Onay maili gönderildi: ${newUser.email}`);
+    console.log(`Onay maili gÃ¶nderildi: ${newUser.email}`);
   } catch (error) {
-    console.error("Mail gönderme hatası:", error);
+    console.error("Mail gÃ¶nderme hatasÄ±:", error);
   }
 
   return newUser;
@@ -68,7 +68,7 @@ const verifyEmail = async (token: string) => {
   });
 
   if (!user) {
-    throw new AppError("Geçersiz veya süresi dolmuş onay kodu.", 400);
+    throw new AppError("GeÃ§ersiz veya sÃ¼resi dolmuÅŸ onay kodu.", 400);
   }
 
   await prisma.user.update({
@@ -87,16 +87,16 @@ const loginUser = async (email: string, password: string) => {
   const user = await userRepository.findUserByEmail(email);
 
   if (!user) {
-    throw new AppError("E-posta adresi veya şifre hatalı.", 401);
+    throw new AppError("E-posta adresi veya ÅŸifre hatalÄ±.", 401);
   }
 
   if (!user.isEmailVerified) {
-    throw new AppError("Lütfen giriş yapmadan önce e-posta adresinize gönderilen linkten hesabınızı onaylayın.", 403);
+    throw new AppError("LÃ¼tfen giriÅŸ yapmadan Ã¶nce e-posta adresinize gÃ¶nderilen linkten hesabÄ±nÄ±zÄ± onaylayÄ±n.", 403);
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
-    throw new AppError("E-posta adresi veya şifre hatalı.", 401);
+    throw new AppError("E-posta adresi veya ÅŸifre hatalÄ±.", 401);
   }
 
   return user;
@@ -105,11 +105,11 @@ const loginUser = async (email: string, password: string) => {
 const forgotPassword = async (email: string) => {
   const user = await userRepository.findUserByEmail(email);
   if (!user) {
-    throw new AppError("Bu e-posta adresiyle kayıtlı bir kullanıcı bulunamadı.", 400);
+    throw new AppError("Bu e-posta adresiyle kayÄ±tlÄ± bir kullanÄ±cÄ± bulunamadÄ±.", 400);
   }
 
   const resetToken = crypto.randomBytes(32).toString('hex');
-  const resetPasswordExpires = new Date(Date.now() + 3600000); // 1 saat geçerli
+  const resetPasswordExpires = new Date(Date.now() + 3600000); // 1 saat geÃ§erli
 
   await prisma.user.update({
     where: { id: user.id },
@@ -132,7 +132,7 @@ const resetPassword = async (token: string, newPassword: string) => {
   });
 
   if (!user) {
-    throw new AppError("Geçersiz veya süresi dolmuş şifre sıfırlama bağlantısı.", 400);
+    throw new AppError("GeÃ§ersiz veya sÃ¼resi dolmuÅŸ ÅŸifre sÄ±fÄ±rlama baÄŸlantÄ±sÄ±.", 400);
   }
 
   const hashedPassword = await bcrypt.hash(newPassword, 10);

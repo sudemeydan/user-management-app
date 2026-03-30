@@ -14,24 +14,24 @@ const createJobPosting = async (url: string | null, description: string | undefi
   if (url) {
     const extractedData: any = await extractJobDetails(url);
     if (extractedData) {
-      finalDescription = `Başlık: ${extractedData.title}\nŞirket: ${extractedData.company}\n\nDetaylar:\n${extractedData.description}`;
+      finalDescription = `BaÅŸlÄ±k: ${extractedData.title}\nÅirket: ${extractedData.company}\n\nDetaylar:\n${extractedData.description}`;
     } else {
-      throw new AppError("URL'den iş ilanı çekilemedi. Lütfen manuel giriniz.", 400);
+      throw new AppError("URL'den iÅŸ ilanÄ± Ã§ekilemedi. LÃ¼tfen manuel giriniz.", 400);
     }
   }
 
   if (!finalDescription) {
-    throw new AppError("Lütfen bir iş ilanı URL'si veya metni giriniz.", 400);
+    throw new AppError("LÃ¼tfen bir iÅŸ ilanÄ± URL'si veya metni giriniz.", 400);
   }
 
   let title = role || "Belirtilmedi";
-  const titleMatch = finalDescription.match(/Başlık:\s*(.+)/);
+  const titleMatch = finalDescription.match(/BaÅŸlÄ±k:\s*(.+)/);
   if (titleMatch) {
     title = titleMatch[1].trim();
   }
 
   let company: string | null = null;
-  const companyMatch = finalDescription.match(/Şirket:\s*(.+)/);
+  const companyMatch = finalDescription.match(/Åirket:\s*(.+)/);
   if (companyMatch) {
     company = companyMatch[1].trim();
   }
@@ -49,12 +49,12 @@ const createJobPosting = async (url: string | null, description: string | undefi
 const getTailoringProposals = async (userId: string | number, cvId: string | number, jobPostingId: string | number) => {
   const cv: any = await cvRepository.findCVById(cvId, true);
   if (!cv || cv.userId !== Number(userId)) {
-    throw new AppError("CV bulunamadı veya yetkiniz yok.", 404);
+    throw new AppError("CV bulunamadÄ± veya yetkiniz yok.", 404);
   }
 
   const jobPosting = await jobPostingRepository.findJobPostingById(jobPostingId);
   if (!jobPosting) {
-    throw new AppError("İş ilanı bulunamadı.", 404);
+    throw new AppError("Ä°ÅŸ ilanÄ± bulunamadÄ±.", 404);
   }
 
   const proposals = await generateTailoringProposals(cv, jobPosting.description);
@@ -63,10 +63,10 @@ const getTailoringProposals = async (userId: string | number, cvId: string | num
 
 const createTailoredCV = async (userId: string | number, cvId: string | number, jobPostingId: string | number, tailoredData: any) => {
   const jobPosting = await jobPostingRepository.findJobPostingById(jobPostingId);
-  if (!jobPosting) throw new AppError("İş ilanı bulunamadı.", 404);
+  if (!jobPosting) throw new AppError("Ä°ÅŸ ilanÄ± bulunamadÄ±.", 404);
 
   const cv: any = await cvRepository.findCVById(cvId, true);
-  if (!cv || cv.userId !== Number(userId)) throw new AppError("Orijinal CV bulunamadı.", 404);
+  if (!cv || cv.userId !== Number(userId)) throw new AppError("Orijinal CV bulunamadÄ±.", 404);
 
   const newTailoredCv = await jobPostingRepository.createTailoredCV({
     userId: Number(userId),
@@ -101,7 +101,7 @@ const optimizeTailoredCV = async (userId: string | number, tailoredCvId: string 
   const tailoredCv: any = await jobPostingRepository.findTailoredCVById(tailoredCvId);
 
   if (!tailoredCv || tailoredCv.originalCv.userId !== Number(userId)) {
-    throw new AppError("Uyarlanmış CV bulunamadı veya yetkiniz yok.", 404);
+    throw new AppError("UyarlanmÄ±ÅŸ CV bulunamadÄ± veya yetkiniz yok.", 404);
   }
 
   const cvData = {
@@ -129,7 +129,7 @@ const optimizeTailoredCV = async (userId: string | number, tailoredCvId: string 
 
   fs.unlinkSync(tempPath);
 
-  const updatedCv = await jobPostingRepository.updateTailoredCVFileId(tailoredCvId, driveResponse.fileId);
+  const updatedCv = await jobPostingRepository.updateTailoredCVFileId(tailoredCvId, driveResponse.fileId as string);
 
   return {
     ...updatedCv,

@@ -39,7 +39,7 @@ export interface OptimizeCVResult extends ATSFormattedCV {
 
 // Drive response mock interface
 export interface DriveResponse {
-  fileId: string;
+  fileId: string | null | undefined;
   publicUrl: string;
 }
 
@@ -47,7 +47,7 @@ const optimizeCVFormat = async (userId: string | number, cvId: number): Promise<
   const cv = await cvRepository.findCVById(cvId, true) as unknown as CVData;
 
   if (!cv || cv.userId !== Number(userId)) {
-    throw new AppError("CV bulunamadı veya yetkiniz yok.", 404);
+    throw new AppError("CV bulunamadÄ± veya yetkiniz yok.", 404);
   }
 
   const pdfBuffer: Uint8Array = await generateATSPDF({

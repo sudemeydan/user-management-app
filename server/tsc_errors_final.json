@@ -1,0 +1,10 @@
+[
+  "controllers/connectionController.ts(19,35): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.\r",
+  "services/atsService.ts(70,88): error TS2345: Argument of type 'string | null | undefined' is not assignable to parameter of type 'string'.\r",
+  "services/cvService.ts(14,5): error TS2322: Type 'string | null | undefined' is not assignable to type 'string'.\r",
+  "services/rabbitmqService.ts(33,9): error TS2739: Type 'ChannelModel' is missing the following properties from type 'Connection': serverProperties, expectSocketClose, sentSinceLastCheck, recvSinceLastCheck, sendMessage\r",
+  "services/rabbitmqService.ts(34,25): error TS18047: 'connection' is possibly 'null'.\r",
+  "services/rabbitmqService.ts(34,36): error TS2339: Property 'createChannel' does not exist on type 'Connection'.\r",
+  "services/rabbitmqService.ts(36,15): error TS18047: 'channel' is possibly 'null'.\r",
+  "services/rabbitmqService.ts(37,15): error TS18047: 'channel' is possibly 'null'.\r"
+]

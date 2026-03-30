@@ -11,7 +11,7 @@ const withRetry = async (fn: () => Promise<any>, maxRetries = 3): Promise<any> =
       const is429 = error?.status === 429 || error?.message?.includes('429') || error?.message?.includes('Too Many Requests');
       if (is429 && attempt < maxRetries) {
         const waitSec = attempt * 10;
-        console.log(`Gemini rate limit aşıldı, ${waitSec}s beklenip tekrar denenecek (deneme ${attempt}/${maxRetries})...`);
+        console.log(`Gemini rate limit aÅŸÄ±ldÄ±, ${waitSec}s beklenip tekrar denenecek (deneme ${attempt}/${maxRetries})...`);
         await new Promise(resolve => setTimeout(resolve, waitSec * 1000));
       } else {
         throw error;
@@ -25,8 +25,8 @@ const cleanAndParseJSON = (jsonString: string): any => {
     const cleaned = jsonString.replace(/```json/gi, '').replace(/```/g, '').trim();
     return JSON.parse(cleaned);
   } catch (error) {
-    console.error("JSON Parse Hatası. Ham Metin:", jsonString);
-    throw new AppError("Gemini yanıtı geçerli bir JSON formatında değil.", 400);
+    console.error("JSON Parse HatasÄ±. Ham Metin:", jsonString);
+    throw new AppError("Gemini yanÄ±tÄ± geÃ§erli bir JSON formatÄ±nda deÄŸil.", 400);
   }
 };
 
@@ -38,10 +38,10 @@ export const parseCVText = async (rawText: string) => {
     });
 
     const prompt = `
-    Aşağıda ham metni verilen CV'yi analiz et ve istenen JSON şemasına uygun olarak ayrıştır.
-    Eğer bir bilgi yoksa null veya boş bırakabilirsin. Tarihleri (startDate, endDate) anlayabildiğin en iyi formata (örn: YYYY-MM) çevir.
+    AÅŸaÄŸÄ±da ham metni verilen CV'yi analiz et ve istenen JSON ÅŸemasÄ±na uygun olarak ayrÄ±ÅŸtÄ±r.
+    EÄŸer bir bilgi yoksa null veya boÅŸ bÄ±rakabilirsin. Tarihleri (startDate, endDate) anlayabildiÄŸin en iyi formata (Ã¶rn: YYYY-MM) Ã§evir.
     
-    ÖNEMLİ KURALLAR:
+    Ã–NEMLÄ° KURALLAR:
     ...
     `;
 
@@ -49,8 +49,8 @@ export const parseCVText = async (rawText: string) => {
     const response = await result.response;
     return cleanAndParseJSON(response.text());
   } catch (error) {
-    console.error("Gemini Parse Hatası:", error);
-    throw new AppError("CV ayrıştırılamadı.", 400);
+    console.error("Gemini Parse HatasÄ±:", error);
+    throw new AppError("CV ayrÄ±ÅŸtÄ±rÄ±lamadÄ±.", 400);
   }
 };
 
@@ -61,14 +61,14 @@ export const analyzeATSCompatibility = async (rawText: string) => {
       generationConfig: { responseMimeType: "application/json" },
     });
 
-    const prompt = `Aşağıda ham metni verilen CV'yi ATS uyumluluğu açısından analiz et.
-    İstenen JSON Formatı: {"score": 0, "feedback": "string"}`;
+    const prompt = `AÅŸaÄŸÄ±da ham metni verilen CV'yi ATS uyumluluÄŸu aÃ§Ä±sÄ±ndan analiz et.
+    Ä°stenen JSON FormatÄ±: {"score": 0, "feedback": "string"}`;
 
     const result = await withRetry(() => model.generateContent(prompt + `\n\n"""${rawText}"""`));
     const response = await result.response;
     return cleanAndParseJSON(response.text());
   } catch (error) {
-    return { score: 50, feedback: "Analiz sırasında bir hata oluştu." };
+    return { score: 50, feedback: "Analiz sÄ±rasÄ±nda bir hata oluÅŸtu." };
   }
 };
 
@@ -78,12 +78,12 @@ export const extractJobDetails = async (jobText: string) => {
       model: "gemini-2.5-flash",
       generationConfig: { responseMimeType: "application/json" },
     });
-    const prompt = `Aşağıda verilen iş ilanı metnini analiz et. İstenen JSON: {"title": "", "company":"", "skills": [], "requirements": [], "summary": ""}`;
+    const prompt = `AÅŸaÄŸÄ±da verilen iÅŸ ilanÄ± metnini analiz et. Ä°stenen JSON: {"title": "", "company":"", "skills": [], "requirements": [], "summary": ""}`;
     const result = await withRetry(() => model.generateContent(prompt + `\n\n"""${jobText}"""`));
     const response = await result.response;
     return cleanAndParseJSON(response.text());
   } catch (error) {
-    throw new AppError("İş ilanı analiz edilemedi.", 400);
+    throw new AppError("Ä°ÅŸ ilanÄ± analiz edilemedi.", 400);
   }
 };
 
@@ -100,9 +100,9 @@ export const generateTailoringProposals = async (cv: any, jobDescription: string
         id: e.id, category: e.category, title: e.title || '', subtitle: e.subtitle || '', description: e.description || ''
       }));
 
-    const prompt = `Sen deneyimli bir İK uzmanı ve CV danışmanısın.
+    const prompt = `Sen deneyimli bir Ä°K uzmanÄ± ve CV danÄ±ÅŸmanÄ±sÄ±n.
     CV Entry Listesi: ${JSON.stringify(cleanEntries)}
-    İş İlanı: """${jobDescription}"""
+    Ä°ÅŸ Ä°lanÄ±: """${jobDescription}"""
     `;
 
     const result = await withRetry(() => model.generateContent(prompt));
@@ -117,7 +117,7 @@ export const generateTailoringProposals = async (cv: any, jobDescription: string
     }
     return parsed;
   } catch (error) {
-    throw new AppError("Uyarlama önerileri oluşturulamadı.", 400);
+    throw new AppError("Uyarlama Ã¶nerileri oluÅŸturulamadÄ±.", 400);
   }
 };
 

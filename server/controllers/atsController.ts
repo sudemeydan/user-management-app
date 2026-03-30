@@ -21,7 +21,7 @@ const optimizeCVFormat = async (req: Request, res: Response, next: NextFunction)
     
     const response: ApiResponse<OptimizeCVResult> = {
       success: true, 
-      message: "CV başarıyla ATS formatına dönüştürüldü!", 
+      message: "CV baÅŸarÄ±yla ATS formatÄ±na dÃ¶nÃ¼ÅŸtÃ¼rÃ¼ldÃ¼!", 
       data: result 
     };
     

@@ -1,0 +1,23 @@
+[
+  "controllers/connectionController.ts(19,35): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.\r",
+  "controllers/connectionController.ts(32,35): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.\r",
+  "controllers/cvController.ts(68,44): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string | number'.\r",
+  "controllers/cvController.ts(79,40): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string | number'.\r",
+  "controllers/cvController.ts(90,38): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string | number'.\r",
+  "controllers/cvController.ts(112,34): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.\r",
+  "controllers/cvController.ts(123,68): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string | number'.\r",
+  "controllers/postController.ts(30,29): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.\r",
+  "controllers/postController.ts(48,34): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.\r",
+  "controllers/tailoringController.ts(21,101): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string | number'.\r",
+  "controllers/tailoringController.ts(54,70): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string | number'.\r",
+  "controllers/userController.ts(70,29): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.\r",
+  "services/atsService.ts(62,9): error TS2322: Type '{ fileId: string | null | undefined; publicUrl: string; }' is not assignable to type 'DriveResponse'.\r",
+  "services/authService.ts(46,51): error TS2345: Argument of type '{ email: string; address: string; password: string; emailVerificationToken: string; isEmailVerified: false; }' is not assignable to parameter of type 'UserCreateInput'.\r",
+  "services/cvService.ts(14,5): error TS2322: Type 'string | null | undefined' is not assignable to type 'string'.\r",
+  "services/rabbitmqService.ts(33,9): error TS2739: Type 'ChannelModel' is missing the following properties from type 'Connection': serverProperties, expectSocketClose, sentSinceLastCheck, recvSinceLastCheck, sendMessage\r",
+  "services/rabbitmqService.ts(34,25): error TS18047: 'connection' is possibly 'null'.\r",
+  "services/rabbitmqService.ts(34,36): error TS2339: Property 'createChannel' does not exist on type 'Connection'.\r",
+  "services/rabbitmqService.ts(36,15): error TS18047: 'channel' is possibly 'null'.\r",
+  "services/rabbitmqService.ts(37,15): error TS18047: 'channel' is possibly 'null'.\r",
+  "services/tailoringService.ts(132,85): error TS2345: Argument of type 'string | null | undefined' is not assignable to parameter of type 'string'.\r"
+]

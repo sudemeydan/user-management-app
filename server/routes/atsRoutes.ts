@@ -4,7 +4,7 @@ import verifyToken from '../middlewares/authMiddleware';
 
 const router: Router = express.Router();
 
-// Geleneksel atsController fonksiyonlarını Express Request, Response, NextFunction tipleriyle sarıyoruz
+// Geleneksel atsController fonksiyonlarÄ±nÄ± Express Request, Response, NextFunction tipleriyle sarÄ±yoruz
 router.post('/cvs/:cvId/optimize', verifyToken, (req: Request, res: Response, next: NextFunction) => {
     atsController.optimizeCVFormat(req, res, next);
 });
