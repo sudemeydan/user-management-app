@@ -1,13 +1,17 @@
 "use strict";
-const express = require('express');
-const router = express.Router();
-const cvController = require('../controllers/cvController');
-const verifyToken = require('../middlewares/authMiddleware').default || require('../middlewares/authMiddleware');
-const multer = require('multer');
-const { uploadLimiter } = require('../middlewares/rateLimiter');
-const upload = multer({
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const cvController_1 = __importDefault(require("../controllers/cvController"));
+const authMiddleware_1 = __importDefault(require("../middlewares/authMiddleware"));
+const multer_1 = __importDefault(require("multer"));
+const rateLimiter_1 = require("../middlewares/rateLimiter");
+const router = express_1.default.Router();
+const upload = (0, multer_1.default)({
     dest: 'uploads/',
-    limits: { fileSize: 5 * 1024 * 1024 }, // Yükleme limiti 5MB
+    limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         if (file.mimetype === 'application/pdf' || file.mimetype === 'application/msword' || file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
             cb(null, true);
@@ -17,16 +21,12 @@ const upload = multer({
         }
     }
 });
-// CV Yönetim Rotaları
-router.get('/all-active-cvs', verifyToken, cvController.getAllActiveCVs);
-router.get('/:id/cvs', verifyToken, cvController.getUserCVs);
-router.put('/cvs/:cvId/activate', verifyToken, cvController.activateCV);
-router.delete('/cvs/:cvId', verifyToken, cvController.deleteCV);
-router.get('/cvs/:cvId/download-pdf', verifyToken, cvController.downloadCvPdf);
-// İndirme rotası
-router.get('/cv-download/:fileId', verifyToken, cvController.downloadCV);
-// POST /api/users/upload-cv
-router.post('/upload-cv', verifyToken, uploadLimiter, upload.single('cvFile'), cvController.uploadCV);
-// GET /api/cvs/:cvId/pdf (ATS/Classic formats download buffer)
-router.get('/:cvId/pdf', cvController.downloadCvPdf);
-module.exports = router;
+router.get('/all-active-cvs', authMiddleware_1.default, cvController_1.default.getAllActiveCVs);
+router.get('/:id/cvs', authMiddleware_1.default, cvController_1.default.getUserCVs);
+router.put('/cvs/:cvId/activate', authMiddleware_1.default, cvController_1.default.activateCV);
+router.delete('/cvs/:cvId', authMiddleware_1.default, cvController_1.default.deleteCV);
+router.get('/cvs/:cvId/download-pdf', authMiddleware_1.default, cvController_1.default.downloadCvPdf);
+router.get('/cv-download/:fileId', authMiddleware_1.default, cvController_1.default.downloadCV);
+router.post('/upload-cv', authMiddleware_1.default, rateLimiter_1.uploadLimiter, upload.single('cvFile'), cvController_1.default.uploadCV);
+router.get('/:cvId/pdf', cvController_1.default.downloadCvPdf);
+exports.default = router;

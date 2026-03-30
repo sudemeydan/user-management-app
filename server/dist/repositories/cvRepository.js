@@ -1,26 +1,30 @@
 "use strict";
-const prisma = require('../utils/prisma');
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const prisma_1 = __importDefault(require("../utils/prisma"));
 const createCV = async (cvData) => {
-    return await prisma.cV.create({
+    return await prisma_1.default.cV.create({
         data: cvData
     });
 };
 const findCVById = async (cvId, includeRelations = false) => {
-    const query = { where: { id: parseInt(cvId) } };
+    const query = { where: { id: Number(cvId) } };
     if (includeRelations) {
         query.include = { entries: true, user: true };
     }
-    return await prisma.cV.findUnique(query);
+    return await prisma_1.default.cV.findUnique(query);
 };
 const findCVByIdWithTailored = async (cvId, userId) => {
-    return await prisma.cV.findFirst({
-        where: { id: parseInt(cvId), userId: parseInt(userId) }
+    return await prisma_1.default.cV.findFirst({
+        where: { id: Number(cvId), userId: Number(userId) }
     });
 };
 const findUserCVs = async (targetUserId, includeActiveOnly = false) => {
     const query = {
         where: {
-            userId: parseInt(targetUserId),
+            userId: Number(targetUserId),
             ...(includeActiveOnly ? { isActive: true } : {})
         },
         include: {
@@ -34,16 +38,16 @@ const findUserCVs = async (targetUserId, includeActiveOnly = false) => {
         },
         orderBy: { createdAt: 'desc' }
     };
-    return await prisma.cV.findMany(query);
+    return await prisma_1.default.cV.findMany(query);
 };
 const findAllActiveCVs = async (requesterId) => {
-    return await prisma.cV.findMany({
+    return await prisma_1.default.cV.findMany({
         where: { isActive: true },
         include: {
             user: {
                 include: {
-                    sentConnections: { where: { receiverId: parseInt(requesterId), status: 'ACCEPTED' } },
-                    receivedConnections: { where: { senderId: parseInt(requesterId), status: 'ACCEPTED' } }
+                    sentConnections: { where: { receiverId: Number(requesterId), status: 'ACCEPTED' } },
+                    receivedConnections: { where: { senderId: Number(requesterId), status: 'ACCEPTED' } }
                 }
             }
         },
@@ -51,25 +55,25 @@ const findAllActiveCVs = async (requesterId) => {
     });
 };
 const activateCV = async (userId, cvId) => {
-    return await prisma.$transaction([
-        prisma.cV.updateMany({
-            where: { userId: parseInt(userId) },
+    return await prisma_1.default.$transaction([
+        prisma_1.default.cV.updateMany({
+            where: { userId: Number(userId) },
             data: { isActive: false }
         }),
-        prisma.cV.update({
-            where: { id: parseInt(cvId) },
+        prisma_1.default.cV.update({
+            where: { id: Number(cvId) },
             data: { isActive: true }
         })
     ]);
 };
 const deleteCV = async (cvId) => {
-    return await prisma.cV.delete({
-        where: { id: parseInt(cvId) }
+    return await prisma_1.default.cV.delete({
+        where: { id: Number(cvId) }
     });
 };
 const getCVATSStatus = async (cvId) => {
-    return await prisma.cV.findUnique({
-        where: { id: parseInt(cvId) },
+    return await prisma_1.default.cV.findUnique({
+        where: { id: Number(cvId) },
         select: {
             atsFormatScore: true,
             atsFormatFeedback: true,
@@ -78,23 +82,23 @@ const getCVATSStatus = async (cvId) => {
     });
 };
 const upsertAtsFormattedCV = async (cvId, fileId) => {
-    return await prisma.atsFormattedCV.upsert({
-        where: { cvId: parseInt(cvId) },
+    return await prisma_1.default.atsFormattedCV.upsert({
+        where: { cvId: Number(cvId) },
         update: {
             fileId: fileId
         },
         create: {
-            cvId: parseInt(cvId),
+            cvId: Number(cvId),
             fileId: fileId
         }
     });
 };
 const countUserCVs = async (userId) => {
-    return await prisma.cV.count({
-        where: { userId: parseInt(userId) }
+    return await prisma_1.default.cV.count({
+        where: { userId: Number(userId) }
     });
 };
-module.exports = {
+exports.default = {
     createCV,
     findCVById,
     findCVByIdWithTailored,

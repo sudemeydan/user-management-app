@@ -1,12 +1,13 @@
-const { google } = require('googleapis');
-const fs = require('fs');
-const path = require('path');
-require('dotenv').config();
+import { google } from 'googleapis';
+import fs from 'fs';
+import path from 'path';
+import { Response } from 'express';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const CLIENT_ID = process.env.GOOGLE_DRIVE_CLIENT_ID;
 const CLIENT_SECRET = process.env.GOOGLE_DRIVE_CLIENT_SECRET;
 const REFRESH_TOKEN = process.env.GOOGLE_DRIVE_REFRESH_TOKEN;
-
 const FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID;
 
 const oauth2Client = new google.auth.OAuth2(
@@ -17,7 +18,6 @@ const oauth2Client = new google.auth.OAuth2(
 
 oauth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 
-// Yeni token alındığında (refresh sonrası) otomatik güncelleme
 oauth2Client.on('tokens', (tokens) => {
   if (tokens.refresh_token) {
     console.log("🔄 Yeni Refresh Token Alındı! .env dosyasına kalıcı olarak kaydediliyor...");
@@ -43,15 +43,14 @@ oauth2Client.on('tokens', (tokens) => {
 
 const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
-const uploadToDrive = async (fileObj, customFolderId = null) => {
+export const uploadToDrive = async (fileObj: any, customFolderId: string | null = null) => {
   try {
-    // Eğer customFolderId gelirse (CV için) onu kullan, gelmezse varsayılan resim klasörünü (FOLDER_ID) kullan
     const targetFolderId = customFolderId || FOLDER_ID;
     console.log("🚀 Yükleme Başlıyor... Hedef Klasör:", targetFolderId);
 
     const fileMetadata = {
       name: `file-${Date.now()}-${fileObj.originalname}`,
-      parents: [targetFolderId], // Artık dinamik
+      parents: [targetFolderId as string],
     };
 
     const media = {
@@ -70,7 +69,7 @@ const uploadToDrive = async (fileObj, customFolderId = null) => {
     console.log("✅ Dosya Drive'a Yüklendi! ID:", fileId);
 
     await drive.permissions.create({
-      fileId: fileId,
+      fileId: fileId as string,
       requestBody: {
         role: 'reader',
         type: 'anyone',
@@ -81,12 +80,13 @@ const uploadToDrive = async (fileObj, customFolderId = null) => {
 
     return { fileId, publicUrl };
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Google Drive Yükleme Hatası:', error.message);
     throw new Error('Dosya Drive\'a yüklenemedi.');
   }
 };
-const deleteFromDrive = async (fileId) => {
+
+export const deleteFromDrive = async (fileId: string) => {
   try {
     await drive.files.delete({ fileId: fileId });
     console.log(`🗑️ Drive'dan silindi: ${fileId}`);
@@ -95,24 +95,24 @@ const deleteFromDrive = async (fileId) => {
   }
 };
 
-const streamFile = async (fileId, res) => {
+export const streamFile = async (fileId: string, res: Response) => {
   try {
     const response = await drive.files.get(
       { fileId: fileId, alt: 'media' },
       { responseType: 'stream' }
     );
     response.data.on('end', () => { });
-    response.data.on('error', err => {
+    response.data.on('error', (err: any) => {
       console.error('Error reading drive stream', err);
       if (!res.headersSent) res.status(500).end();
     });
-    // Set caching headers
+    
     res.setHeader('Cache-Control', 'public, max-age=86400');
     response.data.pipe(res);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching file for streaming:', error.message);
     if (!res.headersSent) res.status(404).send('Not Found');
   }
 };
 
-module.exports = { uploadToDrive, deleteFromDrive, streamFile };
+export default { uploadToDrive, deleteFromDrive, streamFile };

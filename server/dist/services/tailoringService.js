@@ -1,28 +1,31 @@
 "use strict";
-const jobPostingRepository = require('../repositories/jobPostingRepository');
-const cvRepository = require('../repositories/cvRepository');
-const appError = require('../utils/AppError');
-const { extractJobDetails, generateTailoringProposals } = require('./geminiService');
-const { generateTailoredPDF } = require('./pdfService');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-const driveClient = require('../utils/driveClient');
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const jobPostingRepository_1 = __importDefault(require("../repositories/jobPostingRepository"));
+const cvRepository_1 = __importDefault(require("../repositories/cvRepository"));
+const AppError_1 = __importDefault(require("../utils/AppError"));
+const geminiService_1 = require("./geminiService");
+const pdfService_1 = require("./pdfService");
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
+const os_1 = __importDefault(require("os"));
+const driveClient_1 = __importDefault(require("../utils/driveClient"));
 const createJobPosting = async (url, description, role) => {
     let finalDescription = description;
     if (url) {
-        const extractedData = await extractJobDetails(url);
+        const extractedData = await (0, geminiService_1.extractJobDetails)(url);
         if (extractedData) {
             finalDescription = `Başlık: ${extractedData.title}\nŞirket: ${extractedData.company}\n\nDetaylar:\n${extractedData.description}`;
         }
         else {
-            throw new appError("URL'den iş ilanı çekilemedi. Lütfen manuel giriniz.", 400);
+            throw new AppError_1.default("URL'den iş ilanı çekilemedi. Lütfen manuel giriniz.", 400);
         }
     }
     if (!finalDescription) {
-        throw new appError("Lütfen bir iş ilanı URL'si veya metni giriniz.", 400);
+        throw new AppError_1.default("Lütfen bir iş ilanı URL'si veya metni giriniz.", 400);
     }
-    // finalDescription'dan başlık çıkar (varsa)
     let title = role || "Belirtilmedi";
     const titleMatch = finalDescription.match(/Başlık:\s*(.+)/);
     if (titleMatch) {
@@ -33,7 +36,7 @@ const createJobPosting = async (url, description, role) => {
     if (companyMatch) {
         company = companyMatch[1].trim();
     }
-    const jobPosting = await jobPostingRepository.createJobPosting({
+    const jobPosting = await jobPostingRepository_1.default.createJobPosting({
         title: title,
         description: finalDescription,
         company: company,
@@ -42,35 +45,33 @@ const createJobPosting = async (url, description, role) => {
     return jobPosting;
 };
 const getTailoringProposals = async (userId, cvId, jobPostingId) => {
-    const cv = await cvRepository.findCVById(cvId, true);
-    if (!cv || cv.userId !== parseInt(userId)) {
-        throw new appError("CV bulunamadı veya yetkiniz yok.", 404);
+    const cv = await cvRepository_1.default.findCVById(cvId, true);
+    if (!cv || cv.userId !== Number(userId)) {
+        throw new AppError_1.default("CV bulunamadı veya yetkiniz yok.", 404);
     }
-    const jobPosting = await jobPostingRepository.findJobPostingById(jobPostingId);
+    const jobPosting = await jobPostingRepository_1.default.findJobPostingById(jobPostingId);
     if (!jobPosting) {
-        throw new appError("İş ilanı bulunamadı.", 404);
+        throw new AppError_1.default("İş ilanı bulunamadı.", 404);
     }
-    const proposals = await generateTailoringProposals(cv, jobPosting.description);
+    const proposals = await (0, geminiService_1.generateTailoringProposals)(cv, jobPosting.description);
     return proposals;
 };
 const createTailoredCV = async (userId, cvId, jobPostingId, tailoredData) => {
-    const jobPosting = await jobPostingRepository.findJobPostingById(jobPostingId);
+    const jobPosting = await jobPostingRepository_1.default.findJobPostingById(jobPostingId);
     if (!jobPosting)
-        throw new appError("İş ilanı bulunamadı.", 404);
-    const cv = await cvRepository.findCVById(cvId, true);
-    if (!cv || cv.userId !== parseInt(userId))
-        throw new appError("Orijinal CV bulunamadı.", 404);
-    const newTailoredCv = await jobPostingRepository.createTailoredCV({
-        userId: parseInt(userId),
-        originalCvId: parseInt(cvId),
-        jobPostingId: parseInt(jobPostingId),
+        throw new AppError_1.default("İş ilanı bulunamadı.", 404);
+    const cv = await cvRepository_1.default.findCVById(cvId, true);
+    if (!cv || cv.userId !== Number(userId))
+        throw new AppError_1.default("Orijinal CV bulunamadı.", 404);
+    const newTailoredCv = await jobPostingRepository_1.default.createTailoredCV({
+        userId: Number(userId),
+        originalCvId: Number(cvId),
+        jobPostingId: Number(jobPostingId),
         improvedSummary: tailoredData.improvedSummary || cv.summary,
-        // ATS skoru varsa kaydet
         ...(tailoredData.atsScore ? { atsScore: tailoredData.atsScore } : {})
     });
-    const adaptedEntries = cv.entries.map(entry => {
-        // BUG FIX: parseInt ile karşılaştır — entryId string gelir, entry.id number olur
-        const updatedEntry = tailoredData.updatedEntries?.find(e => parseInt(e.originalEntryId) === parseInt(entry.id));
+    const adaptedEntries = cv.entries.map((entry) => {
+        const updatedEntry = tailoredData.updatedEntries?.find((e) => Number(e.originalEntryId) === Number(entry.id));
         return {
             tailoredCvId: newTailoredCv.id,
             category: entry.category,
@@ -81,18 +82,15 @@ const createTailoredCV = async (userId, cvId, jobPostingId, tailoredData) => {
         };
     });
     if (adaptedEntries.length > 0) {
-        await jobPostingRepository.createTailoredCVEntries(adaptedEntries);
+        await jobPostingRepository_1.default.createTailoredCVEntries(adaptedEntries);
     }
-    return await jobPostingRepository.findTailoredCVById(newTailoredCv.id);
+    return await jobPostingRepository_1.default.findTailoredCVById(newTailoredCv.id);
 };
 const optimizeTailoredCV = async (userId, tailoredCvId) => {
-    const tailoredCv = await jobPostingRepository.findTailoredCVById(tailoredCvId);
-    if (!tailoredCv || tailoredCv.originalCv.userId !== parseInt(userId)) {
-        throw new appError("Uyarlanmış CV bulunamadı veya yetkiniz yok.", 404);
+    const tailoredCv = await jobPostingRepository_1.default.findTailoredCVById(tailoredCvId);
+    if (!tailoredCv || tailoredCv.originalCv.userId !== Number(userId)) {
+        throw new AppError_1.default("Uyarlanmış CV bulunamadı veya yetkiniz yok.", 404);
     }
-    // pdfService.generateTailoredPDF beklediği format:
-    // cvData = { summary, userName, userEmail, entries: [...originalEntries] }
-    // tailoredData = { improvedSummary, entries: [...tailoredEntries] }
     const cvData = {
         summary: tailoredCv.originalCv.summary,
         userName: tailoredCv.originalCv.user.name,
@@ -103,22 +101,22 @@ const optimizeTailoredCV = async (userId, tailoredCvId) => {
         improvedSummary: tailoredCv.improvedSummary,
         entries: tailoredCv.entries
     };
-    const pdfBuffer = await generateTailoredPDF(cvData, tailoredData, 'modern');
-    const tempPath = path.join(os.tmpdir(), `Tailored-${tailoredCv.id}-${Date.now()}.pdf`);
-    fs.writeFileSync(tempPath, pdfBuffer);
-    const driveResponse = await driveClient.uploadToDrive({
+    const pdfBuffer = await (0, pdfService_1.generateTailoredPDF)(cvData, tailoredData, 'modern');
+    const tempPath = path_1.default.join(os_1.default.tmpdir(), `Tailored-${tailoredCv.id}-${Date.now()}.pdf`);
+    fs_1.default.writeFileSync(tempPath, pdfBuffer);
+    const driveResponse = await driveClient_1.default.uploadToDrive({
         path: tempPath,
         originalname: `Tailored-${tailoredCv.originalCv.fileName}`,
         mimetype: 'application/pdf'
     }, process.env.GOOGLE_DRIVE_CV_FOLDER_ID);
-    fs.unlinkSync(tempPath);
-    const updatedCv = await jobPostingRepository.updateTailoredCVFileId(tailoredCvId, driveResponse.fileId);
+    fs_1.default.unlinkSync(tempPath);
+    const updatedCv = await jobPostingRepository_1.default.updateTailoredCVFileId(tailoredCvId, driveResponse.fileId);
     return {
         ...updatedCv,
         publicUrl: driveResponse.publicUrl
     };
 };
-module.exports = {
+exports.default = {
     createJobPosting,
     getTailoringProposals,
     createTailoredCV,

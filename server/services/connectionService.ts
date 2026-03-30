@@ -1,8 +1,8 @@
-const connectionRepository = require('../repositories/connectionRepository');
-const AppError = require('../utils/AppError');
+import connectionRepository from '../repositories/connectionRepository';
+import AppError from '../utils/AppError';
 
-const sendRequest = async (senderId, receiverId) => {
-  if (senderId === receiverId) {
+const sendRequest = async (senderId: number | string, receiverId: number | string) => {
+  if (Number(senderId) === Number(receiverId)) {
     throw new AppError("Kendinize istek atamazsınız!", 400);
   }
 
@@ -15,21 +15,21 @@ const sendRequest = async (senderId, receiverId) => {
   return await connectionRepository.createConnection(senderId, receiverId);
 };
 
-const acceptRequest = async (connectionId, userId) => {
-  const connection = await connectionRepository.findConnectionById(connectionId);
+const acceptRequest = async (connectionId: number | string, userId: number | string) => {
+  const connection: any = await connectionRepository.findConnectionById(connectionId);
 
-  if (!connection || connection.receiverId !== userId) {
+  if (!connection || connection.receiverId !== Number(userId)) {
     throw new AppError("Bu isteği kabul etme yetkiniz yok.", 403);
   }
 
   return await connectionRepository.updateConnectionStatus(connectionId, "ACCEPTED");
 };
 
-const rejectOrRemoveRequest = async (connectionId) => {
+const rejectOrRemoveRequest = async (connectionId: number | string) => {
   return await connectionRepository.deleteConnection(connectionId);
 };
 
-module.exports = {
+export default {
   sendRequest,
   acceptRequest,
   rejectOrRemoveRequest

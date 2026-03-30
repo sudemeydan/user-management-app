@@ -1,9 +1,20 @@
-// server/services/rabbitmqService.js
-const amqp = require('amqplib');
-const prisma = require('../utils/prisma');
-const { parseCVText, analyzeATSCompatibility } = require('./geminiService');
+import amqp, { Connection, Channel } from 'amqplib';
+import prisma from '../utils/prisma';
+import { parseCVText, analyzeATSCompatibility } from './geminiService';
 
-function calculateJaccardSimilarity(str1, str2) {
+export interface RabbitMQMessagePayload {
+  cvId: number | string;
+  fileData: string;
+}
+
+export interface RabbitMQResultPayload {
+  cvId: number | string;
+  status: 'COMPLETED' | 'FAILED';
+  rawText?: string;
+  error?: string;
+}
+
+function calculateJaccardSimilarity(str1?: string | null, str2?: string | null): number {
     if (!str1 || !str2) return 0;
     const set1 = new Set(str1.toLowerCase().split(/\s+/));
     const set2 = new Set(str2.toLowerCase().split(/\s+/));
@@ -12,35 +23,30 @@ function calculateJaccardSimilarity(str1, str2) {
     return intersection.size === 0 ? 0 : intersection.size / union.size;
 }
 
-let connection = null;
-let channel = null;
+let connection: Connection | null = null;
+let channel: Channel | null = null;
 
-const connectRabbitMQ = async () => {
+export const connectRabbitMQ = async (): Promise<void> => {
     try {
-        // ÇÖZÜM BURASI: 
-        // docker-compose.yml'deki RABBITMQ_URL'i (amqp://rabbitmq:5672) kullan. 
-        // Eğer o yoksa (lokal geliştirme için) default olarak 'amqp://localhost' kullan.
         const amqpUrl = process.env.RABBITMQ_URL || 'amqp://localhost';
 
         connection = await amqp.connect(amqpUrl);
         channel = await connection.createChannel();
 
-        // Kuyrukları tanımla
         await channel.assertQueue('cv_parsing_queue', { durable: true });
         await channel.assertQueue('cv_result_queue', { durable: true });
 
         console.log('✅ RabbitMQ Bağlantısı Başarılı');
 
-        // Worker'ı (dinleyiciyi) başlat
         startResultConsumer();
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('❌ RabbitMQ Bağlantı Hatası:', error.message);
-        setTimeout(connectRabbitMQ, 5000); // 5 saniye sonra tekrar dene
+        setTimeout(connectRabbitMQ, 5000);
     }
 };
-// Node.js'ten Python'a mesaj (PDF verisi) gönderme fonksiyonu
-const sendToQueue = async (queueName, message) => {
+
+export const sendToQueue = async (queueName: string, message: RabbitMQMessagePayload): Promise<void> => {
     if (!channel) {
         console.error("RabbitMQ kanalı hazır değil.");
         return;
@@ -50,8 +56,7 @@ const sendToQueue = async (queueName, message) => {
     });
 };
 
-// Python'dan gelen sonucu dinleme ve Gemini'yi tetikleme
-const startResultConsumer = async () => {
+const startResultConsumer = async (): Promise<void> => {
     if (!channel) return;
 
     console.log("📥 cv_result_queue dinleniyor...");
@@ -59,39 +64,36 @@ const startResultConsumer = async () => {
     channel.consume('cv_result_queue', async (msg) => {
         if (msg !== null) {
             try {
-                const resultData = JSON.parse(msg.content.toString());
+                const resultData = JSON.parse(msg.content.toString()) as RabbitMQResultPayload;
                 const { cvId, status, rawText, error } = resultData;
 
                 console.log(`[x] Python'dan cevap geldi. CV ID: ${cvId}, Durum: ${status}`);
 
                 if (status === 'FAILED') {
-                    // Python tarafında hata çıktıysa DB'yi güncelle
                     await prisma.cV.update({
-                        where: { id: parseInt(cvId) },
+                        where: { id: parseInt(cvId as string) },
                         data: { status: 'FAILED' }
                     });
                     console.error(`CV Ayrıştırma hatası (Python): ${error}`);
                 }
                 else if (status === 'COMPLETED' && rawText) {
-                    // Python başarılı. DB'de statüyü PROCESSING yap, ham metni kaydet
                     await prisma.cV.update({
-                        where: { id: parseInt(cvId) },
+                        where: { id: parseInt(cvId as string) },
                         data: {
                             status: 'PROCESSING',
                             rawText: rawText
                         }
                     });
 
-                    // SPAM/DUPLICATE CHECK
                     console.log(`[x] Spam kontrolü yapılıyor (CV ID: ${cvId})...`);
-                    const currentCV = await prisma.cV.findUnique({ where: { id: parseInt(cvId) }, select: { userId: true } });
+                    const currentCV = await prisma.cV.findUnique({ where: { id: parseInt(cvId as string) }, select: { userId: true } });
 
                     if (currentCV) {
                         const textLength = rawText.length;
                         const minLength = Math.floor(textLength * 0.90);
                         const maxLength = Math.ceil(textLength * 1.10);  
 
-                        const otherUsersCVs = await prisma.$queryRaw`
+                        const otherUsersCVs: any[] = await prisma.$queryRaw`
                             SELECT id, "userId", "rawText"
                             FROM "CV"
                             WHERE "userId" != ${currentCV.userId}
@@ -103,7 +105,7 @@ const startResultConsumer = async () => {
                         for (const existingCV of otherUsersCVs) {
                             const similarity = calculateJaccardSimilarity(rawText, existingCV.rawText);
                             if (similarity > 0.85) {
-                                console.warn(`[!] SPAM veya KOPYA tespit edildi! Mevcut CV: ${cvId}, Eşleşen CV: ${existingCV.id}, Benzerlik: ${Math.round(similarity * 100)}%`);
+                                console.warn(`[!] SPAM tespit edildi!`);
                                 isSpam = true;
                                 break;
                             }
@@ -111,27 +113,23 @@ const startResultConsumer = async () => {
 
                         if (isSpam) {
                             await prisma.cV.update({
-                                where: { id: parseInt(cvId) },
+                                where: { id: parseInt(cvId as string) },
                                 data: {
                                     status: 'FAILED',
-                                    atsFormatFeedback: 'Güvenlik Politikası: Sistemimizde tamamen aynı kariyere sahip bir CV zaten mevcut olduğundan mükerrer yükleme işleminiz durdurulmuştur.'
+                                    atsFormatFeedback: 'Güvenlik Politikası: Mükerrer CV.'
                                 }
                             });
-                            channel.ack(msg);
+                            channel!.ack(msg);
                             return;
                         }
 
-                        // 1. Gemini'ye ham metni gönder ve JSON al
                         console.log(`[x] Gemini'ye gönderiliyor (CV ID: ${cvId})...`);
-                        const parsedData = await parseCVText(rawText);
+                        const parsedData: any = await parseCVText(rawText);
 
-                        // 2. Gemini'den gelen verileri DB'ye kaydet
-                        // YENİ: ATS format analizi yap
-                        console.log(`[x] ATS Analizi yapılıyor (CV ID: ${cvId})...`);
-                        const atsAnalysis = await analyzeATSCompatibility(rawText);
+                        const atsAnalysis: any = await analyzeATSCompatibility(rawText);
 
                         await prisma.cV.update({
-                            where: { id: parseInt(cvId) },
+                            where: { id: parseInt(cvId as string) },
                             data: {
                                 summary: parsedData.summary,
                                 atsFormatScore: atsAnalysis.score,
@@ -140,10 +138,9 @@ const startResultConsumer = async () => {
                             }
                         });
 
-                        // 3. Entries (Yetenekler, Eğitimler vb.) tablosuna kayıt at
                         if (parsedData.entries && parsedData.entries.length > 0) {
-                            const entriesToCreate = parsedData.entries.map(entry => ({
-                                cvId: parseInt(cvId),
+                            const entriesToCreate = parsedData.entries.map((entry: any) => ({
+                                cvId: parseInt(cvId as string),
                                 category: entry.category,
                                 title: entry.title || "Belirtilmemiş",
                                 subtitle: entry.subtitle,
@@ -157,34 +154,15 @@ const startResultConsumer = async () => {
                                 data: entriesToCreate
                             });
                         }
-                        console.log(`✅ CV (ID: ${cvId}) başarıyla işlendi ve veritabanına kaydedildi!`);
+                        console.log(`✅ CV (ID: ${cvId}) kaydedildi!`);
                     }
                 }
 
-                channel.ack(msg); // Mesaj işlendi, kuyruktan sil
+                channel!.ack(msg);
             } catch (error) {
                 console.error("❌ Consumer işleme hatası:", error);
-
-                    // Hata durumunda veritabanındaki CV durumunu FAILED yap
-                    try {
-                        const resultData = JSON.parse(msg.content.toString());
-                        if (resultData && resultData.cvId) {
-                            await prisma.cV.update({
-                                where: { id: parseInt(resultData.cvId) },
-                                data: { status: 'FAILED' }
-                            });
-                            console.log(`[!] CV ID: ${resultData.cvId} durumu FAILED olarak güncellendi.`);
-                        }
-                    } catch (dbError) {
-                        console.error("❌ Durum güncellenirken ikincil hata oluştu:", dbError);
-                    }
-                    channel.nack(msg, false, false); // Mesaj tamamlanamadı (başarısız olarak reddedildi)
-                }
+                channel!.nack(msg, false, false);
             }
+        }
     });
-};
-
-module.exports = {
-    connectRabbitMQ,
-    sendToQueue
 };

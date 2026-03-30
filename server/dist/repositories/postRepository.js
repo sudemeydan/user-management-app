@@ -1,7 +1,11 @@
 "use strict";
-const prisma = require('../utils/prisma');
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const prisma_1 = __importDefault(require("../utils/prisma"));
 const createPostWithImages = async (authorId, content, uploadedImagesData) => {
-    return await prisma.post.create({
+    return await prisma_1.default.post.create({
         data: {
             content: content,
             authorId: authorId,
@@ -20,11 +24,11 @@ const createPostWithImages = async (authorId, content, uploadedImagesData) => {
 const findAllPosts = async (currentUserId) => {
     const whereClause = currentUserId ? {
         author: {
-            blockingUsers: { none: { blockedId: parseInt(currentUserId) } },
-            blockedUsers: { none: { blockerId: parseInt(currentUserId) } }
+            blockingUsers: { none: { blockedId: Number(currentUserId) } },
+            blockedUsers: { none: { blockerId: Number(currentUserId) } }
         }
     } : undefined;
-    return await prisma.post.findMany({
+    return await prisma_1.default.post.findMany({
         where: whereClause,
         orderBy: { createdAt: 'desc' },
         include: {
@@ -36,17 +40,17 @@ const findAllPosts = async (currentUserId) => {
     });
 };
 const findPostById = async (postId) => {
-    return await prisma.post.findUnique({
+    return await prisma_1.default.post.findUnique({
         where: { id: postId },
         include: { images: true }
     });
 };
 const deletePost = async (postId) => {
-    return await prisma.post.delete({
+    return await prisma_1.default.post.delete({
         where: { id: postId }
     });
 };
-module.exports = {
+exports.default = {
     createPostWithImages,
     findAllPosts,
     findPostById,

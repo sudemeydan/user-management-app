@@ -1,6 +1,7 @@
+import { Request, Response, NextFunction } from 'express';
 
-const roleMiddleware = (allowedRoles) => {
-  return (req, res, next) => {
+const roleMiddleware = (allowedRoles: string[]) => {
+  return (req: Request, res: Response, next: NextFunction): void | Response => {
     if (!req.user || !req.user.role) {
       return res.status(403).json({ success: false, message: "Erişim reddedildi. Rol bilgisi yok." });
     }
@@ -12,4 +13,4 @@ const roleMiddleware = (allowedRoles) => {
   };
 };
 
-module.exports = roleMiddleware;
+export default roleMiddleware;

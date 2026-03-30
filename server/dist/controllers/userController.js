@@ -1,9 +1,13 @@
 "use strict";
-const userService = require('../services/userService');
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const userService_1 = __importDefault(require("../services/userService"));
 const getUsers = async (req, res, next) => {
     try {
-        const currentUserId = req.user ? req.user.id : null;
-        const users = await userService.getAllUsers(currentUserId);
+        const currentUserId = req.user?.id;
+        const users = await userService_1.default.getAllUsers(currentUserId);
         res.json({ success: true, data: users });
     }
     catch (error) {
@@ -13,7 +17,7 @@ const getUsers = async (req, res, next) => {
 const updateUser = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const updatedUser = await userService.updateUser(id, req.body);
+        const updatedUser = await userService_1.default.updateUser(id, req.body);
         res.json({ success: true, message: "Güncellendi", data: updatedUser });
     }
     catch (error) {
@@ -23,7 +27,7 @@ const updateUser = async (req, res, next) => {
 const deleteUser = async (req, res, next) => {
     try {
         const { id } = req.params;
-        await userService.deleteUser(id);
+        await userService_1.default.deleteUser(id);
         res.json({ success: true, message: "Silindi" });
     }
     catch (error) {
@@ -32,7 +36,8 @@ const deleteUser = async (req, res, next) => {
 };
 const requestUpgrade = async (req, res, next) => {
     try {
-        await userService.requestUpgrade(req.user.id);
+        const userId = req.user?.id;
+        await userService_1.default.requestUpgrade(userId);
         res.json({ success: true, message: "Talebini aldık! Yönetici onayladığında PRO olacaksın." });
     }
     catch (error) {
@@ -42,7 +47,7 @@ const requestUpgrade = async (req, res, next) => {
 const handleUpgradeRequest = async (req, res, next) => {
     try {
         const { userId, action } = req.body;
-        await userService.handleUpgrade(userId, action);
+        await userService_1.default.handleUpgrade(userId, action);
         res.json({ success: true, message: `İşlem Başarılı: ${action}` });
     }
     catch (error) {
@@ -52,9 +57,11 @@ const handleUpgradeRequest = async (req, res, next) => {
 const uploadAvatar = async (req, res, next) => {
     try {
         if (!req.file) {
-            return res.status(400).json({ success: false, message: "Dosya yok" });
+            res.status(400).json({ success: false, message: "Dosya yok" });
+            return;
         }
-        const savedImage = await userService.uploadProfileImage(req.user.id, req.file);
+        const userId = req.user?.id;
+        const savedImage = await userService_1.default.uploadProfileImage(userId, req.file);
         res.json({ success: true, message: "Resim yüklendi!", data: savedImage });
     }
     catch (error) {
@@ -65,10 +72,11 @@ const togglePrivacy = async (req, res, next) => {
     try {
         const userId = parseInt(req.params.id);
         const { isPrivate } = req.body;
-        if (req.user.id !== userId && req.user.role !== 'SUPERADMIN') {
-            return res.status(403).json({ success: false, message: "Başkasının gizlilik ayarını değiştiremezsiniz!" });
+        if (req.user?.id !== userId && req.user?.role !== 'SUPERADMIN') {
+            res.status(403).json({ success: false, message: "Başkasının gizlilik ayarını değiştiremezsiniz!" });
+            return;
         }
-        const updatedUser = await userService.updateUser(userId, { isPrivate });
+        const updatedUser = await userService_1.default.updateUser(userId, { isPrivate });
         res.json({ success: true, message: `Hesap artık ${isPrivate ? 'Gizli' : 'Herkese Açık'}.`, data: updatedUser });
     }
     catch (error) {
@@ -77,9 +85,9 @@ const togglePrivacy = async (req, res, next) => {
 };
 const blockUser = async (req, res, next) => {
     try {
-        const blockerId = req.user.id;
+        const blockerId = req.user?.id;
         const blockedId = req.params.id;
-        await userService.blockUser(blockerId, blockedId);
+        await userService_1.default.blockUser(blockerId, blockedId);
         res.json({ success: true, message: "Kullanıcı engellendi." });
     }
     catch (error) {
@@ -88,16 +96,16 @@ const blockUser = async (req, res, next) => {
 };
 const unblockUser = async (req, res, next) => {
     try {
-        const blockerId = req.user.id;
+        const blockerId = req.user?.id;
         const blockedId = req.params.id;
-        await userService.unblockUser(blockerId, blockedId);
+        await userService_1.default.unblockUser(blockerId, blockedId);
         res.json({ success: true, message: "Kullanıcının engeli kaldırıldı." });
     }
     catch (error) {
         next(error);
     }
 };
-module.exports = {
+exports.default = {
     getUsers,
     updateUser,
     deleteUser,

@@ -1,22 +1,27 @@
 "use strict";
-const { google } = require('googleapis');
-const fs = require('fs');
-const path = require('path');
-require('dotenv').config();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.streamFile = exports.deleteFromDrive = exports.uploadToDrive = void 0;
+const googleapis_1 = require("googleapis");
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 const CLIENT_ID = process.env.GOOGLE_DRIVE_CLIENT_ID;
 const CLIENT_SECRET = process.env.GOOGLE_DRIVE_CLIENT_SECRET;
 const REFRESH_TOKEN = process.env.GOOGLE_DRIVE_REFRESH_TOKEN;
 const FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID;
-const oauth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, 'https://developers.google.com/oauthplayground');
+const oauth2Client = new googleapis_1.google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, 'https://developers.google.com/oauthplayground');
 oauth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
-// Yeni token alındığında (refresh sonrası) otomatik güncelleme
 oauth2Client.on('tokens', (tokens) => {
     if (tokens.refresh_token) {
         console.log("🔄 Yeni Refresh Token Alındı! .env dosyasına kalıcı olarak kaydediliyor...");
         try {
-            const envPath = path.resolve(__dirname, '../.env');
-            if (fs.existsSync(envPath)) {
-                let envData = fs.readFileSync(envPath, 'utf8');
+            const envPath = path_1.default.resolve(__dirname, '../.env');
+            if (fs_1.default.existsSync(envPath)) {
+                let envData = fs_1.default.readFileSync(envPath, 'utf8');
                 const regex = /^GOOGLE_DRIVE_REFRESH_TOKEN=.*$/m;
                 if (regex.test(envData)) {
                     envData = envData.replace(regex, `GOOGLE_DRIVE_REFRESH_TOKEN=${tokens.refresh_token}`);
@@ -24,7 +29,7 @@ oauth2Client.on('tokens', (tokens) => {
                 else {
                     envData += `\nGOOGLE_DRIVE_REFRESH_TOKEN=${tokens.refresh_token}`;
                 }
-                fs.writeFileSync(envPath, envData);
+                fs_1.default.writeFileSync(envPath, envData);
                 console.log("✅ Yeni Refresh Token başarıyla .env dosyasına kaydedildi.");
             }
         }
@@ -34,19 +39,18 @@ oauth2Client.on('tokens', (tokens) => {
     }
     console.log("🔑 Access Token Yenilendi.");
 });
-const drive = google.drive({ version: 'v3', auth: oauth2Client });
+const drive = googleapis_1.google.drive({ version: 'v3', auth: oauth2Client });
 const uploadToDrive = async (fileObj, customFolderId = null) => {
     try {
-        // Eğer customFolderId gelirse (CV için) onu kullan, gelmezse varsayılan resim klasörünü (FOLDER_ID) kullan
         const targetFolderId = customFolderId || FOLDER_ID;
         console.log("🚀 Yükleme Başlıyor... Hedef Klasör:", targetFolderId);
         const fileMetadata = {
             name: `file-${Date.now()}-${fileObj.originalname}`,
-            parents: [targetFolderId], // Artık dinamik
+            parents: [targetFolderId],
         };
         const media = {
             mimeType: fileObj.mimetype,
-            body: fs.createReadStream(fileObj.path),
+            body: fs_1.default.createReadStream(fileObj.path),
         };
         const response = await drive.files.create({
             requestBody: fileMetadata,
@@ -71,6 +75,7 @@ const uploadToDrive = async (fileObj, customFolderId = null) => {
         throw new Error('Dosya Drive\'a yüklenemedi.');
     }
 };
+exports.uploadToDrive = uploadToDrive;
 const deleteFromDrive = async (fileId) => {
     try {
         await drive.files.delete({ fileId: fileId });
@@ -80,16 +85,16 @@ const deleteFromDrive = async (fileId) => {
         console.log('Silme işlemi pas geçildi.');
     }
 };
+exports.deleteFromDrive = deleteFromDrive;
 const streamFile = async (fileId, res) => {
     try {
         const response = await drive.files.get({ fileId: fileId, alt: 'media' }, { responseType: 'stream' });
         response.data.on('end', () => { });
-        response.data.on('error', err => {
+        response.data.on('error', (err) => {
             console.error('Error reading drive stream', err);
             if (!res.headersSent)
                 res.status(500).end();
         });
-        // Set caching headers
         res.setHeader('Cache-Control', 'public, max-age=86400');
         response.data.pipe(res);
     }
@@ -99,4 +104,5 @@ const streamFile = async (fileId, res) => {
             res.status(404).send('Not Found');
     }
 };
-module.exports = { uploadToDrive, deleteFromDrive, streamFile };
+exports.streamFile = streamFile;
+exports.default = { uploadToDrive: exports.uploadToDrive, deleteFromDrive: exports.deleteFromDrive, streamFile: exports.streamFile };

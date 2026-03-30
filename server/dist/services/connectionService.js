@@ -1,27 +1,31 @@
 "use strict";
-const connectionRepository = require('../repositories/connectionRepository');
-const AppError = require('../utils/AppError');
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const connectionRepository_1 = __importDefault(require("../repositories/connectionRepository"));
+const AppError_1 = __importDefault(require("../utils/AppError"));
 const sendRequest = async (senderId, receiverId) => {
-    if (senderId === receiverId) {
-        throw new AppError("Kendinize istek atamazsınız!", 400);
+    if (Number(senderId) === Number(receiverId)) {
+        throw new AppError_1.default("Kendinize istek atamazsınız!", 400);
     }
-    const existingConnection = await connectionRepository.findConnection(senderId, receiverId);
+    const existingConnection = await connectionRepository_1.default.findConnection(senderId, receiverId);
     if (existingConnection) {
-        throw new AppError("Zaten bir istek gönderdiniz veya bağlantınız var.", 400);
+        throw new AppError_1.default("Zaten bir istek gönderdiniz veya bağlantınız var.", 400);
     }
-    return await connectionRepository.createConnection(senderId, receiverId);
+    return await connectionRepository_1.default.createConnection(senderId, receiverId);
 };
 const acceptRequest = async (connectionId, userId) => {
-    const connection = await connectionRepository.findConnectionById(connectionId);
-    if (!connection || connection.receiverId !== userId) {
-        throw new AppError("Bu isteği kabul etme yetkiniz yok.", 403);
+    const connection = await connectionRepository_1.default.findConnectionById(connectionId);
+    if (!connection || connection.receiverId !== Number(userId)) {
+        throw new AppError_1.default("Bu isteği kabul etme yetkiniz yok.", 403);
     }
-    return await connectionRepository.updateConnectionStatus(connectionId, "ACCEPTED");
+    return await connectionRepository_1.default.updateConnectionStatus(connectionId, "ACCEPTED");
 };
 const rejectOrRemoveRequest = async (connectionId) => {
-    return await connectionRepository.deleteConnection(connectionId);
+    return await connectionRepository_1.default.deleteConnection(connectionId);
 };
-module.exports = {
+exports.default = {
     sendRequest,
     acceptRequest,
     rejectOrRemoveRequest

@@ -1,8 +1,9 @@
-const userService = require('../services/userService');
+import { Request, Response, NextFunction } from 'express';
+import userService from '../services/userService';
 
-const getUsers = async (req, res, next) => {
+const getUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const currentUserId = req.user ? req.user.id : null;
+    const currentUserId = req.user?.id as string | number | undefined;
     const users = await userService.getAllUsers(currentUserId);
     res.json({ success: true, data: users });
   } catch (error) {
@@ -10,7 +11,7 @@ const getUsers = async (req, res, next) => {
   }
 };
 
-const updateUser = async (req, res, next) => {
+const updateUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params;
     const updatedUser = await userService.updateUser(id, req.body);
@@ -20,7 +21,7 @@ const updateUser = async (req, res, next) => {
   }
 };
 
-const deleteUser = async (req, res, next) => {
+const deleteUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params;
     await userService.deleteUser(id);
@@ -30,16 +31,17 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
-const requestUpgrade = async (req, res, next) => {
+const requestUpgrade = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    await userService.requestUpgrade(req.user.id);
+    const userId = req.user?.id as string | number;
+    await userService.requestUpgrade(userId);
     res.json({ success: true, message: "Talebini aldık! Yönetici onayladığında PRO olacaksın." });
   } catch (error) {
     next(error);
   }
 };
 
-const handleUpgradeRequest = async (req, res, next) => {
+const handleUpgradeRequest = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { userId, action } = req.body;
     await userService.handleUpgrade(userId, action);
@@ -49,24 +51,27 @@ const handleUpgradeRequest = async (req, res, next) => {
   }
 };
 
-const uploadAvatar = async (req, res, next) => {
+const uploadAvatar = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     if (!req.file) {
-      return res.status(400).json({ success: false, message: "Dosya yok" });
+      res.status(400).json({ success: false, message: "Dosya yok" });
+      return;
     }
-    const savedImage = await userService.uploadProfileImage(req.user.id, req.file);
+    const userId = req.user?.id as string | number;
+    const savedImage = await userService.uploadProfileImage(userId, req.file);
     res.json({ success: true, message: "Resim yüklendi!", data: savedImage });
   } catch (error) {
     next(error);
   }
 };
 
-const togglePrivacy = async (req, res, next) => {
+const togglePrivacy = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const userId = parseInt(req.params.id);
     const { isPrivate } = req.body;
-    if (req.user.id !== userId && req.user.role !== 'SUPERADMIN') {
-      return res.status(403).json({ success: false, message: "Başkasının gizlilik ayarını değiştiremezsiniz!" });
+    if (req.user?.id !== userId && req.user?.role !== 'SUPERADMIN') {
+      res.status(403).json({ success: false, message: "Başkasının gizlilik ayarını değiştiremezsiniz!" });
+      return;
     }
     const updatedUser = await userService.updateUser(userId, { isPrivate });
     res.json({ success: true, message: `Hesap artık ${isPrivate ? 'Gizli' : 'Herkese Açık'}.`, data: updatedUser });
@@ -75,9 +80,9 @@ const togglePrivacy = async (req, res, next) => {
   }
 };
 
-const blockUser = async (req, res, next) => {
+const blockUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const blockerId = req.user.id;
+    const blockerId = req.user?.id as string | number;
     const blockedId = req.params.id;
     await userService.blockUser(blockerId, blockedId);
     res.json({ success: true, message: "Kullanıcı engellendi." });
@@ -86,9 +91,9 @@ const blockUser = async (req, res, next) => {
   }
 };
 
-const unblockUser = async (req, res, next) => {
+const unblockUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const blockerId = req.user.id;
+    const blockerId = req.user?.id as string | number;
     const blockedId = req.params.id;
     await userService.unblockUser(blockerId, blockedId);
     res.json({ success: true, message: "Kullanıcının engeli kaldırıldı." });
@@ -97,7 +102,7 @@ const unblockUser = async (req, res, next) => {
   }
 };
 
-module.exports = {
+export default {
   getUsers,
   updateUser,
   deleteUser,

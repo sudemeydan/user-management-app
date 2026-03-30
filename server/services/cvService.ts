@@ -1,13 +1,13 @@
-const cvRepository = require('../repositories/cvRepository');
-const userRepository = require('../repositories/userRepository');
-const driveClient = require('../utils/driveClient');
-const AppError = require('../utils/AppError');
-const { generateATSPDF } = require('./pdfService'); // For downloadCvPdf logic
+import cvRepository from '../repositories/cvRepository';
+import userRepository from '../repositories/userRepository';
+import driveClient from '../utils/driveClient';
+import AppError from '../utils/AppError';
+import { generateATSPDF } from './pdfService';
 
-const uploadCV = async (userId, file) => {
+const uploadCV = async (userId: number | string, file: Express.Multer.File) => {
   const cvFolderId = process.env.GOOGLE_DRIVE_CV_FOLDER_ID;
 
-  const driveResponse = await driveClient.uploadToDrive(file, cvFolderId);
+  const driveResponse = await driveClient.uploadToDrive(file, cvFolderId as string);
 
   const newCV = await cvRepository.createCV({
     fileName: file.originalname,
@@ -15,18 +15,17 @@ const uploadCV = async (userId, file) => {
     fileSize: file.size,
     mimeType: file.mimetype,
     isActive: false,
-    userId: userId
+    userId: Number(userId)
   });
 
   return newCV;
 };
 
-const getUserCVs = async (targetUserId, requesterId, requesterRole) => {
-  const isOwner = parseInt(targetUserId) === parseInt(requesterId);
+const getUserCVs = async (targetUserId: number | string, requesterId: number | string, requesterRole?: string) => {
+  const isOwner = Number(targetUserId) === Number(requesterId);
   const isAdmin = requesterRole === 'SUPERADMIN';
 
-
-  const targetUser = await userRepository.findUserWithConnections(targetUserId, requesterId);
+  const targetUser: any = await userRepository.findUserWithConnections(targetUserId, requesterId);
 
   if (!targetUser) throw new Error("Kullanıcı bulunamadı.");
 
@@ -40,7 +39,7 @@ const getUserCVs = async (targetUserId, requesterId, requesterRole) => {
   return cvs;
 };
 
-const activateCV = async (userId, cvId) => {
+const activateCV = async (userId: number | string, cvId: number | string) => {
   const cv = await cvRepository.findCVByIdWithTailored(cvId, userId);
 
   if (!cv) throw new Error("CV bulunamadı veya yetkiniz yok.");
@@ -49,8 +48,8 @@ const activateCV = async (userId, cvId) => {
   return true;
 };
 
-const deleteCV = async (userId, cvId) => {
-  const cv = await cvRepository.findCVByIdWithTailored(cvId, userId);
+const deleteCV = async (userId: number | string, cvId: number | string) => {
+  const cv: any = await cvRepository.findCVByIdWithTailored(cvId, userId);
 
   if (!cv) throw new Error("CV bulunamadı veya yetkiniz yok.");
 
@@ -64,12 +63,12 @@ const deleteCV = async (userId, cvId) => {
   return true;
 };
 
-const getAllActiveCVs = async (requesterId, requesterRole) => {
+const getAllActiveCVs = async (requesterId: number | string, requesterRole?: string) => {
   const isAdmin = requesterRole === 'SUPERADMIN';
   const activeCVs = await cvRepository.findAllActiveCVs(requesterId);
 
-  const accessibleCVs = activeCVs.filter(cv => {
-    const isOwner = cv.userId === parseInt(requesterId);
+  const accessibleCVs = activeCVs.filter((cv: any) => {
+    const isOwner = cv.userId === Number(requesterId);
     if (isOwner || isAdmin) return true;
     if (!cv.user.isPrivate) return true;
 
@@ -77,7 +76,7 @@ const getAllActiveCVs = async (requesterId, requesterRole) => {
     return isConnected;
   });
 
-  return accessibleCVs.map(cv => ({
+  return accessibleCVs.map((cv: any) => ({
     id: cv.id,
     fileName: cv.fileName,
     fileId: cv.fileId,
@@ -92,8 +91,8 @@ const getAllActiveCVs = async (requesterId, requesterRole) => {
   }));
 };
 
-const getCVDataForRender = async (cvId) => {
-  const cv = await cvRepository.findCVById(cvId, true);
+const getCVDataForRender = async (cvId: number | string) => {
+  const cv: any = await cvRepository.findCVById(cvId, true);
 
   if (!cv) throw new Error("CV bulunamadı");
 
@@ -112,8 +111,8 @@ const getCVDataForRender = async (cvId) => {
   };
 };
 
-const generatePdfBufferForDownload = async (cvId, template) => {
-  const cv = await cvRepository.findCVById(cvId, true);
+const generatePdfBufferForDownload = async (cvId: number | string, template?: string) => {
+  const cv: any = await cvRepository.findCVById(cvId, true);
 
   if (!cv) {
     throw new AppError("CV bulunamadı.", 404);
@@ -129,7 +128,7 @@ const generatePdfBufferForDownload = async (cvId, template) => {
   return pdfBuffer;
 };
 
-module.exports = {
+export default {
   uploadCV,
   getUserCVs,
   activateCV,

@@ -1,37 +1,36 @@
-const jobPostingRepository = require('../repositories/jobPostingRepository');
-const cvRepository = require('../repositories/cvRepository');
-const appError = require('../utils/AppError');
-const { extractJobDetails, generateTailoringProposals } = require('./geminiService');
-const { generateTailoredPDF } = require('./pdfService');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-const driveClient = require('../utils/driveClient');
+import jobPostingRepository from '../repositories/jobPostingRepository';
+import cvRepository from '../repositories/cvRepository';
+import AppError from '../utils/AppError';
+import { extractJobDetails, generateTailoringProposals } from './geminiService';
+import { generateTailoredPDF } from './pdfService';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+import driveClient from '../utils/driveClient';
 
-const createJobPosting = async (url, description, role) => {
+const createJobPosting = async (url: string | null, description: string | undefined, role?: string) => {
   let finalDescription = description;
 
   if (url) {
-    const extractedData = await extractJobDetails(url);
+    const extractedData: any = await extractJobDetails(url);
     if (extractedData) {
       finalDescription = `Başlık: ${extractedData.title}\nŞirket: ${extractedData.company}\n\nDetaylar:\n${extractedData.description}`;
     } else {
-      throw new appError("URL'den iş ilanı çekilemedi. Lütfen manuel giriniz.", 400);
+      throw new AppError("URL'den iş ilanı çekilemedi. Lütfen manuel giriniz.", 400);
     }
   }
 
   if (!finalDescription) {
-    throw new appError("Lütfen bir iş ilanı URL'si veya metni giriniz.", 400);
+    throw new AppError("Lütfen bir iş ilanı URL'si veya metni giriniz.", 400);
   }
 
-  // finalDescription'dan başlık çıkar (varsa)
   let title = role || "Belirtilmedi";
   const titleMatch = finalDescription.match(/Başlık:\s*(.+)/);
   if (titleMatch) {
     title = titleMatch[1].trim();
   }
 
-  let company = null;
+  let company: string | null = null;
   const companyMatch = finalDescription.match(/Şirket:\s*(.+)/);
   if (companyMatch) {
     company = companyMatch[1].trim();
@@ -47,41 +46,39 @@ const createJobPosting = async (url, description, role) => {
   return jobPosting;
 };
 
-const getTailoringProposals = async (userId, cvId, jobPostingId) => {
-  const cv = await cvRepository.findCVById(cvId, true);
-  if (!cv || cv.userId !== parseInt(userId)) {
-    throw new appError("CV bulunamadı veya yetkiniz yok.", 404);
+const getTailoringProposals = async (userId: string | number, cvId: string | number, jobPostingId: string | number) => {
+  const cv: any = await cvRepository.findCVById(cvId, true);
+  if (!cv || cv.userId !== Number(userId)) {
+    throw new AppError("CV bulunamadı veya yetkiniz yok.", 404);
   }
 
   const jobPosting = await jobPostingRepository.findJobPostingById(jobPostingId);
   if (!jobPosting) {
-    throw new appError("İş ilanı bulunamadı.", 404);
+    throw new AppError("İş ilanı bulunamadı.", 404);
   }
 
   const proposals = await generateTailoringProposals(cv, jobPosting.description);
   return proposals;
 };
 
-const createTailoredCV = async (userId, cvId, jobPostingId, tailoredData) => {
+const createTailoredCV = async (userId: string | number, cvId: string | number, jobPostingId: string | number, tailoredData: any) => {
   const jobPosting = await jobPostingRepository.findJobPostingById(jobPostingId);
-  if (!jobPosting) throw new appError("İş ilanı bulunamadı.", 404);
+  if (!jobPosting) throw new AppError("İş ilanı bulunamadı.", 404);
 
-  const cv = await cvRepository.findCVById(cvId, true);
-  if (!cv || cv.userId !== parseInt(userId)) throw new appError("Orijinal CV bulunamadı.", 404);
+  const cv: any = await cvRepository.findCVById(cvId, true);
+  if (!cv || cv.userId !== Number(userId)) throw new AppError("Orijinal CV bulunamadı.", 404);
 
   const newTailoredCv = await jobPostingRepository.createTailoredCV({
-    userId: parseInt(userId),
-    originalCvId: parseInt(cvId),
-    jobPostingId: parseInt(jobPostingId),
+    userId: Number(userId),
+    originalCvId: Number(cvId),
+    jobPostingId: Number(jobPostingId),
     improvedSummary: tailoredData.improvedSummary || cv.summary,
-    // ATS skoru varsa kaydet
     ...(tailoredData.atsScore ? { atsScore: tailoredData.atsScore } : {})
   });
 
-  const adaptedEntries = cv.entries.map(entry => {
-    // BUG FIX: parseInt ile karşılaştır — entryId string gelir, entry.id number olur
+  const adaptedEntries = cv.entries.map((entry: any) => {
     const updatedEntry = tailoredData.updatedEntries?.find(
-      e => parseInt(e.originalEntryId) === parseInt(entry.id)
+      (e: any) => Number(e.originalEntryId) === Number(entry.id)
     );
     return {
       tailoredCvId: newTailoredCv.id,
@@ -100,16 +97,13 @@ const createTailoredCV = async (userId, cvId, jobPostingId, tailoredData) => {
   return await jobPostingRepository.findTailoredCVById(newTailoredCv.id);
 };
 
-const optimizeTailoredCV = async (userId, tailoredCvId) => {
-  const tailoredCv = await jobPostingRepository.findTailoredCVById(tailoredCvId);
+const optimizeTailoredCV = async (userId: string | number, tailoredCvId: string | number) => {
+  const tailoredCv: any = await jobPostingRepository.findTailoredCVById(tailoredCvId);
 
-  if (!tailoredCv || tailoredCv.originalCv.userId !== parseInt(userId)) {
-    throw new appError("Uyarlanmış CV bulunamadı veya yetkiniz yok.", 404);
+  if (!tailoredCv || tailoredCv.originalCv.userId !== Number(userId)) {
+    throw new AppError("Uyarlanmış CV bulunamadı veya yetkiniz yok.", 404);
   }
 
-  // pdfService.generateTailoredPDF beklediği format:
-  // cvData = { summary, userName, userEmail, entries: [...originalEntries] }
-  // tailoredData = { improvedSummary, entries: [...tailoredEntries] }
   const cvData = {
     summary: tailoredCv.originalCv.summary,
     userName: tailoredCv.originalCv.user.name,
@@ -125,13 +119,13 @@ const optimizeTailoredCV = async (userId, tailoredCvId) => {
   const pdfBuffer = await generateTailoredPDF(cvData, tailoredData, 'modern');
 
   const tempPath = path.join(os.tmpdir(), `Tailored-${tailoredCv.id}-${Date.now()}.pdf`);
-  fs.writeFileSync(tempPath, pdfBuffer);
+  fs.writeFileSync(tempPath, pdfBuffer as any);
 
   const driveResponse = await driveClient.uploadToDrive({
     path: tempPath,
     originalname: `Tailored-${tailoredCv.originalCv.fileName}`,
     mimetype: 'application/pdf'
-  }, process.env.GOOGLE_DRIVE_CV_FOLDER_ID);
+  }, process.env.GOOGLE_DRIVE_CV_FOLDER_ID as string);
 
   fs.unlinkSync(tempPath);
 
@@ -143,7 +137,7 @@ const optimizeTailoredCV = async (userId, tailoredCvId) => {
   };
 };
 
-module.exports = {
+export default {
   createJobPosting,
   getTailoringProposals,
   createTailoredCV,

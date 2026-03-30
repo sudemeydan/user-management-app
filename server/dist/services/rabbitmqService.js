@@ -1,8 +1,12 @@
 "use strict";
-// server/services/rabbitmqService.js
-const amqp = require('amqplib');
-const prisma = require('../utils/prisma');
-const { parseCVText, analyzeATSCompatibility } = require('./geminiService');
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.sendToQueue = exports.connectRabbitMQ = void 0;
+const amqplib_1 = __importDefault(require("amqplib"));
+const prisma_1 = __importDefault(require("../utils/prisma"));
+const geminiService_1 = require("./geminiService");
 function calculateJaccardSimilarity(str1, str2) {
     if (!str1 || !str2)
         return 0;
@@ -16,25 +20,20 @@ let connection = null;
 let channel = null;
 const connectRabbitMQ = async () => {
     try {
-        // ÇÖZÜM BURASI: 
-        // docker-compose.yml'deki RABBITMQ_URL'i (amqp://rabbitmq:5672) kullan. 
-        // Eğer o yoksa (lokal geliştirme için) default olarak 'amqp://localhost' kullan.
         const amqpUrl = process.env.RABBITMQ_URL || 'amqp://localhost';
-        connection = await amqp.connect(amqpUrl);
+        connection = await amqplib_1.default.connect(amqpUrl);
         channel = await connection.createChannel();
-        // Kuyrukları tanımla
         await channel.assertQueue('cv_parsing_queue', { durable: true });
         await channel.assertQueue('cv_result_queue', { durable: true });
         console.log('✅ RabbitMQ Bağlantısı Başarılı');
-        // Worker'ı (dinleyiciyi) başlat
         startResultConsumer();
     }
     catch (error) {
         console.error('❌ RabbitMQ Bağlantı Hatası:', error.message);
-        setTimeout(connectRabbitMQ, 5000); // 5 saniye sonra tekrar dene
+        setTimeout(exports.connectRabbitMQ, 5000);
     }
 };
-// Node.js'ten Python'a mesaj (PDF verisi) gönderme fonksiyonu
+exports.connectRabbitMQ = connectRabbitMQ;
 const sendToQueue = async (queueName, message) => {
     if (!channel) {
         console.error("RabbitMQ kanalı hazır değil.");
@@ -44,7 +43,7 @@ const sendToQueue = async (queueName, message) => {
         persistent: true,
     });
 };
-// Python'dan gelen sonucu dinleme ve Gemini'yi tetikleme
+exports.sendToQueue = sendToQueue;
 const startResultConsumer = async () => {
     if (!channel)
         return;
@@ -56,30 +55,27 @@ const startResultConsumer = async () => {
                 const { cvId, status, rawText, error } = resultData;
                 console.log(`[x] Python'dan cevap geldi. CV ID: ${cvId}, Durum: ${status}`);
                 if (status === 'FAILED') {
-                    // Python tarafında hata çıktıysa DB'yi güncelle
-                    await prisma.cV.update({
+                    await prisma_1.default.cV.update({
                         where: { id: parseInt(cvId) },
                         data: { status: 'FAILED' }
                     });
                     console.error(`CV Ayrıştırma hatası (Python): ${error}`);
                 }
                 else if (status === 'COMPLETED' && rawText) {
-                    // Python başarılı. DB'de statüyü PROCESSING yap, ham metni kaydet
-                    await prisma.cV.update({
+                    await prisma_1.default.cV.update({
                         where: { id: parseInt(cvId) },
                         data: {
                             status: 'PROCESSING',
                             rawText: rawText
                         }
                     });
-                    // SPAM/DUPLICATE CHECK
                     console.log(`[x] Spam kontrolü yapılıyor (CV ID: ${cvId})...`);
-                    const currentCV = await prisma.cV.findUnique({ where: { id: parseInt(cvId) }, select: { userId: true } });
+                    const currentCV = await prisma_1.default.cV.findUnique({ where: { id: parseInt(cvId) }, select: { userId: true } });
                     if (currentCV) {
                         const textLength = rawText.length;
                         const minLength = Math.floor(textLength * 0.90);
                         const maxLength = Math.ceil(textLength * 1.10);
-                        const otherUsersCVs = await prisma.$queryRaw `
+                        const otherUsersCVs = await prisma_1.default.$queryRaw `
                             SELECT id, "userId", "rawText"
                             FROM "CV"
                             WHERE "userId" != ${currentCV.userId}
@@ -90,30 +86,26 @@ const startResultConsumer = async () => {
                         for (const existingCV of otherUsersCVs) {
                             const similarity = calculateJaccardSimilarity(rawText, existingCV.rawText);
                             if (similarity > 0.85) {
-                                console.warn(`[!] SPAM veya KOPYA tespit edildi! Mevcut CV: ${cvId}, Eşleşen CV: ${existingCV.id}, Benzerlik: ${Math.round(similarity * 100)}%`);
+                                console.warn(`[!] SPAM tespit edildi!`);
                                 isSpam = true;
                                 break;
                             }
                         }
                         if (isSpam) {
-                            await prisma.cV.update({
+                            await prisma_1.default.cV.update({
                                 where: { id: parseInt(cvId) },
                                 data: {
                                     status: 'FAILED',
-                                    atsFormatFeedback: 'Güvenlik Politikası: Sistemimizde tamamen aynı kariyere sahip bir CV zaten mevcut olduğundan mükerrer yükleme işleminiz durdurulmuştur.'
+                                    atsFormatFeedback: 'Güvenlik Politikası: Mükerrer CV.'
                                 }
                             });
                             channel.ack(msg);
                             return;
                         }
-                        // 1. Gemini'ye ham metni gönder ve JSON al
                         console.log(`[x] Gemini'ye gönderiliyor (CV ID: ${cvId})...`);
-                        const parsedData = await parseCVText(rawText);
-                        // 2. Gemini'den gelen verileri DB'ye kaydet
-                        // YENİ: ATS format analizi yap
-                        console.log(`[x] ATS Analizi yapılıyor (CV ID: ${cvId})...`);
-                        const atsAnalysis = await analyzeATSCompatibility(rawText);
-                        await prisma.cV.update({
+                        const parsedData = await (0, geminiService_1.parseCVText)(rawText);
+                        const atsAnalysis = await (0, geminiService_1.analyzeATSCompatibility)(rawText);
+                        await prisma_1.default.cV.update({
                             where: { id: parseInt(cvId) },
                             data: {
                                 summary: parsedData.summary,
@@ -122,9 +114,8 @@ const startResultConsumer = async () => {
                                 status: 'COMPLETED'
                             }
                         });
-                        // 3. Entries (Yetenekler, Eğitimler vb.) tablosuna kayıt at
                         if (parsedData.entries && parsedData.entries.length > 0) {
-                            const entriesToCreate = parsedData.entries.map(entry => ({
+                            const entriesToCreate = parsedData.entries.map((entry) => ({
                                 cvId: parseInt(cvId),
                                 category: entry.category,
                                 title: entry.title || "Belirtilmemiş",
@@ -134,37 +125,19 @@ const startResultConsumer = async () => {
                                 description: entry.description,
                                 metadata: entry.metadata ? entry.metadata : null
                             }));
-                            await prisma.cVEntry.createMany({
+                            await prisma_1.default.cVEntry.createMany({
                                 data: entriesToCreate
                             });
                         }
-                        console.log(`✅ CV (ID: ${cvId}) başarıyla işlendi ve veritabanına kaydedildi!`);
+                        console.log(`✅ CV (ID: ${cvId}) kaydedildi!`);
                     }
                 }
-                channel.ack(msg); // Mesaj işlendi, kuyruktan sil
+                channel.ack(msg);
             }
             catch (error) {
                 console.error("❌ Consumer işleme hatası:", error);
-                // Hata durumunda veritabanındaki CV durumunu FAILED yap
-                try {
-                    const resultData = JSON.parse(msg.content.toString());
-                    if (resultData && resultData.cvId) {
-                        await prisma.cV.update({
-                            where: { id: parseInt(resultData.cvId) },
-                            data: { status: 'FAILED' }
-                        });
-                        console.log(`[!] CV ID: ${resultData.cvId} durumu FAILED olarak güncellendi.`);
-                    }
-                }
-                catch (dbError) {
-                    console.error("❌ Durum güncellenirken ikincil hata oluştu:", dbError);
-                }
-                channel.nack(msg, false, false); // Mesaj tamamlanamadı (başarısız olarak reddedildi)
+                channel.nack(msg, false, false);
             }
         }
     });
-};
-module.exports = {
-    connectRabbitMQ,
-    sendToQueue
 };

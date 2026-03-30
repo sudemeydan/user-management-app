@@ -1,32 +1,36 @@
 "use strict";
-const prisma = require('../utils/prisma');
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const prisma_1 = __importDefault(require("../utils/prisma"));
 const createConnection = async (senderId, receiverId) => {
-    return await prisma.connection.create({
-        data: { senderId, receiverId, status: "PENDING" }
+    return await prisma_1.default.connection.create({
+        data: { senderId: Number(senderId), receiverId: Number(receiverId), status: "PENDING" }
     });
 };
 const findConnection = async (senderId, receiverId) => {
-    return await prisma.connection.findFirst({
-        where: { senderId, receiverId }
+    return await prisma_1.default.connection.findFirst({
+        where: { senderId: Number(senderId), receiverId: Number(receiverId) }
     });
 };
 const findConnectionById = async (connectionId) => {
-    return await prisma.connection.findUnique({
-        where: { id: connectionId }
+    return await prisma_1.default.connection.findUnique({
+        where: { id: Number(connectionId) }
     });
 };
 const updateConnectionStatus = async (connectionId, status) => {
-    return await prisma.connection.update({
-        where: { id: connectionId },
+    return await prisma_1.default.connection.update({
+        where: { id: Number(connectionId) },
         data: { status }
     });
 };
 const deleteConnection = async (connectionId) => {
-    return await prisma.connection.delete({
-        where: { id: connectionId }
+    return await prisma_1.default.connection.delete({
+        where: { id: Number(connectionId) }
     });
 };
-module.exports = {
+exports.default = {
     createConnection,
     findConnection,
     findConnectionById,
