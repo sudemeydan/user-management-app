@@ -11,7 +11,7 @@ const uploadCV = async (userId: number | string, file: Express.Multer.File) => {
 
   const newCV = await cvRepository.createCV({
     fileName: file.originalname,
-    fileId: driveResponse.fileId,
+    fileId: driveResponse.fileId || "",
     fileSize: file.size,
     mimeType: file.mimetype,
     isActive: false,

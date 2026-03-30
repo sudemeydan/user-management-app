@@ -62,7 +62,7 @@ const startResultConsumer = async (): Promise<void> => {
 
     console.log("ğŸ“¥ cv_result_queue dinleniyor...");
 
-    channel.consume('cv_result_queue', async (msg) => {
+    channel.consume('cv_result_queue', async (msg: amqp.ConsumeMessage | null) => {
         if (msg !== null) {
             try {
                 const resultData = JSON.parse(msg.content.toString()) as RabbitMQResultPayload;

@@ -16,7 +16,7 @@ const sendRequest = async (req: Request, res: Response, next: NextFunction): Pro
 
 const acceptRequest = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const connectionId = parseInt(req.params.id);
+    const connectionId = parseInt(req.params.id as string);
     const userId = req.user?.id as string | number;
 
     const updatedConnection = await connectionService.acceptRequest(connectionId, userId);

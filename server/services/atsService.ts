@@ -67,7 +67,7 @@ const optimizeCVFormat = async (userId: string | number, cvId: number): Promise<
 
   fs.unlinkSync(tempPath);
 
-  const atsFormattedCV: ATSFormattedCV = await cvRepository.upsertAtsFormattedCV(cvId, driveResponse.fileId);
+  const atsFormattedCV: ATSFormattedCV = await cvRepository.upsertAtsFormattedCV(cvId, driveResponse.fileId || "");
 
   return {
     ...atsFormattedCV,
