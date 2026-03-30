@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "jest",
+    "test:watch": "jest --watchAll"
   },
   "keywords": [],
   "author": "",
@@ -29,6 +32,9 @@
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
-    "@types/node": "^25.2.3"
+    "@types/node": "^25.2.3",
+    "jest": "^30.3.0",
+    "jest-mock-extended": "^4.0.0",
+    "supertest": "^7.2.2"
   }
 }
