@@ -1,11 +1,20 @@
-const userRepository = require('../repositories/userRepository');
-const bcrypt = require('bcrypt');
-const crypto = require('crypto');
-const emailService = require('./emailService');
-const AppError = require('../utils/AppError');
-const prisma = require('../utils/prisma');
+import userRepository from '../repositories/userRepository';
+import bcrypt from 'bcrypt';
+import crypto from 'crypto';
+import emailService from './emailService';
+import AppError from '../utils/AppError';
+import prisma from '../utils/prisma';
 
-const registerUser = async (userData) => {
+// 1. Kullanıcı Kayıt isteklerinin tipleri
+export interface RegisterUserData {
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+  address?: string;
+  [key: string]: any;
+}
+
+const registerUser = async (userData: RegisterUserData) => {
   const { email, password, confirmPassword, address, ...otherData } = userData;
 
   if (!email || !password || !confirmPassword || !address) {
@@ -53,7 +62,7 @@ const registerUser = async (userData) => {
   return newUser;
 };
 
-const verifyEmail = async (token) => {
+const verifyEmail = async (token: string) => {
   const user = await prisma.user.findUnique({
     where: { emailVerificationToken: token }
   });
@@ -73,7 +82,8 @@ const verifyEmail = async (token) => {
   return true;
 };
 
-const loginUser = async (email, password) => {
+const loginUser = async (email: string, password: string) => {
+  // Return type inference will carry user up to the controller
   const user = await userRepository.findUserByEmail(email);
 
   if (!user) {
@@ -92,7 +102,7 @@ const loginUser = async (email, password) => {
   return user;
 };
 
-const forgotPassword = async (email) => {
+const forgotPassword = async (email: string) => {
   const user = await userRepository.findUserByEmail(email);
   if (!user) {
     throw new AppError("Bu e-posta adresiyle kayıtlı bir kullanıcı bulunamadı.", 400);
@@ -113,7 +123,7 @@ const forgotPassword = async (email) => {
   return true;
 };
 
-const resetPassword = async (token, newPassword) => {
+const resetPassword = async (token: string, newPassword: string) => {
   const user = await prisma.user.findFirst({
     where: {
       resetPasswordToken: token,
@@ -139,7 +149,7 @@ const resetPassword = async (token, newPassword) => {
   return true;
 };
 
-module.exports = {
+export default {
   registerUser,
   verifyEmail,
   loginUser,

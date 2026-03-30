@@ -1,7 +1,14 @@
-const authService = require('../services/authService');
-const jwt = require('jsonwebtoken');
+import { Request, Response, NextFunction } from 'express';
+import authService, { RegisterUserData } from '../services/authService';
+import jwt from 'jsonwebtoken';
 
-const registerUser = async (req, res, next) => {
+// 1. Kullanıcı Login isteklerinin tipleri
+export interface LoginRequestData {
+  email?: string;
+  password?: string;
+}
+
+const registerUser = async (req: Request<{}, {}, RegisterUserData>, res: Response, next: NextFunction): Promise<void> => {
   try {
     const newUser = await authService.registerUser(req.body);
     res.status(201).json({ success: true, message: "Kayıt Başarılı! Lütfen e-postanızı onaylayın.", data: newUser });
@@ -10,7 +17,7 @@ const registerUser = async (req, res, next) => {
   }
 };
 
-const verifyEmail = async (req, res, next) => {
+const verifyEmail = async (req: Request<{ token: string }>, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { token } = req.params;
     await authService.verifyEmail(token);
@@ -20,20 +27,24 @@ const verifyEmail = async (req, res, next) => {
   }
 };
 
-const login = async (req, res, next) => {
+const login = async (req: Request<{}, {}, LoginRequestData>, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { email, password } = req.body;
+    if (!email || !password) {
+      res.status(400).json({ success: false, message: "E-posta ve şifre zorunludur." });
+      return;
+    }
     const user = await authService.loginUser(email, password);
 
     const accessToken = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET as string,
       { expiresIn: '15m' }
     );
 
     const refreshToken = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET as string,
       { expiresIn: '2h' }
     );
 
@@ -49,7 +60,7 @@ const login = async (req, res, next) => {
   }
 };
 
-const forgotPassword = async (req, res, next) => {
+const forgotPassword = async (req: Request<{}, {}, { email: string }>, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { email } = req.body;
     await authService.forgotPassword(email);
@@ -59,7 +70,7 @@ const forgotPassword = async (req, res, next) => {
   }
 };
 
-const resetPassword = async (req, res, next) => {
+const resetPassword = async (req: Request<{ token: string }, {}, { newPassword: string }>, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { token } = req.params;
     const { newPassword } = req.body;
@@ -70,16 +81,17 @@ const resetPassword = async (req, res, next) => {
   }
 };
 
-const refresh = async (req, res, next) => {
+const refresh = async (req: Request<{}, {}, { refreshToken: string }>, res: Response, next: NextFunction): Promise<void> => {
   const { refreshToken } = req.body;
   if (!refreshToken) {
-    return res.status(401).json({ success: false, message: "Refresh Token bulunamadı!" });
+    res.status(401).json({ success: false, message: "Refresh Token bulunamadı!" });
+    return;
   }
   try {
-    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET as string) as import('../middlewares/authMiddleware').AuthJwtPayload;
     const newAccessToken = jwt.sign(
       { id: decoded.id, email: decoded.email },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET as string,
       { expiresIn: '15m' }
     );
     res.json({ success: true, accessToken: newAccessToken });
@@ -88,7 +100,7 @@ const refresh = async (req, res, next) => {
   }
 };
 
-module.exports = {
+export default {
   registerUser,
   verifyEmail,
   login,

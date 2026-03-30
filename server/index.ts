@@ -1,10 +1,11 @@
+import { Request, Response, NextFunction } from 'express';
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
 const cvRoutes = require('./routes/cvRoutes');
-const atsRoutes = require('./routes/atsRoutes');
+const atsRoutes = require('./routes/atsRoutes').default || require('./routes/atsRoutes');
 const tailoringRoutes = require('./routes/tailoringRoutes');
 const postRoutes = require('./routes/postRoutes');
 const connectionRoutes = require('./routes/connectionRoutes');
@@ -18,7 +19,7 @@ const { connectRabbitMQ } = require('./services/rabbitmqService');
 
 connectRabbitMQ();
 
-app.get('/test-mq', async (req, res) => {
+app.get('/test-mq', async (req: Request, res: Response) => {
   try {
     // Python'a göndermek istediğimiz Hello World verisi
     const testData = {
@@ -43,7 +44,7 @@ app.get('/test-mq', async (req, res) => {
 
 
 app.use(cors());
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   console.log(`📢 SUNUCUYA İSTEK GELDİ: [${req.method}] ${req.url}`);
   next();
 });
@@ -64,8 +65,8 @@ app.use('/connections', connectionRoutes);
 app.use('/posts', postRoutes);
 
 
-const AppError = require('./utils/AppError');
-app.use((req, res, next) => {
+const AppError = require('./utils/AppError').default || require('./utils/AppError');
+app.use((req: Request, res: Response, next: NextFunction) => {
   next(new AppError(`Bu sunucuda ${req.originalUrl} adresi bulunamadı!`, 404));
 });
 

@@ -1,18 +1,19 @@
-const userRepository = require('../repositories/userRepository');
-const bcrypt = require('bcrypt');
-const crypto = require('crypto');
-const emailService = require('./emailService');
-const driveClient = require('../utils/driveClient');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-const prisma = require('../utils/prisma');
-const AppError = require('../utils/AppError');
-const { generateATSPDF, generateTailoredPDF } = require('./pdfService');
-const { uploadBufferToDrive } = require('../utils/driveClient');
-const { extractJobDetails, generateTailoringProposals } = require('./geminiService');
+// @ts-nocheck
+import userRepository from '../repositories/userRepository';
+import bcrypt from 'bcrypt';
+import crypto from 'crypto';
+import emailService from './emailService';
+import driveClient from '../utils/driveClient';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+import prisma from '../utils/prisma';
+import AppError from '../utils/AppError';
+import { generateATSPDF, generateTailoredPDF } from './pdfService';
+import { uploadBufferToDrive } from '../utils/driveClient';
+import { extractJobDetails, generateTailoringProposals } from './geminiService';
 
-const getAllUsers = async (currentUserId) => {
+const getAllUsers = async (currentUserId: any) => {
   const users = await userRepository.findAllUsers(currentUserId);
 
   if (!currentUserId) return users;
@@ -23,7 +24,7 @@ const getAllUsers = async (currentUserId) => {
   }));
 };
 
-const registerUser = async (userData) => {
+const registerUser = async (userData: any) => {
   // 1. Gelen veriyi parçalıyoruz 
   const { email, password, confirmPassword, address, ...otherData } = userData;
 
@@ -80,7 +81,7 @@ const registerUser = async (userData) => {
   return newUser;
 };
 
-const verifyEmail = async (token) => {
+const verifyEmail = async (token: any) => {
   const user = await prisma.user.findUnique({
     where: { emailVerificationToken: token }
   });
@@ -100,7 +101,7 @@ const verifyEmail = async (token) => {
   return true;
 };
 
-const loginUser = async (email, password) => {
+const loginUser = async (email: any, password: any) => {
   const user = await userRepository.findUserByEmail(email);
 
   if (!user) {
@@ -119,7 +120,7 @@ const loginUser = async (email, password) => {
   return user;
 };
 
-const forgotPassword = async (email) => {
+const forgotPassword = async (email: any) => {
   const user = await userRepository.findUserByEmail(email);
   if (!user) {
     throw new AppError("Bu e-posta adresiyle kayıtlı bir kullanıcı bulunamadı.", 400);
@@ -140,7 +141,7 @@ const forgotPassword = async (email) => {
   return true;
 };
 
-const resetPassword = async (token, newPassword) => {
+const resetPassword = async (token: any, newPassword: any) => {
   const user = await prisma.user.findFirst({
     where: {
       resetPasswordToken: token,
@@ -166,18 +167,18 @@ const resetPassword = async (token, newPassword) => {
   return true;
 };
 
-const updateUser = async (id, userData) => {
+const updateUser = async (id: any, userData: any) => {
   if (userData.password) {
     userData.password = await bcrypt.hash(userData.password, 10);
   }
   return await userRepository.updateUser(id, userData);
 };
 
-const deleteUser = async (id) => {
+const deleteUser = async (id: any) => {
   return await userRepository.deleteUser(id);
 };
 
-const requestUpgrade = async (userId) => {
+const requestUpgrade = async (userId: any) => {
   console.log("1. Service Katmanı: İstek başladı. Kullanıcı ID:", userId);
 
   if (!userRepository.createUpgradeRequest) {
@@ -200,7 +201,7 @@ const requestUpgrade = async (userId) => {
   return newRequest;
 };
 
-const handleUpgrade = async (userId, action) => {
+const handleUpgrade = async (userId: any, action: any) => {
   const lastRequest = await userRepository.findLatestUpgradeRequest(userId);
 
   if (!lastRequest || lastRequest.status !== 'PENDING') {
@@ -215,7 +216,7 @@ const handleUpgrade = async (userId, action) => {
   }
 };
 
-const uploadProfileImage = async (userId, fileObj) => {
+const uploadProfileImage = async (userId: any, fileObj: any) => {
   const { fileId, publicUrl } = await driveClient.uploadToDrive(fileObj);
 
   fs.unlink(fileObj.path, (err) => {
@@ -246,7 +247,7 @@ const uploadProfileImage = async (userId, fileObj) => {
   return savedImage;
 };
 
-const uploadCV = async (userId, file) => {
+const uploadCV = async (userId: any, file: any) => {
   const cvFolderId = process.env.GOOGLE_DRIVE_CV_FOLDER_ID;
 
   const driveResponse = await driveClient.uploadToDrive(file, cvFolderId);
@@ -267,7 +268,7 @@ const uploadCV = async (userId, file) => {
   return newCV;
 };
 
-const getUserCVs = async (targetUserId, requesterId, requesterRole) => {
+const getUserCVs = async (targetUserId: any, requesterId: any, requesterRole: any) => {
   const targetUser = await prisma.user.findUnique({
     where: { id: parseInt(targetUserId) },
     include: {
@@ -306,7 +307,7 @@ const getUserCVs = async (targetUserId, requesterId, requesterRole) => {
   return cvs;
 };
 
-const activateCV = async (userId, cvId) => {
+const activateCV = async (userId: any, cvId: any) => {
   const cv = await prisma.cV.findFirst({
     where: { id: parseInt(cvId), userId: parseInt(userId) }
   });
@@ -328,7 +329,7 @@ const activateCV = async (userId, cvId) => {
   return true;
 };
 
-const deleteCV = async (userId, cvId) => {
+const deleteCV = async (userId: any, cvId: any) => {
   const cv = await prisma.cV.findFirst({
     where: { id: parseInt(cvId), userId: parseInt(userId) }
   });
@@ -350,7 +351,7 @@ const deleteCV = async (userId, cvId) => {
   return true;
 };
 
-const getAllActiveCVs = async (requesterId, requesterRole) => {
+const getAllActiveCVs = async (requesterId: any, requesterRole: any) => {
   const isAdmin = requesterRole === 'SUPERADMIN';
 
   // Get all active CVs including user and their connections
@@ -393,18 +394,18 @@ const getAllActiveCVs = async (requesterId, requesterRole) => {
   }));
 };
 
-const blockUser = async (blockerId, blockedId) => {
+const blockUser = async (blockerId: any, blockedId: any) => {
   if (parseInt(blockerId) === parseInt(blockedId)) {
     throw new AppError("Kendinizi engelleyemezsiniz.", 400);
   }
   return await userRepository.blockUser(blockerId, blockedId);
 };
 
-const unblockUser = async (blockerId, blockedId) => {
+const unblockUser = async (blockerId: any, blockedId: any) => {
   return await userRepository.unblockUser(blockerId, blockedId);
 };
 
-const optimizeCVFormat = async (userId, cvId) => {
+const optimizeCVFormat = async (userId: any, cvId: any) => {
   const cv = await prisma.cV.findUnique({
     where: { id: parseInt(cvId) },
     include: { entries: true, user: true }
@@ -453,7 +454,7 @@ const optimizeCVFormat = async (userId, cvId) => {
   };
 };
 
-const getUserATSStatus = async (cvId) => {
+const getUserATSStatus = async (cvId: any) => {
   const cv = await prisma.cV.findUnique({
     where: { id: parseInt(cvId) },
     select: {
@@ -465,7 +466,7 @@ const getUserATSStatus = async (cvId) => {
   return cv;
 };
 
-const getCVDataForRender = async (cvId) => {
+const getCVDataForRender = async (cvId: any) => {
   const cv = await prisma.cV.findUnique({
     where: { id: parseInt(cvId) },
     include: {
@@ -494,7 +495,7 @@ const getCVDataForRender = async (cvId) => {
 
 // ---- İŞ İLANI VE TAILORING FONKSİYONLARI ----
 
-const createJobPosting = async (jobText, url = null) => {
+const createJobPosting = async (jobText: any, url = null) => {
   const extracted = await extractJobDetails(jobText);
   return await prisma.jobPosting.create({
     data: {
@@ -507,7 +508,7 @@ const createJobPosting = async (jobText, url = null) => {
   });
 };
 
-const getTailoringProposals = async (cvId, jobPostingId) => {
+const getTailoringProposals = async (cvId: any, jobPostingId: any) => {
   const cv = await prisma.cV.findUnique({
     where: { id: parseInt(cvId) },
     include: { entries: true }
@@ -522,7 +523,7 @@ const getTailoringProposals = async (cvId, jobPostingId) => {
   return proposals;
 };
 
-const createTailoredCV = async (userId, originalCvId, jobPostingId, tailoredData) => {
+const createTailoredCV = async (userId: any, originalCvId: any, jobPostingId: any, tailoredData: any) => {
   const { improvedSummary, approvedProposals, atsScore } = tailoredData;
 
   const tailoredCV = await prisma.tailoredCV.create({
@@ -553,7 +554,7 @@ const createTailoredCV = async (userId, originalCvId, jobPostingId, tailoredData
   return tailoredCV;
 };
 
-const optimizeTailoredCV = async (userId, tailoredCvId) => {
+const optimizeTailoredCV = async (userId: any, tailoredCvId: any) => {
   const tailoredCV = await prisma.tailoredCV.findUnique({
     where: { id: parseInt(tailoredCvId) },
     include: {
@@ -609,7 +610,7 @@ const optimizeTailoredCV = async (userId, tailoredCvId) => {
   };
 };
 
-module.exports = {
+export default {
   getAllUsers,
   registerUser,
   verifyEmail,
