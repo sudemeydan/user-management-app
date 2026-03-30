@@ -43,10 +43,17 @@ oauth2Client.on('tokens', (tokens) => {
 
 const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
-export const uploadToDrive = async (fileObj: any, customFolderId: string | null = null) => {
+export interface DriveFile {
+  path: string;
+  originalname: string;
+  mimetype: string;
+  [key: string]: any;
+}
+
+export const uploadToDrive = async (fileObj: DriveFile, customFolderId: string | null = null) => {
   try {
     const targetFolderId = customFolderId || FOLDER_ID;
-    console.log("ğŸš€ YÃ¼kleme BaÅŸlÄ±yor... Hedef KlasÃ¶r:", targetFolderId);
+    console.log("🚀 Yükleme Başlıyor... Hedef Klasör:", targetFolderId);
 
     const fileMetadata = {
       name: `file-${Date.now()}-${fileObj.originalname}`,
@@ -63,10 +70,10 @@ export const uploadToDrive = async (fileObj: any, customFolderId: string | null 
       media: media,
       fields: 'id, webViewLink, webContentLink, thumbnailLink',
       supportsAllDrives: true,
-    });
+    } as any);
 
-    const fileId = response.data.id;
-    console.log("âœ… Dosya Drive'a YÃ¼klendi! ID:", fileId);
+    const fileId = (response.data as any).id;
+    console.log("✅ Dosya Drive'a Yüklendi! ID:", fileId);
 
     await drive.permissions.create({
       fileId: fileId as string,
@@ -74,31 +81,31 @@ export const uploadToDrive = async (fileObj: any, customFolderId: string | null 
         role: 'reader',
         type: 'anyone',
       },
-    });
+    } as any);
 
     let publicUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
 
     return { fileId, publicUrl };
 
   } catch (error: any) {
-    console.error('âŒ Google Drive YÃ¼kleme HatasÄ±:', error.message);
-    throw new Error('Dosya Drive\'a yÃ¼klenemedi.');
+    console.error('❌ Google Drive Yükleme Hatası:', error.message);
+    throw new Error('Dosya Drive\'a yüklenemedi.');
   }
 };
 
 export const deleteFromDrive = async (fileId: string) => {
   try {
-    await drive.files.delete({ fileId: fileId });
-    console.log(`ğŸ—‘ï¸ Drive'dan silindi: ${fileId}`);
+    await drive.files.delete({ fileId: fileId } as any);
+    console.log(`🗑️ Drive'dan silindi: ${fileId}`);
   } catch (error) {
-    console.log('Silme iÅŸlemi pas geÃ§ildi.');
+    console.log('Silme işlemi pas geçildi.');
   }
 };
 
 export const streamFile = async (fileId: string, res: Response) => {
   try {
-    const response = await drive.files.get(
-      { fileId: fileId, alt: 'media' },
+    const response: any = await drive.files.get(
+      { fileId: fileId, alt: 'media' } as any,
       { responseType: 'stream' }
     );
     response.data.on('end', () => { });
@@ -115,4 +122,5 @@ export const streamFile = async (fileId: string, res: Response) => {
   }
 };
 
-export default { uploadToDrive, deleteFromDrive, streamFile };
+const driveClient = { uploadToDrive, deleteFromDrive, streamFile };
+export default driveClient;
