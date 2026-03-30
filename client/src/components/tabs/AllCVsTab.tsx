@@ -2,8 +2,12 @@ import React from 'react';
 import axiosInstance from '../../axiosInstance';
 import { Briefcase, Download } from 'lucide-react';
 
-const AllCVsTab = ({ allActiveCvs }) => {
-    const downloadCVStream = async (fileId, fileName) => {
+interface AllCVsTabProps {
+    allActiveCvs: any[];
+}
+
+const AllCVsTab: React.FC<AllCVsTabProps> = ({ allActiveCvs }) => {
+    const downloadCVStream = async (fileId: string | number, fileName: string) => {
         try {
             const res = await axiosInstance.get(`/users/cv-download/${fileId}`, { responseType: 'blob' });
             const blob = new Blob([res.data]);

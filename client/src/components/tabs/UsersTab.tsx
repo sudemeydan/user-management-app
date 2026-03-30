@@ -4,7 +4,22 @@ import {
     Clock, UserCheck, UserX, Download
 } from 'lucide-react';
 
-const UsersTab = ({
+interface UsersTabProps {
+    user: any;
+    filteredUsers: any[];
+    searchTerm: string;
+    setSearchTerm: (t: string) => void;
+    sendConnectionRequest: (id: string | number) => void;
+    acceptConnection: (id: string | number) => void;
+    removeConnection: (id: string | number) => void;
+    blockUser: (id: string | number) => void;
+    unblockUser: (id: string | number) => void;
+    handleDownloadTargetCV: (id: string | number, name: string) => void;
+    handleAdminAction: (id: string | number, action: string) => void;
+    axiosBaseURL: string;
+}
+
+const UsersTab: React.FC<UsersTabProps> = ({
     user,
     filteredUsers,
     searchTerm,
@@ -31,15 +46,15 @@ const UsersTab = ({
             <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                     <tbody className="divide-y divide-gray-100 text-sm">
-                        {filteredUsers.map((u) => {
-                            const sentReq = u.receivedConnections?.find(c => c.senderId === user.id);
-                            const receivedReq = u.sentConnections?.find(c => c.receiverId === user.id);
+                        {filteredUsers.map((u: any) => {
+                            const sentReq = u.receivedConnections?.find((c: any) => c.senderId === user.id);
+                            const receivedReq = u.sentConnections?.find((c: any) => c.receiverId === user.id);
                             let connStatus = 'NONE';
-                            let connId = null;
+                            let connId: string | number | null = null;
                             if (sentReq) { connStatus = sentReq.status === 'ACCEPTED' ? 'ACCEPTED' : 'PENDING_SENT'; connId = sentReq.id; }
                             else if (receivedReq) { connStatus = receivedReq.status === 'ACCEPTED' ? 'ACCEPTED' : 'PENDING_RECEIVED'; connId = receivedReq.id; }
                             const isBlockedByMe = u.isBlockedByMe;
-                            const pendingUpgrade = u.upgradeRequests?.find(req => req.status === 'PENDING');
+                            const pendingUpgrade = u.upgradeRequests?.find((req: any) => req.status === 'PENDING');
                             const canViewDetails = user.role === 'SUPERADMIN' || u.id === user.id || !u.isPrivate || connStatus === 'ACCEPTED';
 
                             return (
@@ -74,12 +89,12 @@ const UsersTab = ({
                                                 {connStatus === 'PENDING_SENT' && <span className="flex items-center gap-1 text-xs bg-gray-100 text-gray-500 px-3 py-1.5 rounded-lg font-medium"><Clock size={14} /> Bekliyor</span>}
                                                 {connStatus === 'PENDING_RECEIVED' && (
                                                     <div className="flex gap-1">
-                                                        <button onClick={() => acceptConnection(connId)} className="flex items-center gap-1 text-xs bg-green-500 text-white px-3 py-1.5 rounded-lg hover:bg-green-600 transition"><Check size={14} /> Kabul</button>
-                                                        <button onClick={() => removeConnection(connId)} className="flex items-center gap-1 text-xs bg-red-100 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-200 transition"><X size={14} /> Red</button>
+                                                        <button onClick={() => acceptConnection(connId as string|number)} className="flex items-center gap-1 text-xs bg-green-500 text-white px-3 py-1.5 rounded-lg hover:bg-green-600 transition"><Check size={14} /> Kabul</button>
+                                                        <button onClick={() => removeConnection(connId as string|number)} className="flex items-center gap-1 text-xs bg-red-100 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-200 transition"><X size={14} /> Red</button>
                                                     </div>
                                                 )}
                                                 {connStatus === 'ACCEPTED' && (
-                                                    <button onClick={() => removeConnection(connId)} className="flex items-center gap-1 text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg group-hover:bg-red-50 group-hover:text-red-600 transition">
+                                                    <button onClick={() => removeConnection(connId as string|number)} className="flex items-center gap-1 text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg group-hover:bg-red-50 group-hover:text-red-600 transition">
                                                         <UserCheck size={14} className="group-hover:hidden" />
                                                         <UserX size={14} className="hidden group-hover:block" />
                                                         <span className="group-hover:hidden">Bağlı</span>

@@ -1,40 +1,37 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, ChangeEvent, FormEvent } from 'react';
 import axiosInstance from '../axiosInstance';
+import { User } from '../types/auth';
 import {
     Users, LogOut, LayoutDashboard, Loader2, Crown, Clock,
     Lock, Unlock, Camera, FileText, Briefcase, BrainCircuit
 } from 'lucide-react';
 
-// Modüler Tab Bileşenleri
 import FeedTab from './tabs/FeedTab';
 import UsersTab from './tabs/UsersTab';
 import MyCVsTab from './tabs/MyCVsTab';
 import AllCVsTab from './tabs/AllCVsTab';
 import ATSTailorTab from './tabs/ATSTailorTab';
 
-const Dashboard = ({ user, onLogout }) => {
-    const [users, setUsers] = useState([]);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [isLoadingAction, setIsLoadingAction] = useState(false);
-    const [uploadingImg, setUploadingImg] = useState(false);
-    const fileInputRef = useRef(null);
-    const [activeTab, setActiveTab] = useState('users');
+interface DashboardProps {
+    user: User;
+    onLogout: () => void;
+}
 
-    // Feed state
-    const [posts, setPosts] = useState([]);
-    const [postContent, setPostContent] = useState('');
-    const [postImages, setPostImages] = useState([]);
-    const postFileInputRef = useRef(null);
+const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
+    const [users, setUsers] = useState<any[]>([]);
+    const [searchTerm, setSearchTerm] = useState<string>('');
+    const [isLoadingAction, setIsLoadingAction] = useState<boolean>(false);
+    const [uploadingImg, setUploadingImg] = useState<boolean>(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [activeTab, setActiveTab] = useState<string>('users');
 
-    // Modal state
-    const [formData, setFormData] = useState({
-        name: '', username: '', email: '', age: '', address: '', password: '', role: 'FREE_USER'
-    });
-    const [editingId, setEditingId] = useState(null);
+    const [posts, setPosts] = useState<any[]>([]);
+    const [postContent, setPostContent] = useState<string>('');
+    const [postImages, setPostImages] = useState<File[]>([]);
+    const postFileInputRef = useRef<HTMLInputElement>(null);
 
-    // CV state
-    const [myCvs, setMyCvs] = useState([]);
-    const [allActiveCvs, setAllActiveCvs] = useState([]);
+    const [myCvs, setMyCvs] = useState<any[]>([]);
+    const [allActiveCvs, setAllActiveCvs] = useState<any[]>([]);
 
     useEffect(() => {
         fetchUsers();
@@ -43,15 +40,14 @@ const Dashboard = ({ user, onLogout }) => {
         fetchAllActiveCvs();
     }, []);
 
-    // Polling: İşlenmekte olan CV varsa, 5 saniyede bir kontrol et
     useEffect(() => {
-        let pollInterval;
+        let pollInterval: NodeJS.Timeout;
         const hasProcessingCV = myCvs.some(cv => cv.status === 'PENDING' || cv.status === 'PROCESSING');
         if (hasProcessingCV) {
             pollInterval = setInterval(() => {
                 axiosInstance.get(`/users/${user.id}/cvs`).then((response) => {
                     const freshCvs = response.data.data;
-                    const stillProcessing = freshCvs.some(cv => cv.status === 'PENDING' || cv.status === 'PROCESSING');
+                    const stillProcessing = freshCvs.some((cv: any) => cv.status === 'PENDING' || cv.status === 'PROCESSING');
                     if (!stillProcessing) setMyCvs(freshCvs);
                 }).catch(err => console.error(err));
             }, 5000);
@@ -59,7 +55,6 @@ const Dashboard = ({ user, onLogout }) => {
         return () => { if (pollInterval) clearInterval(pollInterval); };
     }, [myCvs, user.id]);
 
-    // ---- VERI ÇEKME FONKSİYONLARI ----
     const fetchAllActiveCvs = async () => {
         try { const response = await axiosInstance.get('/users/all-active-cvs'); setAllActiveCvs(response.data.data); }
         catch (error) { console.error("Aktif CV'ler çekilemedi:", error); }
@@ -75,9 +70,9 @@ const Dashboard = ({ user, onLogout }) => {
             const response = await axiosInstance.get('/users');
             const fetchedUsers = response.data.data;
             setUsers(fetchedUsers);
-            const latestCurrentUser = fetchedUsers.find(u => u.id === user.id);
+            const latestCurrentUser = fetchedUsers.find((u: any) => u.id === user.id);
             if (latestCurrentUser) localStorage.setItem('userData', JSON.stringify(latestCurrentUser));
-        } catch (error) {
+        } catch (error: any) {
             if (error.response && (error.response.status === 401 || error.response.status === 403)) {
                 alert("Oturum süreniz doldu. Lütfen tekrar giriş yapın."); onLogout();
             }
@@ -89,52 +84,57 @@ const Dashboard = ({ user, onLogout }) => {
         catch (error) { console.error("Gönderiler çekilemedi:", error); }
     };
 
-    // ---- HANDLER FONKSİYONLARI ----
-    const handleCreatePost = async (e) => {
+    const handleCreatePost = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!postContent.trim() && postImages.length === 0) return;
         setIsLoadingAction(true);
         const postData = new FormData();
         postData.append('content', postContent);
         postImages.forEach((file) => postData.append('images', file));
-        try { await axiosInstance.post('/posts', postData, { headers: { 'Content-Type': 'multipart/form-data' } }); setPostContent(''); setPostImages([]); fetchPosts(); alert("Gönderi başarıyla paylaşıldı!"); }
-        catch (error) { alert("Gönderi paylaşılamadı: " + (error.response?.data?.message || error.message)); }
+        try { 
+            await axiosInstance.post('/posts', postData, { headers: { 'Content-Type': 'multipart/form-data' } }); 
+            setPostContent(''); setPostImages([]); fetchPosts(); alert("Gönderi başarıyla paylaşıldı!"); 
+        }
+        catch (error: any) { alert("Gönderi paylaşılamadı: " + (error.response?.data?.message || error.message)); }
         finally { setIsLoadingAction(false); }
     };
 
-    const handleDeletePost = async (postId) => {
+    const handleDeletePost = async (postId: string | number) => {
         if (!window.confirm("Bu gönderiyi silmek istediğinize emin misiniz?")) return;
         try { await axiosInstance.delete(`/posts/${postId}`); fetchPosts(); }
-        catch (error) { alert("Silme hatası: " + (error.response?.data?.message || error.message)); }
+        catch (error: any) { alert("Silme hatası: " + (error.response?.data?.message || error.message)); }
     };
 
-    const handlePostImageSelect = (e) => {
+    const handlePostImageSelect = (e: ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files) return;
         const files = Array.from(e.target.files);
         if (files.length > 10) { alert("Tek seferde en fazla 10 resim yükleyebilirsiniz!"); return; }
         setPostImages(files);
     };
 
-    const handleImageClick = () => fileInputRef.current.click();
+    const handleImageClick = () => fileInputRef.current?.click();
 
-    const handleFileChange = async (e) => {
+    const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files?.length) return;
         const file = e.target.files[0];
-        if (!file) return;
         if (!file.type.startsWith('image/')) { alert("Lütfen geçerli bir resim dosyası seçin!"); return; }
         setUploadingImg(true);
-        const formData = new FormData();
-        formData.append('image', file);
-        try { await axiosInstance.post('/users/upload-avatar', formData, { headers: { 'Content-Type': 'multipart/form-data' } }); alert("Profil resmi güncellendi! 📸"); fetchUsers(); }
-        catch (error) { alert("Resim yüklenirken hata oluştu."); }
+        const tfData = new FormData();
+        tfData.append('image', file);
+        try { 
+            await axiosInstance.post('/users/upload-avatar', tfData, { headers: { 'Content-Type': 'multipart/form-data' } }); 
+            alert("Profil resmi güncellendi! 📸"); fetchUsers(); 
+        }
+        catch (error: any) { alert("Resim yüklenirken hata oluştu."); }
         finally { setUploadingImg(false); }
     };
 
-    const handleDownloadTargetCV = async (targetUserId, targetUserName) => {
+    const handleDownloadTargetCV = async (targetUserId: string | number, targetUserName: string) => {
         try {
             const response = await axiosInstance.get(`/users/${targetUserId}/cvs`);
             const targetCVS = response.data.data;
-            const activeCV = targetCVS.find(cv => cv.isActive);
+            const activeCV = targetCVS.find((cv: any) => cv.isActive);
             if (!activeCV) { alert("Bu kullanıcının aktif bir CV'si bulunmuyor."); return; }
-            // Download
             const res = await axiosInstance.get(`/users/cv-download/${activeCV.fileId}`, { responseType: 'blob' });
             const blob = new Blob([res.data]);
             const url = window.URL.createObjectURL(blob);
@@ -144,61 +144,58 @@ const Dashboard = ({ user, onLogout }) => {
     };
 
     const handleTogglePrivacy = async () => {
-        const currentUserData = users.find(u => u.id === user.id) || user;
-        try { await axiosInstance.patch(`/users/${user.id}/privacy`, { isPrivate: !currentUserData.isPrivate }); fetchUsers(); }
+        const cd = users.find(u => u.id === user.id) || user;
+        try { await axiosInstance.patch(`/users/${user.id}/privacy`, { isPrivate: !cd.isPrivate }); fetchUsers(); }
         catch (error) { alert("Gizlilik ayarı değiştirilemedi."); }
     };
 
-    const sendConnectionRequest = async (receiverId) => {
+    const sendConnectionRequest = async (receiverId: string | number) => {
         try { await axiosInstance.post('/connections/request', { receiverId }); fetchUsers(); }
         catch (error) { alert("İstek gönderilemedi"); }
     };
 
-    const acceptConnection = async (connectionId) => {
+    const acceptConnection = async (connectionId: string | number) => {
         try { await axiosInstance.put(`/connections/accept/${connectionId}`); fetchUsers(); }
         catch (error) { alert("Hata oluştu"); }
     };
 
-    const removeConnection = async (connectionId) => {
+    const removeConnection = async (connectionId: string | number) => {
         try { await axiosInstance.delete(`/connections/remove/${connectionId}`); fetchUsers(); }
         catch (error) { alert("Hata oluştu"); }
     };
 
-    const blockUser = async (blockedId) => {
+    const blockUser = async (blockedId: string | number) => {
         if (!window.confirm("Bu kullanıcıyı engellemek istediğinize emin misiniz?")) return;
         try { await axiosInstance.post(`/users/${blockedId}/block`); fetchUsers(); alert("Kullanıcı engellendi."); }
-        catch (error) { alert("Engelleme hatası: " + (error.response?.data?.message || error.message)); }
+        catch (error: any) { alert("Engelleme hatası: " + (error.response?.data?.message || error.message)); }
     };
 
-    const unblockUser = async (blockedId) => {
+    const unblockUser = async (blockedId: string | number) => {
         try { await axiosInstance.delete(`/users/${blockedId}/block`); fetchUsers(); alert("Kullanıcının engeli kaldırıldı."); }
-        catch (error) { alert("Engel kaldırma hatası: " + (error.response?.data?.message || error.message)); }
+        catch (error: any) { alert("Engel kaldırma hatası: " + (error.response?.data?.message || error.message)); }
     };
 
     const handleRequestUpgrade = async () => {
         setIsLoadingAction(true);
         try { const response = await axiosInstance.post('/users/request-upgrade'); alert(response.data.message); fetchUsers(); }
-        catch (error) { alert("Hata: " + (error.response?.data?.message || error.message)); }
+        catch (error: any) { alert("Hata: " + (error.response?.data?.message || error.message)); }
         finally { setIsLoadingAction(false); }
     };
 
-    const handleAdminAction = async (userId, action) => {
+    const handleAdminAction = async (userId: string | number, action: string) => {
         if (!window.confirm("İşlemi onaylıyor musunuz?")) return;
         try { await axiosInstance.post('/users/handle-upgrade', { userId, action }); fetchUsers(); }
-        catch (error) { alert("İşlem Hatası: " + error.message); }
+        catch (error: any) { alert("İşlem Hatası: " + error.message); }
     };
 
-    // ---- HESAPLANAN DEĞİŞKENLER ----
-    const filteredUsers = users.filter(u => u.name?.toLowerCase().includes(searchTerm.toLowerCase()) || u.email?.toLowerCase().includes(searchTerm.toLowerCase()));
-    const currentUserData = users.find(u => u.id === user.id) || user;
-    const hasPendingRequest = currentUserData.upgradeRequests?.some(req => req.status === 'PENDING');
-    const profileImgUrl = currentUserData.profileImage?.url;
+    const filteredUsers = users.filter((u: any) => u.name?.toLowerCase().includes(searchTerm.toLowerCase()) || u.email?.toLowerCase().includes(searchTerm.toLowerCase()));
+    const cd = users.find(u => u.id === user.id) || user;
+    const hasPendingRequest = cd.upgradeRequests?.some((req: any) => req.status === 'PENDING');
+    const profileImgUrl = cd.profileImage?.url;
 
     return (
         <div className="min-h-screen flex font-sans" style={{background: 'var(--bg)'}}>
-            {/* SIDEBAR */}
             <aside className="w-64 fixed h-full flex flex-col z-20 shadow-2xl" style={{background: 'var(--surface)', borderRight: '1px solid var(--border)'}}>
-                {/* Logo */}
                 <div className="p-6 flex items-center gap-3" style={{borderBottom: '1px solid var(--border)'}}>
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm text-white shadow-lg" style={{background: 'linear-gradient(135deg, #6c63ff, #9c8fff)', fontFamily: 'Syne, sans-serif', fontSize: '11px', letterSpacing: '1px'}}>CV·AI</div>
                     <div>
@@ -220,14 +217,10 @@ const Dashboard = ({ user, onLogout }) => {
                             onClick={() => setActiveTab(tab.key)}
                             className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-sm"
                             style={activeTab === tab.key ? {
-                                background: 'rgba(108,99,255,0.18)',
-                                color: '#a09dff',
-                                border: '1px solid rgba(108,99,255,0.3)',
-                                boxShadow: '0 0 16px rgba(108,99,255,0.15)'
+                                background: 'rgba(108,99,255,0.18)', color: '#a09dff',
+                                border: '1px solid rgba(108,99,255,0.3)', boxShadow: '0 0 16px rgba(108,99,255,0.15)'
                             } : {
-                                background: 'transparent',
-                                color: 'var(--muted)',
-                                border: '1px solid transparent'
+                                background: 'transparent', color: 'var(--muted)', border: '1px solid transparent'
                             }}
                         >
                             {tab.icon}<span className="font-medium">{tab.label}</span>
@@ -235,7 +228,6 @@ const Dashboard = ({ user, onLogout }) => {
                     ))}
                 </nav>
 
-                {/* Alt Profil Alanı */}
                 <div className="p-4" style={{borderTop: '1px solid var(--border)'}}>
                     <div className="flex items-center gap-3 mb-3 px-1">
                         <div className="relative group cursor-pointer" onClick={handleImageClick}>
@@ -243,8 +235,8 @@ const Dashboard = ({ user, onLogout }) => {
                             <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-white overflow-hidden" style={{background: 'linear-gradient(135deg, #f6d365, #fda085)', border: '2px solid var(--border)'}}>
                                 {uploadingImg ? <Loader2 className="animate-spin w-4 h-4" />
                                     : profileImgUrl
-                                        ? <img src={currentUserData.profileImage?.fileId ? `${axiosInstance.defaults.baseURL}/posts/image/${currentUserData.profileImage.fileId}` : profileImgUrl} alt="Profil" className="w-full h-full object-cover" />
-                                        : currentUserData.name?.charAt(0).toUpperCase()
+                                        ? <img src={cd.profileImage?.fileId ? `${axiosInstance.defaults.baseURL}/posts/image/${cd.profileImage.fileId}` : profileImgUrl} alt="Profil" className="w-full h-full object-cover" />
+                                        : cd.name?.charAt(0).toUpperCase()
                                 }
                             </div>
                             <div className="absolute inset-0 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition" style={{background: 'rgba(0,0,0,0.5)'}}>
@@ -252,18 +244,18 @@ const Dashboard = ({ user, onLogout }) => {
                             </div>
                         </div>
                         <div className="overflow-hidden">
-                            <p className="text-sm font-semibold truncate" style={{color: 'var(--text)', fontFamily: 'Syne, sans-serif'}}>{currentUserData.name}</p>
-                            <p className="text-xs truncate" style={{color: 'var(--muted)'}}>{currentUserData.role}</p>
+                            <p className="text-sm font-semibold truncate" style={{color: 'var(--text)', fontFamily: 'Syne, sans-serif'}}>{cd.name}</p>
+                            <p className="text-xs truncate" style={{color: 'var(--muted)'}}>{cd.role}</p>
                         </div>
                     </div>
 
                     <button onClick={handleTogglePrivacy} className="w-full flex items-center justify-between px-3 py-2 mb-2 rounded-xl transition-all" style={{background: 'var(--surface2)', border: '1px solid var(--border)'}}>
                         <span className="flex items-center gap-2 text-xs font-medium" style={{color: 'var(--muted)'}}>
-                            {currentUserData.isPrivate ? <Lock size={13} style={{color: '#f6a623'}} /> : <Unlock size={13} style={{color: 'var(--accent3)'}} />}
-                            {currentUserData.isPrivate ? 'Gizli Hesap' : 'Açık Hesap'}
+                            {cd.isPrivate ? <Lock size={13} style={{color: '#f6a623'}} /> : <Unlock size={13} style={{color: 'var(--accent3)'}} />}
+                            {cd.isPrivate ? 'Gizli Hesap' : 'Açık Hesap'}
                         </span>
-                        <div className={`w-8 h-4 rounded-full relative transition-colors`} style={{background: currentUserData.isPrivate ? '#f6a623' : '#3a3a55'}}>
-                            <div className={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-all ${currentUserData.isPrivate ? 'right-0.5' : 'left-0.5'}`}></div>
+                        <div className={`w-8 h-4 rounded-full relative transition-colors`} style={{background: cd.isPrivate ? '#f6a623' : '#3a3a55'}}>
+                            <div className={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-all ${cd.isPrivate ? 'right-0.5' : 'left-0.5'}`}></div>
                         </div>
                     </button>
 
@@ -273,9 +265,7 @@ const Dashboard = ({ user, onLogout }) => {
                 </div>
             </aside>
 
-            {/* MAIN CONTENT */}
             <main className="flex-1 ml-64 p-8 relative" style={{zIndex: 1}}>
-                {/* PRO Upgrade Banner */}
                 {user.role === 'FREE_USER' && (
                     <div className="mb-8 relative overflow-hidden rounded-2xl text-white p-7 flex items-center justify-between" style={{background: 'linear-gradient(135deg, #6c63ff 0%, #9c8fff 50%, #ff6584 100%)', boxShadow: '0 8px 40px rgba(108,99,255,0.3)'}}>
                         <div className="absolute inset-0 opacity-20" style={{background: 'radial-gradient(ellipse at top left, rgba(255,255,255,0.3), transparent 60%)'}}></div>
@@ -295,7 +285,6 @@ const Dashboard = ({ user, onLogout }) => {
                     </div>
                 )}
 
-                {/* Tab İçerikleri */}
                 {activeTab === 'feed' && (
                     <FeedTab
                         user={user}
@@ -326,7 +315,7 @@ const Dashboard = ({ user, onLogout }) => {
                         unblockUser={unblockUser}
                         handleDownloadTargetCV={handleDownloadTargetCV}
                         handleAdminAction={handleAdminAction}
-                        axiosBaseURL={axiosInstance.defaults.baseURL}
+                        axiosBaseURL={axiosInstance.defaults.baseURL!}
                     />
                 )}
 

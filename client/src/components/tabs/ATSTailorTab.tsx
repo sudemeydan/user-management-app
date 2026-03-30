@@ -11,69 +11,65 @@ const STEPS = {
     DONE: 'DONE'
 };
 
-const ATSTailorTab = ({ myCvs }) => {
-    const [step, setStep] = useState(STEPS.INPUT);
-    const [jobText, setJobText] = useState('');
-    const [jobUrl, setJobUrl] = useState('');
-    const [selectedCvId, setSelectedCvId] = useState('');
-    const [loading, setLoading] = useState(false);
+interface ATSTailorTabProps {
+    myCvs: any[];
+}
 
-    // State: Analiz sonuçları
-    const [jobPosting, setJobPosting] = useState(null);
-    const [proposals, setProposals] = useState(null);
-    const [approvedIndexes, setApprovedIndexes] = useState(new Set());
+const ATSTailorTab: React.FC<ATSTailorTabProps> = ({ myCvs }) => {
+    const [step, setStep] = useState<string>(STEPS.INPUT);
+    const [jobText, setJobText] = useState<string>('');
+    const [jobUrl, setJobUrl] = useState<string>('');
+    const [selectedCvId, setSelectedCvId] = useState<string>('');
+    const [loading, setLoading] = useState<boolean>(false);
 
-    // 1) İş ilanı gönder + öneriler al
+    const [jobPosting, setJobPosting] = useState<any>(null);
+    const [proposals, setProposals] = useState<any>(null);
+    const [approvedIndexes, setApprovedIndexes] = useState<Set<number>>(new Set());
+
     const handleAnalyze = async () => {
         if (!jobText.trim()) { alert("Lütfen iş ilanı metnini girin."); return; }
         if (!selectedCvId) { alert("Lütfen bir CV seçin."); return; }
 
         setLoading(true);
         try {
-            // İş ilanı oluştur
             const jobRes = await axiosInstance.post('/users/job-postings', { jobText, url: jobUrl || null });
             const createdJob = jobRes.data.data;
             setJobPosting(createdJob);
 
-            // Tailoring önerileri al
             const proposalRes = await axiosInstance.get(`/users/cvs/${selectedCvId}/tailor/${createdJob.id}`);
             setProposals(proposalRes.data.data);
 
-            // Tüm önerileri varsayılan olarak onayla
             if (proposalRes.data.data?.proposals) {
-                setApprovedIndexes(new Set(proposalRes.data.data.proposals.map((_, i) => i)));
+                setApprovedIndexes(new Set(proposalRes.data.data.proposals.map((_: any, i: number) => i)));
             }
             setStep(STEPS.PROPOSALS);
-        } catch (error) {
+        } catch (error: any) {
             alert("Analiz hatası: " + (error.response?.data?.message || error.message));
         } finally {
             setLoading(false);
         }
     };
 
-    // 2) Onaylanan önerileri submit et
     const handleCreateTailored = async () => {
         setLoading(true);
         try {
-            const approvedProposals = proposals.proposals
-                .filter((_, i) => approvedIndexes.has(i));
-
+            const approvedProposals = proposals.proposals.filter((_: any, i: number) => approvedIndexes.has(i));
             await axiosInstance.post('/users/tailored-cvs', {
                 originalCvId: parseInt(selectedCvId),
                 jobPostingId: jobPosting.id,
                 improvedSummary: proposals.improvedSummary,
-                atsScore: proposals.atsScore || null,  // ATS skoru da kaydet
+                atsScore: proposals.atsScore || null,
                 approvedProposals
             });
             setStep(STEPS.DONE);
-        } catch (error) {
+        } catch (error: any) {
             alert("Uyarlama hatası: " + (error.response?.data?.message || error.message));
         } finally {
             setLoading(false);
         }
     };
 
-    const toggleProposal = (index) => {
+    const toggleProposal = (index: number) => {
         setApprovedIndexes(prev => {
             const newSet = new Set(prev);
             if (newSet.has(index)) newSet.delete(index);
@@ -89,12 +85,10 @@ const ATSTailorTab = ({ myCvs }) => {
         setApprovedIndexes(new Set());
     };
 
-    // Sadece işlenmiş CV'ler gösterilsin
     const processedCvs = myCvs.filter(cv => cv.status === 'COMPLETED');
 
     return (
         <div className="max-w-4xl mx-auto">
-            {/* Progress Bar */}
             <div className="flex items-center gap-2 mb-8">
                 {[
                     { key: STEPS.INPUT, label: '1. İlan Gir & CV Seç' },
@@ -111,7 +105,6 @@ const ATSTailorTab = ({ myCvs }) => {
                 ))}
             </div>
 
-            {/* STEP 1: İlan Giriş & CV Seçimi */}
             {step === STEPS.INPUT && (
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-6">
                     <div>
@@ -121,7 +114,6 @@ const ATSTailorTab = ({ myCvs }) => {
                         <p className="text-sm text-gray-500">İş ilanı metnini yapıştırın, CV'nizi seçin — yapay zeka uyarlama önerileri sunacak.</p>
                     </div>
 
-                    {/* CV Seçimi */}
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">CV Seçin</label>
                         {processedCvs.length === 0 ? (
@@ -145,7 +137,6 @@ const ATSTailorTab = ({ myCvs }) => {
                         )}
                     </div>
 
-                    {/* İş İlanı Metni */}
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">İş İlanı Metni</label>
                         <textarea
@@ -153,11 +144,10 @@ const ATSTailorTab = ({ myCvs }) => {
                             onChange={(e) => setJobText(e.target.value)}
                             placeholder="İş ilanını buraya yapıştırın... (Pozisyon gereklilikleri, aranan nitelikler vb.)"
                             className="w-full p-4 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none text-sm"
-                            rows="8"
+                            rows={8}
                         />
                     </div>
 
-                    {/* İlan URL (Opsiyonel) */}
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">İlan URL'si <span className="text-gray-400 font-normal">(opsiyonel)</span></label>
                         <input
@@ -180,10 +170,8 @@ const ATSTailorTab = ({ myCvs }) => {
                 </div>
             )}
 
-            {/* STEP 2: Öneriler */}
             {step === STEPS.PROPOSALS && proposals && (
                 <div className="space-y-6">
-                    {/* Geliştirilmiş Özet */}
                     {proposals.improvedSummary && (
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                             <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
@@ -195,30 +183,28 @@ const ATSTailorTab = ({ myCvs }) => {
                         </div>
                     )}
 
-                    {/* Öneri Kartları */}
                     {proposals.proposals && proposals.proposals.length > 0 && (
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                    {/* Proposals Header with ATS Score */}
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-bold text-gray-800">İçerik Önerileri</h3>
-                        <div className="flex items-center gap-2">
-                            {proposals.atsScore !== undefined && (
-                                <span className={`text-xs font-bold px-3 py-1 rounded-full ${
-                                    proposals.atsScore >= 75 ? 'bg-green-100 text-green-700' :
-                                    proposals.atsScore >= 50 ? 'bg-yellow-100 text-yellow-700' :
-                                    'bg-red-100 text-red-700'
-                                }`}>
-                                    ATS Uyum: {proposals.atsScore}/100
-                                </span>
-                            )}
-                            <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                                {approvedIndexes.size}/{proposals.proposals.length} onaylandı
-                            </span>
-                        </div>
-                    </div>
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-bold text-gray-800">İçerik Önerileri</h3>
+                                <div className="flex items-center gap-2">
+                                    {proposals.atsScore !== undefined && (
+                                        <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                                            proposals.atsScore >= 75 ? 'bg-green-100 text-green-700' :
+                                            proposals.atsScore >= 50 ? 'bg-yellow-100 text-yellow-700' :
+                                            'bg-red-100 text-red-700'
+                                        }`}>
+                                            ATS Uyum: {proposals.atsScore}/100
+                                        </span>
+                                    )}
+                                    <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                                        {approvedIndexes.size}/{proposals.proposals.length} onaylandı
+                                    </span>
+                                </div>
+                            </div>
 
                             <div className="space-y-4">
-                                {proposals.proposals.map((proposal, index) => {
+                                {proposals.proposals.map((proposal: any, index: number) => {
                                     const isApproved = approvedIndexes.has(index);
                                     return (
                                         <div
@@ -254,7 +240,6 @@ const ATSTailorTab = ({ myCvs }) => {
                         </div>
                     )}
 
-                    {/* Aksiyon Butonları */}
                     <div className="flex gap-3">
                         <button
                             onClick={() => setStep(STEPS.INPUT)}
@@ -274,7 +259,6 @@ const ATSTailorTab = ({ myCvs }) => {
                 </div>
             )}
 
-            {/* STEP 3: Tamamlandı */}
             {step === STEPS.DONE && (
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-10 text-center">
                     <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">

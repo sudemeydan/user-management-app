@@ -1,15 +1,29 @@
-import React from 'react';
+import React, { ChangeEvent, FormEvent } from 'react';
 import {
     Send, Loader2, Trash2, ImageIcon
 } from 'lucide-react';
 
-const FeedTab = ({
+interface FeedTabProps {
+    user: any;
+    posts: any[];
+    postContent: string;
+    setPostContent: (c: string) => void;
+    postImages: File[];
+    setPostImages: (f: File[]) => void;
+    postFileInputRef: React.RefObject<HTMLInputElement>;
+    isLoadingAction: boolean;
+    handleCreatePost: (e: FormEvent<HTMLFormElement>) => void;
+    handleDeletePost: (id: string | number) => void;
+    handlePostImageSelect: (e: ChangeEvent<HTMLInputElement>) => void;
+    axiosBaseURL?: string;
+}
+
+const FeedTab: React.FC<FeedTabProps> = ({
     user,
     posts,
     postContent,
     setPostContent,
     postImages,
-    setPostImages,
     postFileInputRef,
     isLoadingAction,
     handleCreatePost,
@@ -19,7 +33,6 @@ const FeedTab = ({
 }) => {
     return (
         <div className="max-w-3xl mx-auto space-y-6">
-            {/* Yeni Gönderi */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
                 <form onSubmit={handleCreatePost}>
                     <textarea
@@ -27,7 +40,7 @@ const FeedTab = ({
                         onChange={(e) => setPostContent(e.target.value)}
                         placeholder="Aklınızdan neler geçiyor?"
                         className="w-full p-4 border border-gray-100 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none"
-                        rows="3"
+                        rows={3}
                     />
                     {postImages.length > 0 && (
                         <div className="flex gap-2 mt-3 overflow-x-auto py-2">
@@ -41,7 +54,7 @@ const FeedTab = ({
                     <div className="flex justify-between items-center mt-4">
                         <div className="flex items-center gap-2">
                             <input type="file" multiple accept="image/*" className="hidden" ref={postFileInputRef} onChange={handlePostImageSelect} />
-                            <button type="button" onClick={() => postFileInputRef.current.click()} className="flex items-center gap-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-lg transition font-medium text-sm">
+                            <button type="button" onClick={() => postFileInputRef.current?.click()} className="flex items-center gap-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-lg transition font-medium text-sm">
                                 <ImageIcon size={18} /> Resim Ekle ({postImages.length}/10)
                             </button>
                         </div>
@@ -52,7 +65,6 @@ const FeedTab = ({
                 </form>
             </div>
 
-            {/* Gönderi Listesi */}
             <div className="space-y-6">
                 {posts.length === 0 ? (
                     <div className="text-center text-gray-500 py-10">Henüz hiç gönderi yok. İlk paylaşan sen ol!</div>
@@ -79,7 +91,7 @@ const FeedTab = ({
                             {post.content && <div className="px-5 pb-4 text-gray-700 whitespace-pre-wrap">{post.content}</div>}
                             {post.images?.length > 0 && (
                                 <div className={`grid gap-1 px-5 pb-5 ${post.images.length === 1 ? 'grid-cols-1' : post.images.length === 2 ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-3'}`}>
-                                    {post.images.map(img => (
+                                    {post.images.map((img: any) => (
                                         <div key={img.id} className="relative pt-[100%] rounded-lg overflow-hidden bg-gray-100">
                                             <img src={`${axiosBaseURL}/posts/image/${img.fileId}`} alt="post" className="absolute top-0 left-0 w-full h-full object-cover" />
                                         </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ChangeEvent } from 'react';
 import axiosInstance from '../../axiosInstance';
 import CVDetailAccordion from '../shared/CVDetailAccordion';
 import {
@@ -7,11 +7,17 @@ import {
     ChevronDown, ChevronUp, Zap
 } from 'lucide-react';
 
-const MyCVsTab = ({ user, myCvs, fetchMyCVs }) => {
-    const [isUploadingCV, setIsUploadingCV] = useState(false);
-    const [atsLoading, setAtsLoading] = useState(null); // CV ID'si loading ise
-    const [expandedCvId, setExpandedCvId] = useState(null);
-    const cvFileInputRef = React.useRef(null);
+interface MyCVsTabProps {
+    user: any;
+    myCvs: any[];
+    fetchMyCVs: () => void;
+}
+
+const MyCVsTab: React.FC<MyCVsTabProps> = ({ user, myCvs, fetchMyCVs }) => {
+    const [isUploadingCV, setIsUploadingCV] = useState<boolean>(false);
+    const [atsLoading, setAtsLoading] = useState<string | number | null>(null);
+    const [expandedCvId, setExpandedCvId] = useState<string | number | null>(null);
+    const cvFileInputRef = React.useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const hasProcessingCVs = myCvs.some(cv => cv.status === 'PENDING' || cv.status === 'PROCESSING');
@@ -24,9 +30,9 @@ const MyCVsTab = ({ user, myCvs, fetchMyCVs }) => {
         return () => clearInterval(intervalId);
     }, [myCvs, fetchMyCVs]);
 
-    const handleCVUploadChange = async (e) => {
+    const handleCVUploadChange = async (e: ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files?.length) return;
         const file = e.target.files[0];
-        if (!file) return;
         const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'];
         if (!allowedTypes.includes(file.type)) { alert("Lütfen sadece PDF veya DOCX dosyası yükleyin."); return; }
         if (file.size > 5 * 1024 * 1024) { alert("Dosya boyutu 5MB'dan küçük olmalıdır."); return; }
@@ -37,22 +43,22 @@ const MyCVsTab = ({ user, myCvs, fetchMyCVs }) => {
         try {
             await axiosInstance.post('/users/upload-cv', tfData, { headers: { 'Content-Type': 'multipart/form-data' } });
             fetchMyCVs();
-        } catch (error) { alert("CV yüklenemedi: " + (error.response?.data?.message || error.message)); }
+        } catch (error: any) { alert("CV yüklenemedi: " + (error.response?.data?.message || error.message)); }
         finally { setIsUploadingCV(false); if (cvFileInputRef.current) cvFileInputRef.current.value = ""; }
     };
 
-    const handleCVActivate = async (cvId) => {
+    const handleCVActivate = async (cvId: string | number) => {
         try { await axiosInstance.put(`/users/cvs/${cvId}/activate`); fetchMyCVs(); }
-        catch (error) { alert("Aktifleştirme başarısız: " + (error.response?.data?.message || error.message)); }
+        catch (error: any) { alert("Aktifleştirme başarısız: " + (error.response?.data?.message || error.message)); }
     };
 
-    const handleCVDelete = async (cvId) => {
+    const handleCVDelete = async (cvId: string | number) => {
         if (!window.confirm("Bu CV'yi silmek istediğinize emin misiniz?")) return;
         try { await axiosInstance.delete(`/users/cvs/${cvId}`); fetchMyCVs(); }
-        catch (error) { alert("Silme başarısız: " + (error.response?.data?.message || error.message)); }
+        catch (error: any) { alert("Silme başarısız: " + (error.response?.data?.message || error.message)); }
     };
 
-    const downloadCVStream = async (fileId, fileName) => {
+    const downloadCVStream = async (fileId: string | number, fileName: string) => {
         try {
             const res = await axiosInstance.get(`/users/cv-download/${fileId}`, { responseType: 'blob' });
             const blob = new Blob([res.data]);
@@ -62,21 +68,21 @@ const MyCVsTab = ({ user, myCvs, fetchMyCVs }) => {
         } catch (error) { alert("İndirme sırasında bir hata oluştu."); }
     };
 
-    const handleOptimizeATS = async (cvId) => {
+    const handleOptimizeATS = async (cvId: string | number) => {
         if (!window.confirm("CV'nizi ATS uyumlu şablona dönüştürmek istediğinize emin misiniz?")) return;
         setAtsLoading(cvId);
         try {
             const res = await axiosInstance.post(`/users/cvs/${cvId}/optimize`);
             alert(res.data.message);
             fetchMyCVs();
-        } catch (error) {
+        } catch (error: any) {
             alert("ATS dönüştürme hatası: " + (error.response?.data?.message || error.message));
         } finally {
             setAtsLoading(null);
         }
     };
 
-    const toggleCvDetails = (cvId) => setExpandedCvId(expandedCvId === cvId ? null : cvId);
+    const toggleCvDetails = (cvId: string | number) => setExpandedCvId(expandedCvId === cvId ? null : cvId);
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden p-6 max-w-4xl mx-auto">
@@ -84,7 +90,7 @@ const MyCVsTab = ({ user, myCvs, fetchMyCVs }) => {
                 <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2"><FileText /> Özgeçmiş Yönetimi</h2>
                 <div>
                     <input type="file" ref={cvFileInputRef} onChange={handleCVUploadChange} accept=".pdf,.doc,.docx" className="hidden" />
-                    <button onClick={() => cvFileInputRef.current.click()} disabled={isUploadingCV} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 shadow-sm">
+                    <button onClick={() => cvFileInputRef.current?.click()} disabled={isUploadingCV} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 shadow-sm">
                         {isUploadingCV ? <Loader2 className="animate-spin" size={18} /> : <UploadCloud size={18} />}
                         Yeni CV Yükle
                     </button>
@@ -104,7 +110,6 @@ const MyCVsTab = ({ user, myCvs, fetchMyCVs }) => {
 
                         return (
                             <div key={cv.id} className={`border rounded-xl transition-all duration-300 overflow-hidden ${cv.isActive ? 'border-indigo-300 bg-indigo-50/20 shadow-md' : 'border-gray-200 bg-white hover:border-indigo-200'}`}>
-                                {/* Ana Satır */}
                                 <div className="flex items-center justify-between p-4 cursor-pointer" onClick={() => !isProcessing && toggleCvDetails(cv.id)}>
                                     <div className="flex items-center gap-4">
                                         <div className={`p-3 rounded-lg flex-shrink-0 ${isProcessing ? 'bg-amber-100 text-amber-600 animate-pulse' : isFailed ? 'bg-red-100 text-red-600' : 'bg-indigo-100 text-indigo-600'}`}>
@@ -116,7 +121,6 @@ const MyCVsTab = ({ user, myCvs, fetchMyCVs }) => {
                                                 <span>{new Date(cv.createdAt).toLocaleDateString('tr-TR')}</span>
                                                 <span>•</span>
                                                 <span>{cv.fileSize > 1024 * 1024 ? `${(cv.fileSize / (1024 * 1024)).toFixed(2)} MB` : `${(cv.fileSize / 1024).toFixed(2)} KB`}</span>
-                                                {/* Mini ATS Badge */}
                                                 {cv.atsFormatScore !== null && cv.atsFormatScore !== undefined && (
                                                     <>
                                                         <span>•</span>
@@ -141,7 +145,6 @@ const MyCVsTab = ({ user, myCvs, fetchMyCVs }) => {
                                         )}
 
                                         <div className="flex items-center gap-1 border-l pl-4 border-gray-200" onClick={e => e.stopPropagation()}>
-                                            {/* ATS Optimizasyon Butonu */}
                                             {!isProcessing && cv.atsFormatScore !== null && cv.atsFormatScore < 70 && (
                                                 <button
                                                     onClick={() => handleOptimizeATS(cv.id)}
@@ -166,8 +169,7 @@ const MyCVsTab = ({ user, myCvs, fetchMyCVs }) => {
                                     </div>
                                 </div>
 
-                                {/* Detay */}
-                                {isExpanded && !isProcessing && <CVDetailAccordion cv={cv} fetchMyCVs={fetchMyCVs} />}
+                                {isExpanded && !isProcessing && <CVDetailAccordion cv={cv} fetchMyCVs={fetchMyCVs as any} />}
                             </div>
                         );
                     })}
