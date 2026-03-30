@@ -6,7 +6,7 @@ import { generateTailoredPDF } from './pdfService';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import driveClient from '../utils/driveClient';
+import driveClient, { DriveResponse } from '../utils/driveClient';
 
 const createJobPosting = async (url: string | null, description: string | undefined, role?: string) => {
   let finalDescription = description;

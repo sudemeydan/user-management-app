@@ -1,5 +1,5 @@
 import cvRepository from '../repositories/cvRepository';
-import driveClient from '../utils/driveClient';
+import driveClient, { DriveResponse } from '../utils/driveClient';
 import AppError from '../utils/AppError';
 import fs from 'fs';
 import path from 'path';
@@ -37,11 +37,6 @@ export interface OptimizeCVResult extends ATSFormattedCV {
   publicUrl: string;
 }
 
-// Drive response mock interface
-export interface DriveResponse {
-  fileId: string | null | undefined;
-  publicUrl: string;
-}
 
 const optimizeCVFormat = async (userId: string | number, cvId: number): Promise<OptimizeCVResult> => {
   const cv = await cvRepository.findCVById(cvId, true) as unknown as CVData;

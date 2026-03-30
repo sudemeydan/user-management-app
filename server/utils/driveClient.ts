@@ -43,6 +43,11 @@ oauth2Client.on('tokens', (tokens) => {
 
 const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
+export interface DriveResponse {
+  fileId: string | null | undefined;
+  publicUrl: string;
+}
+
 export interface DriveFile {
   path: string;
   originalname: string;
@@ -50,7 +55,7 @@ export interface DriveFile {
   [key: string]: any;
 }
 
-export const uploadToDrive = async (fileObj: DriveFile, customFolderId: string | null = null) => {
+export const uploadToDrive = async (fileObj: DriveFile, customFolderId: string | null = null): Promise<DriveResponse> => {
   try {
     const targetFolderId = customFolderId || FOLDER_ID;
     console.log("🚀 Yükleme Başlıyor... Hedef Klasör:", targetFolderId);
