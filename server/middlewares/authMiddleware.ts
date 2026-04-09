@@ -1,14 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-// 2. JWT token Ã§Ã¶zÃ¼ldÃ¼ÄŸÃ¼nde ortaya Ã§Ä±kan veri iÃ§in bir JwtPayload arayÃ¼zÃ¼ tanÄ±mla
+// 2. JWT token çözüldüğünde ortaya çıkan veri için bir JwtPayload arayüzü tanımla
 export interface AuthJwtPayload extends jwt.JwtPayload {
   id: string | number;
   email: string;
   role?: string;
 }
 
-// 3. Express'in standart Request objesini geniÅŸleterek Type Augmentation saÄŸla
+// 3. Express'in standart Request objesini genişleterek Type Augmentation sağla
 declare global {
   namespace Express {
     interface Request {
@@ -21,7 +21,7 @@ const verifyToken = (req: Request, res: Response, next: NextFunction): void | Re
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ success: false, message: "EriÅŸim reddedildi. GeÃ§erli bir kimlik kartÄ± (Token) yok." });
+    return res.status(401).json({ success: false, message: "Erişim reddedildi. Geçerli bir kimlik kartı (Token) yok." });
   }
 
   const token = authHeader.split(' ')[1];
@@ -31,7 +31,7 @@ const verifyToken = (req: Request, res: Response, next: NextFunction): void | Re
     req.user = decoded; 
     next(); 
   } catch (error) {
-    return res.status(403).json({ success: false, message: "GeÃ§ersiz veya sÃ¼resi dolmuÅŸ kimlik kartÄ±." });
+    return res.status(403).json({ success: false, message: "Geçersiz veya süresi dolmuş kimlik kartı." });
   }
 };
 

@@ -32,16 +32,16 @@ const registerUser = async (userData) => {
     if (!email || !password || !confirmPassword || !address) {
         throw new Error("Lütfen e-posta, şifre, şifre tekrarı ve şehir (adres) alanlarını doldurun.");
     }
-    // 3. Şifre Eşleşme Kontrolü
+    // 3. Åifre Eşleşme Kontrolü
     if (password !== confirmPassword) {
         throw new AppError_1.default("Girdiğiniz şifreler eşleşmiyor.", 400);
     }
-    // 4. Güçlü Şifre Kontrolü (En az 8 karakter, 1 büyük, 1 küçük, 1 rakam)
+    // 4. Güçlü Åifre Kontrolü (En az 8 karakter, 1 büyük, 1 küçük, 1 rakam)
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/;
     if (!passwordRegex.test(password)) {
-        throw new AppError_1.default("Şifre en az 8 karakter olmalı; en az bir büyük harf, bir küçük harf ve bir rakam içermelidir.", 400);
+        throw new AppError_1.default("Åifre en az 8 karakter olmalı; en az bir büyük harf, bir küçük harf ve bir rakam içermelidir.", 400);
     }
-    // 5. Şehir (Adres) Kontrolü
+    // 5. Åehir (Adres) Kontrolü
     const validCities = ["İstanbul", "Ankara", "İzmir", "Bursa", "Antalya"];
     if (!validCities.includes(address)) {
         throw new AppError_1.default("Lütfen geçerli bir şehir seçiniz.", 400);
@@ -51,7 +51,7 @@ const registerUser = async (userData) => {
     if (existingUser) {
         throw new AppError_1.default("Bu e-posta adresi zaten kullanımda.", 400);
     }
-    // 7. Şifreyi Hashleme ve Token Oluşturma 
+    // 7. Åifreyi Hashleme ve Token Oluşturma 
     const hashedPassword = await bcrypt_1.default.hash(password, 10);
     const verificationToken = crypto_1.default.randomBytes(32).toString('hex');
     // 8. Veritabanına Kayıt (Repository üzerinden)
@@ -420,7 +420,7 @@ const getCVDataForRender = async (cvId) => {
         entries: cv.entries
     };
 };
-// ---- İŞ İLANI VE TAILORING FONKSİYONLARI ----
+// ---- İÅ İLANI VE TAILORING FONKSİYONLARI ----
 const createJobPosting = async (jobText, url = null) => {
     const extracted = await (0, geminiService_1.extractJobDetails)(jobText);
     return await prisma_1.default.jobPosting.create({

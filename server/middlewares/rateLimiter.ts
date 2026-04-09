@@ -5,7 +5,7 @@ export const apiLimiter = rateLimit({
   limit: 100,
   message: {
     success: false,
-    message: 'Ã‡ok fazla istekte bulundunuz. LÃ¼tfen biraz bekleyip tekrar deneyin.'
+    message: 'Çok fazla istekte bulundunuz. Lütfen biraz bekleyip tekrar deneyin.'
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -16,7 +16,7 @@ export const authLimiter = rateLimit({
   limit: 5,
   message: {
     success: false,
-    message: 'Ã‡ok fazla giriÅŸ veya kayÄ±t denemesi yaptÄ±nÄ±z. LÃ¼tfen 1 dakika sonra tekrar deneyiniz.'
+    message: 'Çok fazla giriş veya kayıt denemesi yaptınız. Lütfen 1 dakika sonra tekrar deneyiniz.'
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -27,7 +27,7 @@ export const uploadLimiter = rateLimit({
   limit: 10,
   message: {
     success: false,
-    message: 'Saatlik dosya yÃ¼kleme veya analiz sÄ±nÄ±rÄ±na ulaÅŸtÄ±nÄ±z. LÃ¼tfen daha sonra tekrar deneyin.'
+    message: 'Saatlik dosya yükleme veya analiz sınırına ulaştınız. Lütfen daha sonra tekrar deneyin.'
   },
   standardHeaders: true,
   legacyHeaders: false,

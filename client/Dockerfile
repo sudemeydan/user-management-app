@@ -6,7 +6,7 @@ WORKDIR /app
 
 # 3. Paketleri kopyala ve kur
 COPY package*.json ./
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # 4. Kodları kopyala
 COPY . .

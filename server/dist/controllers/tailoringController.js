@@ -20,8 +20,7 @@ const createJobPosting = async (req, res, next) => {
 };
 const getTailoringProposals = async (req, res, next) => {
     try {
-        const { cvId, jobPostingId } = req.params;
-        const proposals = await tailoringService_1.default.getTailoringProposals(req.user?.id, cvId, jobPostingId);
+        const proposals = await tailoringService_1.default.getTailoringProposals(req.user?.id, req.params.cvId, req.params.jobPostingId);
         res.json({ success: true, data: proposals });
     }
     catch (error) {
@@ -50,7 +49,7 @@ const createTailoredCV = async (req, res, next) => {
 };
 const optimizeTailoredCV = async (req, res, next) => {
     try {
-        const { tailoredCvId } = req.params;
+        const tailoredCvId = req.params.tailoredCvId;
         const userId = req.user?.id;
         const result = await tailoringService_1.default.optimizeTailoredCV(userId, tailoredCvId);
         res.json({ success: true, message: "Uyarlanmış CV PDF'i oluşturuldu!", data: result });

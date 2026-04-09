@@ -31,7 +31,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Bağımlılıkları kur
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Prisma şemasını kopyala ve Prisma Client'ı oluştur
 COPY prisma ./prisma/

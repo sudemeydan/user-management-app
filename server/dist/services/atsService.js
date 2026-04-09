@@ -13,7 +13,7 @@ const pdfService_1 = require("./pdfService");
 const optimizeCVFormat = async (userId, cvId) => {
     const cv = await cvRepository_1.default.findCVById(cvId, true);
     if (!cv || cv.userId !== Number(userId)) {
-        throw new AppError_1.default("CV bulunamadı veya yetkiniz yok.", 404);
+        throw new AppError_1.default("CV bulunamadÄ± veya yetkiniz yok.", 404);
     }
     const pdfBuffer = await (0, pdfService_1.generateATSPDF)({
         summary: cv.summary,
@@ -28,7 +28,7 @@ const optimizeCVFormat = async (userId, cvId) => {
         mimetype: 'application/pdf'
     }, process.env.GOOGLE_DRIVE_CV_FOLDER_ID);
     fs_1.default.unlinkSync(tempPath);
-    const atsFormattedCV = await cvRepository_1.default.upsertAtsFormattedCV(cvId, driveResponse.fileId);
+    const atsFormattedCV = await cvRepository_1.default.upsertAtsFormattedCV(cvId, driveResponse.fileId || "");
     return {
         ...atsFormattedCV,
         publicUrl: driveResponse.publicUrl

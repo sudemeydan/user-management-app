@@ -19,7 +19,7 @@ const registerUser = async (userData) => {
     }
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/;
     if (!passwordRegex.test(password)) {
-        throw new AppError_1.default("Şifre en az 8 karakter olmalı; en az bir büyük harf, bir küçük harf ve bir rakam içermelidir.", 400);
+        throw new AppError_1.default("Åifre en az 8 karakter olmalı; en az bir büyük harf, bir küçük harf ve bir rakam içermelidir.", 400);
     }
     const validCities = ["İstanbul", "Ankara", "İzmir", "Bursa", "Antalya"];
     if (!validCities.includes(address)) {

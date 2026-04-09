@@ -17,7 +17,7 @@ const oauth2Client = new googleapis_1.google.auth.OAuth2(CLIENT_ID, CLIENT_SECRE
 oauth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 oauth2Client.on('tokens', (tokens) => {
     if (tokens.refresh_token) {
-        console.log("🔄 Yeni Refresh Token Alındı! .env dosyasına kalıcı olarak kaydediliyor...");
+        console.log("[INFO] Yeni Refresh Token Alindi! .env dosyasina kalici olarak kaydediliyor...");
         try {
             const envPath = path_1.default.resolve(__dirname, '../.env');
             if (fs_1.default.existsSync(envPath)) {
@@ -30,20 +30,20 @@ oauth2Client.on('tokens', (tokens) => {
                     envData += `\nGOOGLE_DRIVE_REFRESH_TOKEN=${tokens.refresh_token}`;
                 }
                 fs_1.default.writeFileSync(envPath, envData);
-                console.log("✅ Yeni Refresh Token başarıyla .env dosyasına kaydedildi.");
+                console.log("[OK] Yeni Refresh Token basariyla .env dosyasina kaydedildi.");
             }
         }
         catch (err) {
-            console.error("❌ Refresh Token .env dosyasına kaydedilirken hata:", err);
+            console.error("âŒ Refresh Token .env dosyasÄ±na kaydedilirken hata:", err);
         }
     }
-    console.log("🔑 Access Token Yenilendi.");
+    console.log("[INFO] Access Token Yenilendi.");
 });
 const drive = googleapis_1.google.drive({ version: 'v3', auth: oauth2Client });
 const uploadToDrive = async (fileObj, customFolderId = null) => {
     try {
         const targetFolderId = customFolderId || FOLDER_ID;
-        console.log("🚀 Yükleme Başlıyor... Hedef Klasör:", targetFolderId);
+        console.log("[INFO] Yukleme Basliyor... Hedef Klasor:", targetFolderId);
         const fileMetadata = {
             name: `file-${Date.now()}-${fileObj.originalname}`,
             parents: [targetFolderId],
@@ -59,7 +59,7 @@ const uploadToDrive = async (fileObj, customFolderId = null) => {
             supportsAllDrives: true,
         });
         const fileId = response.data.id;
-        console.log("✅ Dosya Drive'a Yüklendi! ID:", fileId);
+        console.log("[OK] Dosya Drive'a Yuklendi! ID:", fileId);
         await drive.permissions.create({
             fileId: fileId,
             requestBody: {
@@ -71,7 +71,7 @@ const uploadToDrive = async (fileObj, customFolderId = null) => {
         return { fileId, publicUrl };
     }
     catch (error) {
-        console.error('❌ Google Drive Yükleme Hatası:', error.message);
+        console.error('[ERROR] Google Drive Yukleme Hatasi:', error.message);
         throw new Error('Dosya Drive\'a yüklenemedi.');
     }
 };
@@ -105,4 +105,5 @@ const streamFile = async (fileId, res) => {
     }
 };
 exports.streamFile = streamFile;
-exports.default = { uploadToDrive: exports.uploadToDrive, deleteFromDrive: exports.deleteFromDrive, streamFile: exports.streamFile };
+const driveClient = { uploadToDrive: exports.uploadToDrive, deleteFromDrive: exports.deleteFromDrive, streamFile: exports.streamFile };
+exports.default = driveClient;

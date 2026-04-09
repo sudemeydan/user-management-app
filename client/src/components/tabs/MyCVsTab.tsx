@@ -19,16 +19,7 @@ const MyCVsTab: React.FC<MyCVsTabProps> = ({ user, myCvs, fetchMyCVs }) => {
     const [expandedCvId, setExpandedCvId] = useState<string | number | null>(null);
     const cvFileInputRef = React.useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
-        const hasProcessingCVs = myCvs.some(cv => cv.status === 'PENDING' || cv.status === 'PROCESSING');
-        if (!hasProcessingCVs) return;
-
-        const intervalId = setInterval(() => {
-            if (fetchMyCVs) fetchMyCVs();
-        }, 5000);
-
-        return () => clearInterval(intervalId);
-    }, [myCvs, fetchMyCVs]);
+    // Polling is now handled in the Dashboard.tsx to centralize state updates.
 
     const handleCVUploadChange = async (e: ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files?.length) return;

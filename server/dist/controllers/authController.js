@@ -8,7 +8,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const registerUser = async (req, res, next) => {
     try {
         const newUser = await authService_1.default.registerUser(req.body);
-        res.status(201).json({ success: true, message: "Kayıt Başarılı! Lütfen e-postanızı onaylayın.", data: newUser });
+        res.status(201).json({ success: true, message: "Kayıt Başarılı! Lütfen e-postanızı onaylaın.", data: newUser });
     }
     catch (error) {
         next(error);
@@ -18,7 +18,7 @@ const verifyEmail = async (req, res, next) => {
     try {
         const { token } = req.params;
         await authService_1.default.verifyEmail(token);
-        res.json({ success: true, message: "E-posta adresiniz başarıyla onaylandı! Artık giriş yapabilirsiniz." });
+        res.json({ success: true, message: "E-posta adresiniz başarıyla onaylanıdı! Artık giriş yapabilirsiniz." });
     }
     catch (error) {
         next(error);

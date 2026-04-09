@@ -15,7 +15,7 @@ const updateUser = async (req: Request, res: Response, next: NextFunction): Prom
   try {
     const { id } = req.params;
     const updatedUser = await userService.updateUser(id, req.body);
-    res.json({ success: true, message: "GÃ¼ncellendi", data: updatedUser });
+    res.json({ success: true, message: "Güncellendi", data: updatedUser });
   } catch (error) {
     next(error);
   }
@@ -35,7 +35,7 @@ const requestUpgrade = async (req: Request, res: Response, next: NextFunction): 
   try {
     const userId = req.user?.id as string | number;
     await userService.requestUpgrade(userId);
-    res.json({ success: true, message: "Talebini aldÄ±k! YÃ¶netici onayladÄ±ÄŸÄ±nda PRO olacaksÄ±n." });
+    res.json({ success: true, message: "Talebini aldık! Yönetici onayladığında PRO olacaksın." });
   } catch (error) {
     next(error);
   }
@@ -45,7 +45,7 @@ const handleUpgradeRequest = async (req: Request, res: Response, next: NextFunct
   try {
     const { userId, action } = req.body;
     await userService.handleUpgrade(userId, action);
-    res.json({ success: true, message: `Ä°ÅŸlem BaÅŸarÄ±lÄ±: ${action}` });
+    res.json({ success: true, message: `İşlem Başarılı: ${action}` });
   } catch (error) {
     next(error);
   }
@@ -59,7 +59,7 @@ const uploadAvatar = async (req: Request, res: Response, next: NextFunction): Pr
     }
     const userId = req.user?.id as string | number;
     const savedImage = await userService.uploadProfileImage(userId, req.file);
-    res.json({ success: true, message: "Resim yÃ¼klendi!", data: savedImage });
+    res.json({ success: true, message: "Resim yüklendi!", data: savedImage });
   } catch (error) {
     next(error);
   }
@@ -70,11 +70,11 @@ const togglePrivacy = async (req: Request, res: Response, next: NextFunction): P
     const userId = parseInt(req.params.id as string);
     const { isPrivate } = req.body;
     if (req.user?.id !== userId && req.user?.role !== 'SUPERADMIN') {
-      res.status(403).json({ success: false, message: "BaÅŸkasÄ±nÄ±n gizlilik ayarÄ±nÄ± deÄŸiÅŸtiremezsiniz!" });
+      res.status(403).json({ success: false, message: "Başkasının gizlilik ayarını değiştiremezsiniz!" });
       return;
     }
     const updatedUser = await userService.updateUser(userId, { isPrivate });
-    res.json({ success: true, message: `Hesap artÄ±k ${isPrivate ? 'Gizli' : 'Herkese AÃ§Ä±k'}.`, data: updatedUser });
+    res.json({ success: true, message: `Hesap artık ${isPrivate ? 'Gizli' : 'Herkese Açık'}.`, data: updatedUser });
   } catch (error) {
     next(error);
   }
@@ -85,7 +85,7 @@ const blockUser = async (req: Request, res: Response, next: NextFunction): Promi
     const blockerId = req.user?.id as string | number;
     const blockedId = req.params.id;
     await userService.blockUser(blockerId, blockedId);
-    res.json({ success: true, message: "KullanÄ±cÄ± engellendi." });
+    res.json({ success: true, message: "Kullanıcı engellendi." });
   } catch (error) {
     next(error);
   }
@@ -96,7 +96,7 @@ const unblockUser = async (req: Request, res: Response, next: NextFunction): Pro
     const blockerId = req.user?.id as string | number;
     const blockedId = req.params.id;
     await userService.unblockUser(blockerId, blockedId);
-    res.json({ success: true, message: "KullanÄ±cÄ±nÄ±n engeli kaldÄ±rÄ±ldÄ±." });
+    res.json({ success: true, message: "Kullanıcının engeli kaldırıldı." });
   } catch (error) {
     next(error);
   }

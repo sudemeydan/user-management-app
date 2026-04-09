@@ -43,17 +43,22 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     useEffect(() => {
         let pollInterval: NodeJS.Timeout;
         const hasProcessingCV = myCvs.some(cv => cv.status === 'PENDING' || cv.status === 'PROCESSING');
+        
         if (hasProcessingCV) {
             pollInterval = setInterval(() => {
                 axiosInstance.get(`/users/${user.id}/cvs`).then((response) => {
                     const freshCvs = response.data.data;
                     const stillProcessing = freshCvs.some((cv: any) => cv.status === 'PENDING' || cv.status === 'PROCESSING');
-                    if (!stillProcessing) setMyCvs(freshCvs);
+                    
+                    // Sadece durum değiştiğinde veya işlem bittiğinde state güncelle
+                    if (!stillProcessing || JSON.stringify(freshCvs) !== JSON.stringify(myCvs)) {
+                        setMyCvs(freshCvs);
+                    }
                 }).catch(err => console.error(err));
             }, 5000);
         }
         return () => { if (pollInterval) clearInterval(pollInterval); };
-    }, [myCvs, user.id]);
+    }, [user.id, myCvs.length]); // myCvs'in tamamı yerine sadece boyutu takip et
 
     const fetchAllActiveCvs = async () => {
         try { const response = await axiosInstance.get('/users/all-active-cvs'); setAllActiveCvs(response.data.data); }

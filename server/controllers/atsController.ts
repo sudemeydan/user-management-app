@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+﻿import { Request, Response, NextFunction } from 'express';
 import atsService, { OptimizeCVResult } from '../services/atsService';
 
 export interface ApiResponse<T> {
@@ -21,7 +21,7 @@ const optimizeCVFormat = async (req: Request, res: Response, next: NextFunction)
     
     const response: ApiResponse<OptimizeCVResult> = {
       success: true, 
-      message: "CV baÅŸarÄ±yla ATS formatÄ±na dÃ¶nÃ¼ÅŸtÃ¼rÃ¼ldÃ¼!", 
+      message: "CV başarıyla ATS formatına dönüştürüldü!", 
       data: result 
     };
     

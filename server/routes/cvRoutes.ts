@@ -13,7 +13,7 @@ const upload = multer({
     if (file.mimetype === 'application/pdf' || file.mimetype === 'application/msword' || file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
       cb(null, true);
     } else {
-      cb(new Error('Sadece PDF ve DOCX dosyalarÄ± yÃ¼klenebilir.'));
+      cb(new Error('Sadece PDF ve DOCX dosyaları yüklenebilir.'));
     }
   }
 });

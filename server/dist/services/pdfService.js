@@ -17,7 +17,7 @@ handlebars_1.default.registerHelper('safe', function (text) {
 handlebars_1.default.registerHelper('bulletPoints', function (text) {
     if (!text)
         return '';
-    const lines = text.split(/\n|(?:^|\s)\*\s|•|·|(?:^|\s)-\s/g).map((l) => l.trim()).filter((l) => l.length > 0);
+    const lines = text.split(/\n|(?:^|\s)\*\s|â€¢|Â·|(?:^|\s)-\s/g).map((l) => l.trim()).filter((l) => l.length > 0);
     if (lines.length === 1)
         return new handlebars_1.default.SafeString(`<p>${handlebars_1.default.Utils.escapeExpression(lines[0])}</p>`);
     const listItems = lines.map((l) => `<li>${handlebars_1.default.Utils.escapeExpression(l)}</li>`).join('');

@@ -1,0 +1,40 @@
+﻿[dotenv@17.3.1] injecting env (0) from .env -- tip: ÔÜÖ´©Å  load multiple .env files with { path: ['.env.local', '.env'] }
+node.exe : C:\Users\sudem\OneDrive\Desktop\user-mana
+gement-app\server\node_modules\router\index.js:392
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program F
+iles\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (C:\Use 
+   rs\sudem\...er\index.js:392:String) [], RemoteE  
+  xception
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+      throw new TypeError('argument handler must be 
+a function')
+            ^
+TypeError: argument handler must be a function
+    at Function.use (C:\Users\sudem\OneDrive\Desktop
+\user-management-app\server\node_modules\router\inde
+x.js:392:13)
+    at Function.<anonymous> (C:\Users\sudem\OneDrive
+\Desktop\user-management-app\server\node_modules\exp
+ress\lib\application.js:222:21)
+    at Array.forEach (<anonymous>)
+    at Function.use (C:\Users\sudem\OneDrive\Desktop
+\user-management-app\server\node_modules\express\lib
+\application.js:219:7)
+    at Object.<anonymous> (C:\Users\sudem\OneDrive\D
+esktop\user-management-app\server\index.ts:58:5)
+    at Module._compile (node:internal/modules/cjs/lo
+ader:1706:14)
+    at Module.m._compile (C:\Users\sudem\OneDrive\De
+sktop\user-management-app\server\node_modules\ts-nod
+e\src\index.ts:1618:23)
+    at node:internal/modules/cjs/loader:1839:10
+    at Object.require.extensions.<computed> [as .ts]
+ (C:\Users\sudem\OneDrive\Desktop\user-management-ap
+p\server\node_modules\ts-node\src\index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader
+:1441:32)

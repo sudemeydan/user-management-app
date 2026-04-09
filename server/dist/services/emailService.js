@@ -36,12 +36,12 @@ exports.sendVerificationEmail = sendVerificationEmail;
 const sendPasswordResetEmail = async (userEmail, resetToken) => {
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
     const message = `
-    <h1>Şifre Sıfırlama İsteği</h1>
+    <h1>Åifre Sıfırlama İsteği</h1>
     <p>Hesabınız için şifre sıfırlama talebinde bulundunuz. Yeni şifrenizi belirlemek için aşağıdaki linke tıklayın:</p>
-    <a href="${resetUrl}" style="display:inline-block; padding:10px 20px; color:white; background-color:#E53E3E; text-decoration:none; border-radius:5px;">Şifremi Sıfırla</a>
+    <a href="${resetUrl}" style="display:inline-block; padding:10px 20px; color:white; background-color:#E53E3E; text-decoration:none; border-radius:5px;">Åifremi Sıfırla</a>
     <p>Bu istek 1 saat boyunca geçerlidir. Eğer bu isteği siz yapmadıysanız, hesabınız güvendedir ve hiçbir işlem yapmanıza gerek yoktur.</p>
   `;
-    await (0, exports.sendEmail)({ email: userEmail, subject: 'Şifre Sıfırlama - User Management App', message });
+    await (0, exports.sendEmail)({ email: userEmail, subject: 'Åifre Sıfırlama - User Management App', message });
 };
 exports.sendPasswordResetEmail = sendPasswordResetEmail;
 exports.default = { sendEmail: exports.sendEmail, sendVerificationEmail: exports.sendVerificationEmail, sendPasswordResetEmail: exports.sendPasswordResetEmail };

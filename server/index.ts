@@ -1,21 +1,21 @@
-import { Request, Response, NextFunction } from 'express';
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const userRoutes = require('./routes/userRoutes');
-const authRoutes = require('./routes/authRoutes');
-const cvRoutes = require('./routes/cvRoutes');
-const atsRoutes = require('./routes/atsRoutes').default || require('./routes/atsRoutes');
-const tailoringRoutes = require('./routes/tailoringRoutes');
-const postRoutes = require('./routes/postRoutes');
-const connectionRoutes = require('./routes/connectionRoutes');
+import dotenv from 'dotenv';
+dotenv.config();
+
+import express, { Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import path from 'path';
+import userRoutes from './routes/userRoutes';
+import authRoutes from './routes/authRoutes';
+import cvRoutes from './routes/cvRoutes';
+import atsRoutes from './routes/atsRoutes';
+import tailoringRoutes from './routes/tailoringRoutes';
+import postRoutes from './routes/postRoutes';
+import connectionRoutes from './routes/connectionRoutes';
+import errorHandler from './middlewares/errorHandler';
+import { sendToQueue, connectRabbitMQ } from './services/rabbitmqService';
+
 const app = express();
 const PORT = 3001;
-const errorHandler = require('./middlewares/errorHandler');
-const { sendToQueue } = require('./services/rabbitmqService');
-
-const { connectRabbitMQ } = require('./services/rabbitmqService');
-
 
 connectRabbitMQ();
 
@@ -29,7 +29,7 @@ app.get('/test-mq', async (req: Request, res: Response) => {
     };
 
     // Kuyruğa mesajı fırlatıyoruz
-    await sendToQueue('cv_parsing_queue', testData);
+    await sendToQueue('cv_parsing_queue', testData as any);
 
     // Kullanıcıya (tarayıcıya) anında cevap dönüyoruz
     res.status(200).json({
@@ -45,7 +45,7 @@ app.get('/test-mq', async (req: Request, res: Response) => {
 
 app.use(cors());
 app.use((req: Request, res: Response, next: NextFunction) => {
-  console.log(`📢 SUNUCUYA İSTEK GELDİ: [${req.method}] ${req.url}`);
+  console.log(`[REQUEST] SUNUCUYA ISTEK GELDI: [${req.method}] ${req.url}`);
   next();
 });
 
@@ -65,13 +65,21 @@ app.use('/connections', connectionRoutes);
 app.use('/posts', postRoutes);
 
 
+import { startApolloServer } from './graphql/apolloServer';
+
 const AppError = require('./utils/AppError').default || require('./utils/AppError');
-app.use((req: Request, res: Response, next: NextFunction) => {
-  next(new AppError(`Bu sunucuda ${req.originalUrl} adresi bulunamadı!`, 404));
-});
 
-app.use(errorHandler);
+// Apollo Server'ı başlat, GraphQL endpoint'ini kaydet
+startApolloServer(app).then(() => {
+  
+  // DİKKAT: 404 Handler tüm geçerli rotalardan (GraphQL dahil) SONRA gelmelidir.
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    next(new AppError(`Bu sunucuda ${req.originalUrl} adresi bulunamadı!`, 404));
+  });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Sunucu ${PORT} çalışıyor!`);
+  app.use(errorHandler);
+
+  app.listen(PORT, () => {
+    console.log(`[READY] Sunucu ${PORT} calisiyor!`);
+  });
 });

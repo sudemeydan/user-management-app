@@ -14,55 +14,56 @@ const os_1 = __importDefault(require("os"));
 const driveClient_1 = __importDefault(require("../utils/driveClient"));
 const createJobPosting = async (url, description, role) => {
     let finalDescription = description;
+    let title = role || 'Belirtilmedi';
+    let company = null;
     if (url) {
         const extractedData = await (0, geminiService_1.extractJobDetails)(url);
-        if (extractedData) {
-            finalDescription = `Başlık: ${extractedData.title}\nŞirket: ${extractedData.company}\n\nDetaylar:\n${extractedData.description}`;
+        if (!extractedData) {
+            throw new AppError_1.default("URL'den işilanı çekilemedi. Lütfen manuel giriniz.", 400);
         }
-        else {
-            throw new AppError_1.default("URL'den iş ilanı çekilemedi. Lütfen manuel giriniz.", 400);
-        }
+        title = extractedData.title || title;
+        company = extractedData.company || null;
+        finalDescription = extractedData.description || description;
     }
     if (!finalDescription) {
         throw new AppError_1.default("Lütfen bir iş ilanı URL'si veya metni giriniz.", 400);
     }
-    let title = role || "Belirtilmedi";
-    const titleMatch = finalDescription.match(/Başlık:\s*(.+)/);
-    if (titleMatch) {
-        title = titleMatch[1].trim();
-    }
-    let company = null;
-    const companyMatch = finalDescription.match(/Şirket:\s*(.+)/);
-    if (companyMatch) {
-        company = companyMatch[1].trim();
-    }
     const jobPosting = await jobPostingRepository_1.default.createJobPosting({
-        title: title,
+        title,
         description: finalDescription,
-        company: company,
+        company,
         url: url || null
     });
     return jobPosting;
 };
+const proposalCache = new Map();
 const getTailoringProposals = async (userId, cvId, jobPostingId) => {
+    const cacheKey = `${cvId}-${jobPostingId}`;
+    if (proposalCache.has(cacheKey)) {
+        console.log(`[CACHE HIT] CV ID: ${cvId}, Job ID: ${jobPostingId} icin onbellekte veri bulundu.`);
+        return proposalCache.get(cacheKey);
+    }
+    console.log(`[CACHE MISS] CV ID: ${cvId}, Job ID: ${jobPostingId} icin Gemini cagriliyor...`);
     const cv = await cvRepository_1.default.findCVById(cvId, true);
     if (!cv || cv.userId !== Number(userId)) {
-        throw new AppError_1.default("CV bulunamadı veya yetkiniz yok.", 404);
+        throw new AppError_1.default('CV bulunamadı veya yetkiniz yok.', 404);
     }
     const jobPosting = await jobPostingRepository_1.default.findJobPostingById(jobPostingId);
     if (!jobPosting) {
-        throw new AppError_1.default("İş ilanı bulunamadı.", 404);
+        throw new AppError_1.default('İş ilanı bulunamadı.', 404);
     }
     const proposals = await (0, geminiService_1.generateTailoringProposals)(cv, jobPosting.description);
+    // Sonucu önbelleğe kaydet
+    proposalCache.set(cacheKey, proposals);
     return proposals;
 };
 const createTailoredCV = async (userId, cvId, jobPostingId, tailoredData) => {
     const jobPosting = await jobPostingRepository_1.default.findJobPostingById(jobPostingId);
     if (!jobPosting)
-        throw new AppError_1.default("İş ilanı bulunamadı.", 404);
+        throw new AppError_1.default('İş ilanı bulunamadı.', 404);
     const cv = await cvRepository_1.default.findCVById(cvId, true);
     if (!cv || cv.userId !== Number(userId))
-        throw new AppError_1.default("Orijinal CV bulunamadı.", 404);
+        throw new AppError_1.default('Orijinal CV bulunamadı.', 404);
     const newTailoredCv = await jobPostingRepository_1.default.createTailoredCV({
         userId: Number(userId),
         originalCvId: Number(cvId),
@@ -89,7 +90,7 @@ const createTailoredCV = async (userId, cvId, jobPostingId, tailoredData) => {
 const optimizeTailoredCV = async (userId, tailoredCvId) => {
     const tailoredCv = await jobPostingRepository_1.default.findTailoredCVById(tailoredCvId);
     if (!tailoredCv || tailoredCv.originalCv.userId !== Number(userId)) {
-        throw new AppError_1.default("Uyarlanmış CV bulunamadı veya yetkiniz yok.", 404);
+        throw new AppError_1.default('Uyarlanmış CV bulunamadı veya yetkiniz yok.', 404);
     }
     const cvData = {
         summary: tailoredCv.originalCv.summary,

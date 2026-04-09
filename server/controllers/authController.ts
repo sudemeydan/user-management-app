@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import authService, { RegisterUserData } from '../services/authService';
 import jwt from 'jsonwebtoken';
 
-// 1. KullanÄ±cÄ± Login isteklerinin tipleri
+// 1. Kullanıcı Login isteklerinin tipleri
 export interface LoginRequestData {
   email?: string;
   password?: string;
@@ -11,7 +11,7 @@ export interface LoginRequestData {
 const registerUser = async (req: Request<{}, {}, RegisterUserData>, res: Response, next: NextFunction): Promise<void> => {
   try {
     const newUser = await authService.registerUser(req.body);
-    res.status(201).json({ success: true, message: "KayÄ±t BaÅŸarÄ±lÄ±! LÃ¼tfen e-postanÄ±zÄ± onaylayÄ±n.", data: newUser });
+    res.status(201).json({ success: true, message: "Kayıt Başarılı! Lütfen e-postanızı onaylaın.", data: newUser });
   } catch (error) {
     next(error);
   }
@@ -21,7 +21,7 @@ const verifyEmail = async (req: Request<{ token: string }>, res: Response, next:
   try {
     const { token } = req.params;
     await authService.verifyEmail(token);
-    res.json({ success: true, message: "E-posta adresiniz baÅŸarÄ±yla onaylandÄ±! ArtÄ±k giriÅŸ yapabilirsiniz." });
+    res.json({ success: true, message: "E-posta adresiniz başarıyla onaylanıdı! Artık giriş yapabilirsiniz." });
   } catch (error) {
     next(error);
   }
@@ -31,7 +31,7 @@ const login = async (req: Request<{}, {}, LoginRequestData>, res: Response, next
   try {
     const { email, password } = req.body;
     if (!email || !password) {
-      res.status(400).json({ success: false, message: "E-posta ve ÅŸifre zorunludur." });
+      res.status(400).json({ success: false, message: "E-posta ve şifre zorunludur." });
       return;
     }
     const user = await authService.loginUser(email, password);
@@ -50,7 +50,7 @@ const login = async (req: Request<{}, {}, LoginRequestData>, res: Response, next
 
     res.json({
       success: true,
-      message: "GiriÅŸ BaÅŸarÄ±lÄ±!",
+      message: "Giriş Başarılı!",
       user: user,
       accessToken: accessToken,
       refreshToken: refreshToken
@@ -64,7 +64,7 @@ const forgotPassword = async (req: Request<{}, {}, { email: string }>, res: Resp
   try {
     const { email } = req.body;
     await authService.forgotPassword(email);
-    res.json({ success: true, message: "Åifre sÄ±fÄ±rlama baÄŸlantÄ±sÄ± e-posta adresinize gÃ¶nderildi." });
+    res.json({ success: true, message: "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi." });
   } catch (error) {
     next(error);
   }
@@ -75,7 +75,7 @@ const resetPassword = async (req: Request<{ token: string }, {}, { newPassword: 
     const { token } = req.params;
     const { newPassword } = req.body;
     await authService.resetPassword(token, newPassword);
-    res.json({ success: true, message: "Åifreniz baÅŸarÄ±yla gÃ¼ncellendi. ArtÄ±k yeni ÅŸifrenizle giriÅŸ yapabilirsiniz." });
+    res.json({ success: true, message: "Şifreniz başarıyla güncellendi. Artık yeni şifrenizle giriş yapabilirsiniz." });
   } catch (error) {
     next(error);
   }
@@ -84,7 +84,7 @@ const resetPassword = async (req: Request<{ token: string }, {}, { newPassword: 
 const refresh = async (req: Request<{}, {}, { refreshToken: string }>, res: Response, next: NextFunction): Promise<void> => {
   const { refreshToken } = req.body;
   if (!refreshToken) {
-    res.status(401).json({ success: false, message: "Refresh Token bulunamadÄ±!" });
+    res.status(401).json({ success: false, message: "Refresh Token bulunamadı!" });
     return;
   }
   try {

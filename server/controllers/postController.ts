@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+﻿import { Request, Response, NextFunction } from 'express';
 import postService from '../services/postService';
 import driveClient from '../utils/driveClient';
 
@@ -9,7 +9,7 @@ const createPost = async (req: Request, res: Response, next: NextFunction): Prom
     const files = req.files as Express.Multer.File[] || [];
 
     const newPost = await postService.createPostWithImages(userId, content, files);
-    res.status(201).json({ success: true, message: "GÃ¶nderi paylaÅŸÄ±ldÄ±!", data: newPost });
+    res.status(201).json({ success: true, message: "Gönderi paylaşıldı!", data: newPost });
   } catch (error) {
     next(error);
   }
@@ -32,7 +32,7 @@ const deletePost = async (req: Request, res: Response, next: NextFunction): Prom
     const userRole = req.user?.role;
 
     await postService.deletePost(postId, userId, userRole);
-    res.json({ success: true, message: "GÃ¶nderi silindi!" });
+    res.json({ success: true, message: "Gönderi silindi!" });
   } catch (error) {
     next(error);
   }

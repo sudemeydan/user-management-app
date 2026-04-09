@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+﻿import { Request, Response, NextFunction } from 'express';
 import cvService from '../services/cvService';
 import { sendToQueue } from '../services/rabbitmqService';
 import driveClient from '../utils/driveClient';
@@ -8,7 +8,7 @@ import cvRepository from '../repositories/cvRepository';
 const uploadCV = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     if (!req.file) {
-      res.status(400).json({ success: false, message: "LÃ¼tfen geÃ§erli bir PDF veya DOCX dosyasÄ± seÃ§in." });
+      res.status(400).json({ success: false, message: "Lütfen geçerli bir PDF veya DOCX dosyası seçin." });
       return;
     }
 
@@ -16,19 +16,19 @@ const uploadCV = async (req: Request, res: Response, next: NextFunction): Promis
     const userId = req.user?.id;
     
     if (!userId) {
-       res.status(401).json({ success: false, message: "KullanÄ±cÄ± bulunamadÄ±." });
+       res.status(401).json({ success: false, message: "Kullanıcı bulunamadı." });
        return;
     }
 
     const cvCount = await cvRepository.countUserCVs(userId);
 
     if (userRole === 'FREE_USER' && cvCount >= 1) {
-      res.status(403).json({ success: false, message: "Ãœcretsiz kullanÄ±cÄ±lar en fazla 1 adet CV yÃ¼kleyip analiz ettirebilir." });
+      res.status(403).json({ success: false, message: "Ücretsiz kullanıcılar en fazla 1 adet CV yükleyip analiz ettirebilir." });
       return;
     }
 
     if (userRole === 'PRO_USER' && cvCount >= 5) {
-      res.status(403).json({ success: false, message: "Pro kullanÄ±cÄ±lar en fazla 5 adet CV yÃ¼kleyip analiz ettirebilir." });
+      res.status(403).json({ success: false, message: "Pro kullanıcılar en fazla 5 adet CV yükleyip analiz ettirebilir." });
       return;
     }
 
@@ -41,7 +41,7 @@ const uploadCV = async (req: Request, res: Response, next: NextFunction): Promis
         const fileData = fs.readFileSync(req.file.path);
         pdfBase64 = fileData.toString('base64');
       } else {
-        throw new Error("Dosya verisi okunamadÄ±.");
+        throw new Error("Dosya verisi okunamadı.");
       }
     }
 
@@ -50,10 +50,10 @@ const uploadCV = async (req: Request, res: Response, next: NextFunction): Promis
     if (pdfBase64) {
       const queueMessage = { cvId: savedCV.id, fileData: pdfBase64 };
       await sendToQueue('cv_parsing_queue', queueMessage);
-      console.log(`[x] CV (ID: ${savedCV.id}) RabbitMQ kuyruÄŸuna gÃ¶nderildi.`);
+      console.log(`[x] CV (ID: ${savedCV.id}) RabbitMQ kuyruğuna gönderildi.`);
     }
 
-    res.json({ success: true, message: "CV baÅŸarÄ±yla yÃ¼klendi ve iÅŸleniyor!", data: savedCV });
+    res.json({ success: true, message: "CV başarıyla yüklendi ve işleniyor!", data: savedCV });
   } catch (error) {
     next(error);
   }

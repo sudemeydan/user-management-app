@@ -20,7 +20,7 @@ oauth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 
 oauth2Client.on('tokens', (tokens) => {
   if (tokens.refresh_token) {
-    console.log("ğŸ”„ Yeni Refresh Token AlÄ±ndÄ±! .env dosyasÄ±na kalÄ±cÄ± olarak kaydediliyor...");
+    console.log("[INFO] Yeni Refresh Token Alindi! .env dosyasina kalici olarak kaydediliyor...");
     try {
       const envPath = path.resolve(__dirname, '../.env');
       if (fs.existsSync(envPath)) {
@@ -32,13 +32,13 @@ oauth2Client.on('tokens', (tokens) => {
           envData += `\nGOOGLE_DRIVE_REFRESH_TOKEN=${tokens.refresh_token}`;
         }
         fs.writeFileSync(envPath, envData);
-        console.log("âœ… Yeni Refresh Token baÅŸarÄ±yla .env dosyasÄ±na kaydedildi.");
+        console.log("[OK] Yeni Refresh Token basariyla .env dosyasina kaydedildi.");
       }
     } catch (err) {
       console.error("âŒ Refresh Token .env dosyasÄ±na kaydedilirken hata:", err);
     }
   }
-  console.log("ğŸ”‘ Access Token Yenilendi.");
+  console.log("[INFO] Access Token Yenilendi.");
 });
 
 const drive = google.drive({ version: 'v3', auth: oauth2Client });
@@ -58,7 +58,7 @@ export interface DriveFile {
 export const uploadToDrive = async (fileObj: DriveFile, customFolderId: string | null = null): Promise<DriveResponse> => {
   try {
     const targetFolderId = customFolderId || FOLDER_ID;
-    console.log("🚀 Yükleme Başlıyor... Hedef Klasör:", targetFolderId);
+    console.log("[INFO] Yukleme Basliyor... Hedef Klasor:", targetFolderId);
 
     const fileMetadata = {
       name: `file-${Date.now()}-${fileObj.originalname}`,
@@ -78,7 +78,7 @@ export const uploadToDrive = async (fileObj: DriveFile, customFolderId: string |
     } as any);
 
     const fileId = (response.data as any).id;
-    console.log("✅ Dosya Drive'a Yüklendi! ID:", fileId);
+    console.log("[OK] Dosya Drive'a Yuklendi! ID:", fileId);
 
     await drive.permissions.create({
       fileId: fileId as string,
@@ -93,7 +93,7 @@ export const uploadToDrive = async (fileObj: DriveFile, customFolderId: string |
     return { fileId, publicUrl };
 
   } catch (error: any) {
-    console.error('❌ Google Drive Yükleme Hatası:', error.message);
+    console.error('[ERROR] Google Drive Yukleme Hatasi:', error.message);
     throw new Error('Dosya Drive\'a yüklenemedi.');
   }
 };

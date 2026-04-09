@@ -25,11 +25,11 @@ const connectRabbitMQ = async () => {
         channel = await connection.createChannel();
         await channel.assertQueue('cv_parsing_queue', { durable: true });
         await channel.assertQueue('cv_result_queue', { durable: true });
-        console.log('✅ RabbitMQ Bağlantısı Başarılı');
+        console.log('[OK] RabbitMQ Baglantisi Basarili');
         startResultConsumer();
     }
     catch (error) {
-        console.error('❌ RabbitMQ Bağlantı Hatası:', error.message);
+        console.error('u2757 RabbitMQ Bau011flantu0131 Hatasu0131:', error.message);
         setTimeout(exports.connectRabbitMQ, 5000);
     }
 };
@@ -47,7 +47,7 @@ exports.sendToQueue = sendToQueue;
 const startResultConsumer = async () => {
     if (!channel)
         return;
-    console.log("📥 cv_result_queue dinleniyor...");
+    console.log("[INFO] cv_result_queue dinleniyor...");
     channel.consume('cv_result_queue', async (msg) => {
         if (msg !== null) {
             try {
@@ -59,7 +59,7 @@ const startResultConsumer = async () => {
                         where: { id: parseInt(cvId) },
                         data: { status: 'FAILED' }
                     });
-                    console.error(`CV Ayrıştırma hatası (Python): ${error}`);
+                    console.error(`[ERROR] CV Ayristirma hatasi (Python): ${error}`);
                 }
                 else if (status === 'COMPLETED' && rawText) {
                     await prisma_1.default.cV.update({
@@ -69,7 +69,7 @@ const startResultConsumer = async () => {
                             rawText: rawText
                         }
                     });
-                    console.log(`[x] Spam kontrolü yapılıyor (CV ID: ${cvId})...`);
+                    console.log(`[INFO] Spam kontrolu yapiliyor (CV ID: ${cvId})...`);
                     const currentCV = await prisma_1.default.cV.findUnique({ where: { id: parseInt(cvId) }, select: { userId: true } });
                     if (currentCV) {
                         const textLength = rawText.length;
@@ -96,13 +96,13 @@ const startResultConsumer = async () => {
                                 where: { id: parseInt(cvId) },
                                 data: {
                                     status: 'FAILED',
-                                    atsFormatFeedback: 'Güvenlik Politikası: Mükerrer CV.'
+                                    atsFormatFeedback: 'Guvenlik Politikasi: Mukerrer CV.'
                                 }
                             });
                             channel.ack(msg);
                             return;
                         }
-                        console.log(`[x] Gemini'ye gönderiliyor (CV ID: ${cvId})...`);
+                        console.log(`[INFO] Gemini'ye gonderiliyor (CV ID: ${cvId})...`);
                         const parsedData = await (0, geminiService_1.parseCVText)(rawText);
                         const atsAnalysis = await (0, geminiService_1.analyzeATSCompatibility)(rawText);
                         await prisma_1.default.cV.update({
@@ -118,7 +118,7 @@ const startResultConsumer = async () => {
                             const entriesToCreate = parsedData.entries.map((entry) => ({
                                 cvId: parseInt(cvId),
                                 category: entry.category,
-                                title: entry.title || "Belirtilmemiş",
+                                title: entry.title || "Belirtilmemis",
                                 subtitle: entry.subtitle,
                                 startDate: entry.startDate,
                                 endDate: entry.endDate,
@@ -129,14 +129,14 @@ const startResultConsumer = async () => {
                                 data: entriesToCreate
                             });
                         }
-                        console.log(`✅ CV (ID: ${cvId}) kaydedildi!`);
+                        console.log(`[OK] CV (ID: ${cvId}) kaydedildi!`);
                     }
                 }
                 channel.ack(msg);
             }
             catch (error) {
-                console.error("❌ Consumer işleme hatası:", error);
-                channel.nack(msg, false, false);
+                console.error('u274c Consumer iu015fleme hatasu0131:', error);
+                channel.nack(msg, false, true);
             }
         }
     });

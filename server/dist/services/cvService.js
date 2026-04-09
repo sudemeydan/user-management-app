@@ -13,11 +13,13 @@ const uploadCV = async (userId, file) => {
     const driveResponse = await driveClient_1.default.uploadToDrive(file, cvFolderId);
     const newCV = await cvRepository_1.default.createCV({
         fileName: file.originalname,
-        fileId: driveResponse.fileId,
+        fileId: driveResponse.fileId || "",
         fileSize: file.size,
         mimeType: file.mimetype,
         isActive: false,
-        userId: Number(userId)
+        user: {
+            connect: { id: Number(userId) }
+        }
     });
     return newCV;
 };

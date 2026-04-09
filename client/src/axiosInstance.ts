@@ -5,7 +5,7 @@ interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
 }
 
 const axiosInstance = axios.create({
-  baseURL: 'http://127.0.0.1:3001'
+  baseURL: 'http://localhost:3001'
 });
 
 axiosInstance.interceptors.request.use(

@@ -101,7 +101,7 @@ const getAllActiveCVs = async (req, res, next) => {
 };
 const downloadCV = async (req, res, next) => {
     try {
-        const { fileId } = req.params;
+        const fileId = req.params.fileId;
         await driveClient_1.default.streamFile(fileId, res);
     }
     catch (error) {
@@ -110,7 +110,7 @@ const downloadCV = async (req, res, next) => {
 };
 const downloadCvPdf = async (req, res, next) => {
     try {
-        const { cvId } = req.params;
+        const cvId = req.params.cvId;
         const template = req.query.template || 'classic';
         const pdfBuffer = await cvService_1.default.generatePdfBufferForDownload(cvId, template);
         res.set({

@@ -25,42 +25,42 @@ const getAllUsers = async (currentUserId: any) => {
 };
 
 const registerUser = async (userData: any) => {
-  // 1. Gelen veriyi parÃ§alÄ±yoruz 
+  // 1. Gelen veriyi parçalıyoruz 
   const { email, password, confirmPassword, address, ...otherData } = userData;
 
-  // 2. Gerekli AlanlarÄ±n Doluluk KontrolÃ¼
+  // 2. Gerekli Alanların Doluluk Kontrolü
   if (!email || !password || !confirmPassword || !address) {
-    throw new Error("LÃ¼tfen e-posta, ÅŸifre, ÅŸifre tekrarÄ± ve ÅŸehir (adres) alanlarÄ±nÄ± doldurun.");
+    throw new Error("Lütfen e-posta, şifre, şifre tekrarı ve şehir (adres) alanlarını doldurun.");
   }
 
-  // 3. Åifre EÅŸleÅŸme KontrolÃ¼
+  // 3. Åifre Eşleşme Kontrolü
   if (password !== confirmPassword) {
-    throw new AppError("GirdiÄŸiniz ÅŸifreler eÅŸleÅŸmiyor.", 400);
+    throw new AppError("Girdiğiniz şifreler eşleşmiyor.", 400);
   }
 
-  // 4. GÃ¼Ã§lÃ¼ Åifre KontrolÃ¼ (En az 8 karakter, 1 bÃ¼yÃ¼k, 1 kÃ¼Ã§Ã¼k, 1 rakam)
+  // 4. Güçlü Åifre Kontrolü (En az 8 karakter, 1 büyük, 1 küçük, 1 rakam)
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/;
   if (!passwordRegex.test(password)) {
-    throw new AppError("Åifre en az 8 karakter olmalÄ±; en az bir bÃ¼yÃ¼k harf, bir kÃ¼Ã§Ã¼k harf ve bir rakam iÃ§ermelidir.", 400);
+    throw new AppError("Åifre en az 8 karakter olmalı; en az bir büyük harf, bir küçük harf ve bir rakam içermelidir.", 400);
   }
 
-  // 5. Åehir (Adres) KontrolÃ¼
-  const validCities = ["Ä°stanbul", "Ankara", "Ä°zmir", "Bursa", "Antalya"];
+  // 5. Åehir (Adres) Kontrolü
+  const validCities = ["İstanbul", "Ankara", "İzmir", "Bursa", "Antalya"];
   if (!validCities.includes(address)) {
-    throw new AppError("LÃ¼tfen geÃ§erli bir ÅŸehir seÃ§iniz.", 400);
+    throw new AppError("Lütfen geçerli bir şehir seçiniz.", 400);
   }
 
-  // 6. KullanÄ±cÄ± Zaten Var mÄ± KontrolÃ¼ 
+  // 6. Kullanıcı Zaten Var mı Kontrolü 
   const existingUser = await userRepository.findUserByEmail(email);
   if (existingUser) {
-    throw new AppError("Bu e-posta adresi zaten kullanÄ±mda.", 400);
+    throw new AppError("Bu e-posta adresi zaten kullanımda.", 400);
   }
 
-  // 7. Åifreyi Hashleme ve Token OluÅŸturma 
+  // 7. Åifreyi Hashleme ve Token Oluşturma 
   const hashedPassword = await bcrypt.hash(password, 10);
   const verificationToken = crypto.randomBytes(32).toString('hex');
 
-  // 8. VeritabanÄ±na KayÄ±t (Repository Ã¼zerinden)
+  // 8. Veritabanına Kayıt (Repository üzerinden)
   const newUser = await userRepository.createUser({
     ...otherData,
     email,
@@ -70,12 +70,12 @@ const registerUser = async (userData: any) => {
     isEmailVerified: false
   });
 
-  // 9. Onay Maili GÃ¶nderme (Senin mevcut kodun)
+  // 9. Onay Maili Gönderme (Senin mevcut kodun)
   try {
     await emailService.sendVerificationEmail(newUser.email, verificationToken);
-    console.log(`Onay maili gÃ¶nderildi: ${newUser.email}`);
+    console.log(`Onay maili gönderildi: ${newUser.email}`);
   } catch (error) {
-    console.error("Mail gÃ¶nderme hatasÄ±:", error);
+    console.error("Mail gönderme hatası:", error);
   }
 
   return newUser;
@@ -87,7 +87,7 @@ const verifyEmail = async (token: any) => {
   });
 
   if (!user) {
-    throw new AppError("GeÃ§ersiz veya sÃ¼resi dolmuÅŸ onay kodu.", 400);
+    throw new AppError("Geçersiz veya süresi dolmuş onay kodu.", 400);
   }
 
   await prisma.user.update({
@@ -105,16 +105,16 @@ const loginUser = async (email: any, password: any) => {
   const user = await userRepository.findUserByEmail(email);
 
   if (!user) {
-    throw new AppError("E-posta adresi veya ÅŸifre hatalÄ±.", 401);
+    throw new AppError("E-posta adresi veya şifre hatalı.", 401);
   }
 
   if (!user.isEmailVerified) {
-    throw new AppError("LÃ¼tfen giriÅŸ yapmadan Ã¶nce e-posta adresinize gÃ¶nderilen linkten hesabÄ±nÄ±zÄ± onaylayÄ±n.", 403);
+    throw new AppError("Lütfen giriş yapmadan önce e-posta adresinize gönderilen linkten hesabınızı onaylayın.", 403);
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
-    throw new AppError("E-posta adresi veya ÅŸifre hatalÄ±.", 401);
+    throw new AppError("E-posta adresi veya şifre hatalı.", 401);
   }
 
   return user;
@@ -123,11 +123,11 @@ const loginUser = async (email: any, password: any) => {
 const forgotPassword = async (email: any) => {
   const user = await userRepository.findUserByEmail(email);
   if (!user) {
-    throw new AppError("Bu e-posta adresiyle kayÄ±tlÄ± bir kullanÄ±cÄ± bulunamadÄ±.", 400);
+    throw new AppError("Bu e-posta adresiyle kayıtlı bir kullanıcı bulunamadı.", 400);
   }
 
   const resetToken = crypto.randomBytes(32).toString('hex');
-  const resetPasswordExpires = new Date(Date.now() + 3600000); // 1 saat geÃ§erli
+  const resetPasswordExpires = new Date(Date.now() + 3600000); // 1 saat geçerli
 
   await prisma.user.update({
     where: { id: user.id },
@@ -150,7 +150,7 @@ const resetPassword = async (token: any, newPassword: any) => {
   });
 
   if (!user) {
-    throw new AppError("GeÃ§ersiz veya sÃ¼resi dolmuÅŸ ÅŸifre sÄ±fÄ±rlama baÄŸlantÄ±sÄ±.", 400);
+    throw new AppError("Geçersiz veya süresi dolmuş şifre sıfırlama bağlantısı.", 400);
   }
 
   const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -179,11 +179,11 @@ const deleteUser = async (id: any) => {
 };
 
 const requestUpgrade = async (userId: any) => {
-  console.log("1. Service KatmanÄ±: Ä°stek baÅŸladÄ±. KullanÄ±cÄ± ID:", userId);
+  console.log("1. Service Katmanı: İstek başladı. Kullanıcı ID:", userId);
 
   if (!userRepository.createUpgradeRequest) {
     console.error("!!! HATA: userRepository.createUpgradeRequest fonksiyonu BULUNAMADI!");
-    throw new AppError("Sunucu hatasÄ±: Repository fonksiyonu eksik.", 400);
+    throw new AppError("Sunucu hatası: Repository fonksiyonu eksik.", 400);
   }
 
   const lastRequest = await userRepository.findLatestUpgradeRequest(userId);
@@ -194,10 +194,10 @@ const requestUpgrade = async (userId: any) => {
     throw new AppError("Zaten incelenmeyi bekleyen bir talebiniz var.", 400);
   }
 
-  console.log("4. Yeni kayÄ±t oluÅŸturuluyor...");
+  console.log("4. Yeni kayıt oluşturuluyor...");
   const newRequest = await userRepository.createUpgradeRequest(userId);
 
-  console.log("5. SONUÃ‡: Yeni kayÄ±t oluÅŸturuldu:", newRequest);
+  console.log("5. SONUÇ: Yeni kayıt oluşturuldu:", newRequest);
   return newRequest;
 };
 
@@ -205,7 +205,7 @@ const handleUpgrade = async (userId: any, action: any) => {
   const lastRequest = await userRepository.findLatestUpgradeRequest(userId);
 
   if (!lastRequest || lastRequest.status !== 'PENDING') {
-    throw new AppError("Bekleyen bir talep bulunamadÄ±.", 400);
+    throw new AppError("Bekleyen bir talep bulunamadı.", 400);
   }
 
   if (action === 'APPROVE') {
@@ -220,7 +220,7 @@ const uploadProfileImage = async (userId: any, fileObj: any) => {
   const { fileId, publicUrl } = await driveClient.uploadToDrive(fileObj);
 
   fs.unlink(fileObj.path, (err) => {
-    if (err) console.error("GeÃ§ici dosya silinemedi:", err);
+    if (err) console.error("Geçici dosya silinemedi:", err);
   });
 
   const existingImage = await prisma.profileImage.findUnique({
@@ -256,7 +256,7 @@ const uploadCV = async (userId: any, file: any) => {
 
   const newCV = await prisma.cV.create({
     data: {
-      fileName: file.originalname, // KullanÄ±cÄ±nÄ±n gÃ¶receÄŸi orijinal dosya adÄ±
+      fileName: file.originalname, // Kullanıcının göreceği orijinal dosya adı
       fileId: driveResponse.fileId, // Drive ID'si
       fileSize: file.size, // Multer bize boyutu BYTE cinsinden verir
       mimeType: file.mimetype,
@@ -277,14 +277,14 @@ const getUserCVs = async (targetUserId: any, requesterId: any, requesterRole: an
     }
   });
 
-  if (!targetUser) throw new AppError("KullanÄ±cÄ± bulunamadÄ±.", 400);
+  if (!targetUser) throw new AppError("Kullanıcı bulunamadı.", 400);
 
   const isOwner = parseInt(targetUserId) === parseInt(requesterId);
   const isAdmin = requesterRole === 'SUPERADMIN';
   const isConnected = targetUser.sentConnections.length > 0 || targetUser.receivedConnections.length > 0;
 
   if (!isOwner && !isAdmin && targetUser.isPrivate && !isConnected) {
-    throw new AppError("Gizli profil olduÄŸu iÃ§in CV'leri gÃ¶remezsiniz.", 403);
+    throw new AppError("Gizli profil olduğu için CV'leri göremezsiniz.", 403);
   }
 
   const cvs = await prisma.cV.findMany({
@@ -312,9 +312,9 @@ const activateCV = async (userId: any, cvId: any) => {
     where: { id: parseInt(cvId), userId: parseInt(userId) }
   });
 
-  if (!cv) throw new AppError("CV bulunamadÄ± veya yetkiniz yok.", 400);
+  if (!cv) throw new AppError("CV bulunamadı veya yetkiniz yok.", 400);
 
-  // Ã–nce hepsi pasif, sonra seÃ§ilen aktif (Transaction ile)
+  // Önce hepsi pasif, sonra seçilen aktif (Transaction ile)
   await prisma.$transaction([
     prisma.cV.updateMany({
       where: { userId: parseInt(userId) },
@@ -334,16 +334,16 @@ const deleteCV = async (userId: any, cvId: any) => {
     where: { id: parseInt(cvId), userId: parseInt(userId) }
   });
 
-  if (!cv) throw new AppError("CV bulunamadÄ± veya yetkiniz yok.", 400);
+  if (!cv) throw new AppError("CV bulunamadı veya yetkiniz yok.", 400);
 
   // Drive'dan sil
   try {
     await driveClient.deleteFromDrive(cv.fileId);
   } catch (error) {
-    console.error("Drive silme hatasÄ± (Yine de veritabanÄ±ndan kaldÄ±rÄ±lacak):", error);
+    console.error("Drive silme hatası (Yine de veritabanından kaldırılacak):", error);
   }
 
-  // VeritabanÄ±ndan sil
+  // Veritabanından sil
   await prisma.cV.delete({
     where: { id: parseInt(cvId) }
   });
@@ -412,31 +412,31 @@ const optimizeCVFormat = async (userId: any, cvId: any) => {
   });
 
   if (!cv || cv.userId !== parseInt(userId)) {
-    throw new AppError("CV bulunamadÄ± veya yetkiniz yok.", 404);
+    throw new AppError("CV bulunamadı veya yetkiniz yok.", 404);
   }
 
-  // Optimize edilmiÅŸ PDF Ã¼ret
+  // Optimize edilmiş PDF üret
   const pdfBuffer = await generateATSPDF({
     summary: cv.summary,
     userName: cv.user.name,
     userEmail: cv.user.email
   }, cv.entries);
 
-  // DosyayÄ± geÃ§ici olarak diske kaydet (DiÄŸer yÃ¼klemelerin mantÄ±ÄŸÄ±)
+  // Dosyayı geçici olarak diske kaydet (Diğer yüklemelerin mantığı)
   const tempPath = path.join(os.tmpdir(), `ATS-${cv.id}-${Date.now()}.pdf`);
   fs.writeFileSync(tempPath, pdfBuffer);
 
-  // Drive'a yÃ¼kle
+  // Drive'a yükle
   const driveResponse = await driveClient.uploadToDrive({
     path: tempPath,
     originalname: `ATS-${cv.fileName}`,
     mimetype: 'application/pdf'
   }, process.env.GOOGLE_DRIVE_CV_FOLDER_ID);
 
-  // GeÃ§ici dosyayÄ± sil
+  // Geçici dosyayı sil
   fs.unlinkSync(tempPath);
 
-  // VeritabanÄ±nda kaydet
+  // Veritabanında kaydet
   const atsFormattedCV = await prisma.atsFormattedCV.upsert({
     where: { cvId: parseInt(cvId) },
     update: {
@@ -475,7 +475,7 @@ const getCVDataForRender = async (cvId: any) => {
     }
   });
 
-  if (!cv) throw new AppError("CV bulunamadÄ±", 400);
+  if (!cv) throw new AppError("CV bulunamadı", 400);
 
   // Format data to match what the frontend expects
   return {
@@ -493,7 +493,7 @@ const getCVDataForRender = async (cvId: any) => {
   };
 };
 
-// ---- Ä°Å Ä°LANI VE TAILORING FONKSÄ°YONLARI ----
+// ---- İÅ İLANI VE TAILORING FONKSİYONLARI ----
 
 const createJobPosting = async (jobText: any, url = null) => {
   const extracted = await extractJobDetails(jobText);
@@ -517,7 +517,7 @@ const getTailoringProposals = async (cvId: any, jobPostingId: any) => {
     where: { id: parseInt(jobPostingId) }
   });
 
-  if (!cv || !job) throw new AppError("CV veya Ä°ÅŸ Ä°lanÄ± bulunamadÄ±.", 404);
+  if (!cv || !job) throw new AppError("CV veya İş İlanı bulunamadı.", 404);
 
   const proposals = await generateTailoringProposals(cv, job);
   return proposals;
@@ -540,7 +540,7 @@ const createTailoredCV = async (userId: any, originalCvId: any, jobPostingId: an
     const entriesToCreate = approvedProposals.map(p => ({
       tailoredCvId: tailoredCV.id,
       category: p.category,
-      name: p.suggestedTitle || 'BelirtilmemiÅŸ',
+      name: p.suggestedTitle || 'Belirtilmemiş',
       description: p.suggestedDescription,
       isModified: true,
       aiComment: p.aiComment
@@ -570,10 +570,10 @@ const optimizeTailoredCV = async (userId: any, tailoredCvId: any) => {
   });
 
   if (!tailoredCV || tailoredCV.userId !== parseInt(userId)) {
-    throw new AppError("UyarlanmÄ±ÅŸ CV bulunamadÄ± veya yetkiniz yok.", 404);
+    throw new AppError("Uyarlanmış CV bulunamadı veya yetkiniz yok.", 404);
   }
 
-  // PDF iÃ§in cvData objesini hazÄ±rla (ats_cv.html beklentilerine gÃ¶re)
+  // PDF için cvData objesini hazırla (ats_cv.html beklentilerine göre)
   const cvData = {
     userName: tailoredCV.originalCv.user.name,
     userEmail: tailoredCV.originalCv.user.email,
@@ -581,24 +581,24 @@ const optimizeTailoredCV = async (userId: any, tailoredCvId: any) => {
     entries: tailoredCV.originalCv.entries
   };
 
-  // PDF Ãœret (Modern ÅŸablonu zorla)
+  // PDF Üret (Modern şablonu zorla)
   const pdfBuffer = await generateTailoredPDF(cvData, tailoredCV, 'modern');
 
-  // DosyayÄ± geÃ§ici olarak diske kaydet
+  // Dosyayı geçici olarak diske kaydet
   const tempPath = path.join(os.tmpdir(), `Tailored-${tailoredCvId}-${Date.now()}.pdf`);
   fs.writeFileSync(tempPath, pdfBuffer);
 
-  // Drive'a yÃ¼kle
+  // Drive'a yükle
   const driveResponse = await driveClient.uploadToDrive({
     path: tempPath,
     originalname: `Tailored-${tailoredCV.jobPosting.title}-${tailoredCV.originalCv.fileName}`,
     mimetype: 'application/pdf'
   }, process.env.GOOGLE_DRIVE_CV_FOLDER_ID);
 
-  // GeÃ§ici dosyayÄ± sil
+  // Geçici dosyayı sil
   fs.unlinkSync(tempPath);
 
-  // DB GÃ¼ncelle
+  // DB Güncelle
   const updated = await prisma.tailoredCV.update({
     where: { id: parseInt(tailoredCvId) },
     data: { fileId: driveResponse.fileId }

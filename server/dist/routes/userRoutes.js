@@ -23,7 +23,7 @@ const cvUpload = (0, multer_1.default)({
             cb(null, true);
         }
         else {
-            cb(new Error("Sadece PDF ve DOCX formatları kabul edilmektedir."));
+            cb(new Error("Sadece PDF ve DOCX formatlarÄ± kabul edilmektedir."));
         }
     }
 });
