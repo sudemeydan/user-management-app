@@ -36,8 +36,9 @@ def callback(ch, method, properties, body):
             
         cv_id = data.get("cvId", "UNKNOWN")
         pdf_base64 = data.get("fileData") 
+        source = data.get("source")  # 'employer' veya None (candidate)
         
-        print(f" [x] CV İşleniyor: ID={cv_id}")
+        print(f" [x] CV İşleniyor: ID={cv_id}, Kaynak={source or 'candidate'}")
         
         if not pdf_base64:
             raise ValueError("fileData (PDF base64) bulunamadı.")
@@ -70,6 +71,10 @@ def callback(ch, method, properties, body):
                 "status": "FAILED",
                 "rawText": None
             }
+        
+        # source alanını sonuca ekle (employer pipeline routing için)
+        if source:
+            result_data["source"] = source
             
         # 3. Sonucu cv_result_queue'ya gönder
         ch.basic_publish(
@@ -83,6 +88,13 @@ def callback(ch, method, properties, body):
         print(f" [!] Beklenmeyen bir hata: {e}")
         try:
              error_data = {"cvId": cv_id, "status": "FAILED", "rawText": None, "error": str(e)}
+             # source bilgisi varsa hata mesajına da ekle
+             try:
+                 msg_data = json.loads(body.decode('utf-8'))
+                 if msg_data.get("source"):
+                     error_data["source"] = msg_data["source"]
+             except:
+                 pass
              ch.basic_publish(exchange='', routing_key='cv_result_queue', body=json.dumps(error_data))
              print(" [x] Hata Node.js'e bildirildi.")
         except Exception as inner_e:

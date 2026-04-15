@@ -38,6 +38,7 @@ model User {
   blockingUsers       Block[]       @relation("BlockingUser")
   blockedUsers        Block[]       @relation("BlockedUser")
   tailoredCVs         TailoredCV[]
+  employerPostings    EmployerJobPosting[] @relation("EmployerPostings")
 }
 
 model Block {
@@ -246,4 +247,62 @@ enum EntryCategory {
   LANGUAGE
   CERTIFICATE
   OTHER
+}
+
+// --- İK / İŞVEREN MODÜLÜ ---
+
+// İK Personeli / İşverenin oluşturduğu iş ilanı
+model EmployerJobPosting {
+  id          Int      @id @default(autoincrement())
+  title       String
+  company     String
+  description String   @db.Text
+  location    String?
+  isActive    Boolean  @default(true)
+
+  // İlanı oluşturan İK kullanıcısına bağlı
+  createdById Int
+  createdBy   User     @relation("EmployerPostings", fields: [createdById], references: [id])
+
+  // Bu ilana gelen başvurular
+  applications CandidateApplication[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Bir ilana yüklenen aday başvurusu (CV dosyası)
+model CandidateApplication {
+  id               Int                   @id @default(autoincrement())
+
+  // İlgili iş ilanı
+  jobPostingId     Int
+  jobPosting       EmployerJobPosting    @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+
+  // Aday bilgisi
+  candidateName    String
+  candidateEmail   String?
+  userId           Int?                  // Sistemde kayıtlı bir adaysa bağlanır
+
+  // Yüklenen CV dosyası
+  cvFileId         String                // Google Drive ID
+  cvFileName       String                // Orijinal dosya adı
+  cvRawText        String?   @db.Text    // Python'dan parse edilmiş ham metin
+
+  // AI Analiz Sonuçları
+  matchScore       Int?                  // 0-100 arası uyumluluk skoru
+  scoreSummary     String?   @db.Text    // Kısa değerlendirme özeti
+  strengths        Json?                 // Güçlü yönler dizisi
+  weaknesses       Json?                 // Zayıf yönler dizisi
+  analysisStatus   ApplicationStatus @default(PENDING)
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+enum ApplicationStatus {
+  PENDING
+  ANALYZING
+  COMPLETED
+  FAILED
 }

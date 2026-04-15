@@ -11,6 +11,7 @@ import atsRoutes from './routes/atsRoutes';
 import tailoringRoutes from './routes/tailoringRoutes';
 import postRoutes from './routes/postRoutes';
 import connectionRoutes from './routes/connectionRoutes';
+import employerRoutes from './routes/employerRoutes';
 import errorHandler from './middlewares/errorHandler';
 import { sendToQueue, connectRabbitMQ } from './services/rabbitmqService';
 
@@ -63,6 +64,7 @@ app.use('/users', tailoringRoutes);
 
 app.use('/connections', connectionRoutes);
 app.use('/posts', postRoutes);
+app.use('/employer', employerRoutes);
 
 
 import { startApolloServer } from './graphql/apolloServer';

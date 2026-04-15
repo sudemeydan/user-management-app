@@ -3,7 +3,7 @@ import axiosInstance from '../axiosInstance';
 import { User } from '../types/auth';
 import {
     Users, LogOut, LayoutDashboard, Loader2, Crown, Clock,
-    Lock, Unlock, Camera, FileText, Briefcase, BrainCircuit
+    Lock, Unlock, Camera, FileText, Briefcase, BrainCircuit, Building2
 } from 'lucide-react';
 
 import FeedTab from './tabs/FeedTab';
@@ -11,6 +11,7 @@ import UsersTab from './tabs/UsersTab';
 import MyCVsTab from './tabs/MyCVsTab';
 import AllCVsTab from './tabs/AllCVsTab';
 import ATSTailorTab from './tabs/ATSTailorTab';
+import EmployerTab from './tabs/EmployerTab';
 
 interface DashboardProps {
     user: User;
@@ -216,6 +217,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                         { key: 'cvs', icon: <FileText size={18} />, label: 'Özgeçmişlerim' },
                         { key: 'all-cvs', icon: <Briefcase size={18} />, label: 'Tüm Özgeçmişler' },
                         { key: 'ats-tailor', icon: <BrainCircuit size={18} />, label: 'İlana Göre Uyarla' },
+                        { key: 'employer', icon: <Building2 size={18} />, label: 'İK Paneli' },
                     ].map(tab => (
                         <button
                             key={tab.key}
@@ -334,6 +336,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
 
                 {activeTab === 'ats-tailor' && (
                     <ATSTailorTab myCvs={myCvs} />
+                )}
+
+                {activeTab === 'employer' && (
+                    <EmployerTab user={user} />
                 )}
             </main>
         </div>

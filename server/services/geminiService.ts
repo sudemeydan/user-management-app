@@ -245,9 +245,66 @@ export const generateTailoringProposals = async (cv: any, jobDescription: string
   }
 };
 
+export const scoreCVForJobPosting = async (
+  cvRawText: string,
+  jobDescription: string,
+  jobTitle: string
+): Promise<{
+  matchScore: number;
+  summary: string;
+  strengths: string[];
+  weaknesses: string[];
+}> => {
+  try {
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      generationConfig: { responseMimeType: "application/json" },
+    });
+
+    const prompt = `Sen deneyimli bir İnsan Kaynakları uzmanı ve ATS (Applicant Tracking System) analistisin.
+
+    GÖREV: Verilen CV'yi iş ilanı kriterlerine göre değerlendir ve aşağıdaki JSON formatında yanıt ver.
+
+    DEĞERLENDİRME KRİTERLERİ:
+    1. Teknik Beceri Uyumu (40 puan): İş ilanındaki zorunlu ve tercih edilen becerilerle CV'deki becerilerin örtüşmesi
+    2. Deneyim Uyumu (30 puan): Yıl bazında deneyim, sektör uyumu, pozisyon uygunluğu
+    3. Eğitim Uyumu (15 puan): Gereken eğitim seviyesi ve alanı
+    4. Anahtar Kelime Yoğunluğu (15 puan): İlan metnindeki kritik terimlerin CV'de geçme sıklığı
+
+    KESİNLİKLE SADECE JSON DÖNDÜR (markdown veya ekstra metin kullanma).
+
+    İş İlanı Başlığı: "${jobTitle}"
+    İş İlanı Metni: """${jobDescription}"""
+    CV Metni: """${cvRawText}"""
+
+    DÖNÜŞ FORMATI:
+    {
+      "matchScore": 0-100 arası puan (integer),
+      "summary": "2-3 cümlelik değerlendirme özeti (Türkçe)",
+      "strengths": ["Güçlü yön 1", "Güçlü yön 2", "Güçlü yön 3"],
+      "weaknesses": ["Eksik nokta 1", "Eksik nokta 2"]
+    }`;
+
+    const result = await withRetry(() => model.generateContent(prompt));
+    const response = await result.response;
+    const parsed = cleanAndParseJSON(response.text());
+
+    return {
+      matchScore: Math.min(100, Math.max(0, parseInt(parsed.matchScore) || 0)),
+      summary: parsed.summary || 'Değerlendirme tamamlandı.',
+      strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
+      weaknesses: Array.isArray(parsed.weaknesses) ? parsed.weaknesses : []
+    };
+  } catch (error) {
+    console.error("[ERROR] Gemini CV Skorlama Hatası:", error);
+    throw new AppError("CV skorlama sırasında bir hata oluştu.", 400);
+  }
+};
+
 export default {
   parseCVText,
   analyzeATSCompatibility,
   extractJobDetails,
-  generateTailoringProposals
+  generateTailoringProposals,
+  scoreCVForJobPosting
 };

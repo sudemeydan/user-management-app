@@ -12,6 +12,7 @@ export interface RabbitMQResultPayload {
   status: 'COMPLETED' | 'FAILED';
   rawText?: string;
   error?: string;
+  source?: 'employer' | 'candidate';  // Hangi pipeline'dan geldiğini belirtir
 }
 
 function calculateJaccardSimilarity(str1?: string | null, str2?: string | null): number {
@@ -65,9 +66,27 @@ const startResultConsumer = async (): Promise<void> => {
         if (msg !== null) {
             try {
                 const resultData = JSON.parse(msg.content.toString()) as RabbitMQResultPayload;
-                const { cvId, status, rawText, error } = resultData;
+                const { cvId, status, rawText, error, source } = resultData;
 
-                console.log(`[x] Python'dan cevap geldi. CV ID: ${cvId}, Durum: ${status}`);
+                console.log(`[x] Python'dan cevap geldi. CV ID: ${cvId}, Durum: ${status}, Kaynak: ${source || 'candidate'}`);
+
+                // EMPLOYER pipeline: rawText'i CandidateApplication'a kaydet
+                if (source === 'employer') {
+                    if (status === 'COMPLETED' && rawText) {
+                        const employerService = require('./employerService').default;
+                        await employerService.handleEmployerCVParseResult(parseInt(cvId as string), rawText);
+                    } else if (status === 'FAILED') {
+                        await prisma.candidateApplication.update({
+                            where: { id: parseInt(cvId as string) },
+                            data: { analysisStatus: 'FAILED' }
+                        });
+                        console.error(`[EMPLOYER] CV Ayrıştırma hatası (Python): ${error}`);
+                    }
+                    channel!.ack(msg);
+                    return;
+                }
+
+                // CANDIDATE pipeline: mevcut akış (değiştirilmedi)
 
                 if (status === 'FAILED') {
                     await prisma.cV.update({
