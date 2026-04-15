@@ -24,6 +24,8 @@ model User {
   emailVerificationToken   String?          @unique
   resetPasswordToken       String?          @unique
   resetPasswordExpires     DateTime?
+  failedLoginAttempts      Int              @default(0)
+  lockedUntil              DateTime?
   cvs                CV[]
   
   upgradeRequests UpgradeRequest[] 

@@ -18,7 +18,7 @@ import cors from 'cors';
 // Express uygulamasına Apollo Server'ı bağlayan fonksiyon
 export const startApolloServer = async (app: Application) => {
   await server.start();
-  
+
   // '/graphql' endpoint'ini oluştur ve middleware olarak ekle
   // Express 5 tipleri ile Apollo middleware'inin tipleri ufak farklılıklar gösteriyor, @ts-ignore ile devredışı bırakıyoruz
   // @ts-ignore
@@ -39,6 +39,6 @@ export const startApolloServer = async (app: Application) => {
       },
     })
   );
-  
+
   console.log(`🚀 GraphQL Endpoint ready at http://localhost:3001/graphql`);
 };

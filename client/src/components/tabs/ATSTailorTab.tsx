@@ -123,7 +123,7 @@ const ATSTailorTab: React.FC<ATSTailorTabProps> = ({ myCvs }) => {
                                 <select
                                     value={selectedCvId}
                                     onChange={(e) => setSelectedCvId(e.target.value)}
-                                    className="w-full p-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition appearance-none pr-10 text-sm"
+                                    className="w-full p-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition appearance-none pr-10 text-sm"
                                 >
                                     <option value="">-- CV seçin --</option>
                                     {processedCvs.map(cv => (
@@ -143,7 +143,7 @@ const ATSTailorTab: React.FC<ATSTailorTabProps> = ({ myCvs }) => {
                             value={jobText}
                             onChange={(e) => setJobText(e.target.value)}
                             placeholder="İş ilanını buraya yapıştırın... (Pozisyon gereklilikleri, aranan nitelikler vb.)"
-                            className="w-full p-4 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none text-sm"
+                            className="w-full p-4 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none text-sm"
                             rows={8}
                         />
                     </div>
@@ -155,7 +155,7 @@ const ATSTailorTab: React.FC<ATSTailorTabProps> = ({ myCvs }) => {
                             value={jobUrl}
                             onChange={(e) => setJobUrl(e.target.value)}
                             placeholder="https://kariyer.net/ilan/..."
-                            className="w-full p-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm"
+                            className="w-full p-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm"
                         />
                     </div>
 

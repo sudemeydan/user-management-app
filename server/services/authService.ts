@@ -82,8 +82,10 @@ const verifyEmail = async (token: string) => {
   return true;
 };
 
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCK_TIME_MS = 15 * 60 * 1000;
+
 const loginUser = async (email: string, password: string) => {
-  // Return type inference will carry user up to the controller
   const user = await userRepository.findUserByEmail(email);
 
   if (!user) {
@@ -94,10 +96,47 @@ const loginUser = async (email: string, password: string) => {
     throw new AppError("Lütfen giriş yapmadan önce e-posta adresinize gönderilen linkten hesabınızı onaylayın.", 403);
   }
 
+  if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
+    const remainingMs = new Date(user.lockedUntil).getTime() - Date.now();
+    const remainingMin = Math.ceil(remainingMs / 60000);
+    throw new AppError(
+      `Hesabınız çok fazla başarısız giriş denemesi nedeniyle kilitlendi. Lütfen ${remainingMin} dakika sonra tekrar deneyin.`,
+      423
+    );
+  }
+
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
-    throw new AppError("E-posta adresi veya şifre hatalı.", 401);
+    const newAttempts = user.failedLoginAttempts + 1;
+    const updateData: any = { failedLoginAttempts: newAttempts };
+
+    if (newAttempts >= MAX_FAILED_ATTEMPTS) {
+      updateData.lockedUntil = new Date(Date.now() + LOCK_TIME_MS);
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: updateData,
+    });
+
+    const remainingAttempts = MAX_FAILED_ATTEMPTS - newAttempts;
+    if (remainingAttempts <= 0) {
+      throw new AppError(
+        `Çok fazla başarısız giriş denemesi. Hesabınız ${LOCK_TIME_MS / 60000} dakika boyunca kilitlendi.`,
+        423
+      );
+    }
+
+    throw new AppError(
+      `E-posta adresi veya şifre hatalı. Kalan deneme hakkınız: ${remainingAttempts}`,
+      401
+    );
   }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { failedLoginAttempts: 0, lockedUntil: null },
+  });
 
   return user;
 };

@@ -33,7 +33,7 @@ const cleanAndParseJSON = (jsonString: string): any => {
 export const parseCVText = async (rawText: string) => {
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
       generationConfig: { responseMimeType: "application/json" },
     });
 
@@ -92,7 +92,7 @@ export const parseCVText = async (rawText: string) => {
 export const analyzeATSCompatibility = async (rawText: string) => {
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
       generationConfig: { responseMimeType: "application/json" },
     });
 
@@ -117,7 +117,7 @@ export const analyzeATSCompatibility = async (rawText: string) => {
 export const extractJobDetails = async (jobText: string) => {
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
       generationConfig: { responseMimeType: "application/json" },
     });
     const prompt = `Aşağıda verilen iş ilanı metnini analiz et ve bilgileri ayrıştır.
@@ -149,7 +149,7 @@ export const generateTailoringProposals = async (cv: any, jobDescription: string
     }
     
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
       generationConfig: { responseMimeType: "application/json" },
     });
 
