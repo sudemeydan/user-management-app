@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef, ChangeEvent, FormEvent } from 'react';
+import React, { useState, useEffect, useRef, useCallback, ChangeEvent, FormEvent } from 'react';
+import { io, Socket } from 'socket.io-client';
 import axiosInstance from '../axiosInstance';
 import { User } from '../types/auth';
 import {
     Users, LogOut, LayoutDashboard, Loader2, Crown, Clock,
-    Lock, Unlock, Camera, FileText, Briefcase, BrainCircuit, Building2
+    Lock, Unlock, Camera, FileText, Briefcase, BrainCircuit, Building2, Bell, X, ShieldAlert
 } from 'lucide-react';
 
 import FeedTab from './tabs/FeedTab';
@@ -12,6 +13,7 @@ import MyCVsTab from './tabs/MyCVsTab';
 import AllCVsTab from './tabs/AllCVsTab';
 import ATSTailorTab from './tabs/ATSTailorTab';
 import EmployerTab from './tabs/EmployerTab';
+import AdminLogsTab from './tabs/AdminLogsTab';
 
 interface DashboardProps {
     user: User;
@@ -33,43 +35,17 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
 
     const [myCvs, setMyCvs] = useState<any[]>([]);
     const [allActiveCvs, setAllActiveCvs] = useState<any[]>([]);
-
-    useEffect(() => {
-        fetchUsers();
-        fetchPosts();
-        fetchMyCVs();
-        fetchAllActiveCvs();
-    }, []);
-
-    useEffect(() => {
-        let pollInterval: NodeJS.Timeout;
-        const hasProcessingCV = myCvs.some(cv => cv.status === 'PENDING' || cv.status === 'PROCESSING');
-        
-        if (hasProcessingCV) {
-            pollInterval = setInterval(() => {
-                axiosInstance.get(`/users/${user.id}/cvs`).then((response) => {
-                    const freshCvs = response.data.data;
-                    const stillProcessing = freshCvs.some((cv: any) => cv.status === 'PENDING' || cv.status === 'PROCESSING');
-                    
-                    // Sadece durum değiştiğinde veya işlem bittiğinde state güncelle
-                    if (!stillProcessing || JSON.stringify(freshCvs) !== JSON.stringify(myCvs)) {
-                        setMyCvs(freshCvs);
-                    }
-                }).catch(err => console.error(err));
-            }, 5000);
-        }
-        return () => { if (pollInterval) clearInterval(pollInterval); };
-    }, [user.id, myCvs.length]); // myCvs'in tamamı yerine sadece boyutu takip et
+    const [notification, setNotification] = useState<string | null>(null);
 
     const fetchAllActiveCvs = async () => {
         try { const response = await axiosInstance.get('/users/all-active-cvs'); setAllActiveCvs(response.data.data); }
         catch (error) { console.error("Aktif CV'ler çekilemedi:", error); }
     };
 
-    const fetchMyCVs = async () => {
+    const fetchMyCVs = useCallback(async () => {
         try { const response = await axiosInstance.get(`/users/${user.id}/cvs`); setMyCvs(response.data.data); }
         catch (error) { console.error("CV'ler çekilemedi:", error); }
-    };
+    }, [user.id]);
 
     const fetchUsers = async () => {
         try {
@@ -89,6 +65,52 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
         try { const response = await axiosInstance.get('/posts'); setPosts(response.data.data); }
         catch (error) { console.error("Gönderiler çekilemedi:", error); }
     };
+
+    useEffect(() => {
+        fetchUsers();
+        fetchPosts();
+        fetchMyCVs();
+        fetchAllActiveCvs();
+    }, []);
+
+    // WebSocket bağlantısı: Polling yerine real-time bildirim
+    useEffect(() => {
+        const socket: Socket = io('http://127.0.0.1:3001');
+
+        // Bağlandığında kullanıcının kendi room'una katıl
+        socket.on('connect', () => {
+            console.log('[SOCKET] Sunucuya bağlandı:', socket.id);
+            socket.emit('join', user.id);
+        });
+
+        // CV analizi tamamlandığında tetiklenir
+        socket.on('cv_analysis_completed', (data: any) => {
+            console.log('[SOCKET] CV analizi tamamlandı:', data);
+
+            // Bildirimi göster
+            setNotification(data.message || 'CV analiziniz tamamlandı!');
+
+            // CV listesini güncelle
+            fetchMyCVs();
+
+            // Otomatik olarak Özgeçmişlerim sekmesine yönlendir
+            setActiveTab('cvs');
+
+            // 5 saniye sonra bildirimi kapat
+            setTimeout(() => setNotification(null), 5000);
+        });
+
+        socket.on('disconnect', () => {
+            console.log('[SOCKET] Bağlantı kesildi.');
+        });
+
+        // Component unmount olduğunda socket bağlantısını kapat
+        return () => {
+            socket.disconnect();
+        };
+    }, [user.id, fetchMyCVs]);
+
+
 
     const handleCreatePost = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -218,6 +240,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                         { key: 'all-cvs', icon: <Briefcase size={18} />, label: 'Tüm Özgeçmişler' },
                         { key: 'ats-tailor', icon: <BrainCircuit size={18} />, label: 'İlana Göre Uyarla' },
                         { key: 'employer', icon: <Building2 size={18} />, label: 'İK Paneli' },
+                        ...(user.role === 'ADMIN' || user.role === 'SUPERADMIN' ? [{ key: 'admin-logs', icon: <ShieldAlert size={18} />, label: 'Sistem Logları' }] : []),
                     ].map(tab => (
                         <button
                             key={tab.key}
@@ -273,6 +296,28 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
             </aside>
 
             <main className="flex-1 ml-64 p-8 relative" style={{zIndex: 1}}>
+                {/* WebSocket Bildirim Toast */}
+                {notification && (
+                    <div
+                        className="mb-4 flex items-center gap-3 p-4 rounded-2xl shadow-lg animate-slideDown"
+                        style={{
+                            background: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
+                            border: '1px solid rgba(16,185,129,0.3)',
+                            color: '#fff',
+                            animation: 'slideDown 0.4s ease-out'
+                        }}
+                    >
+                        <Bell size={20} className="animate-bounce" />
+                        <span className="flex-1 font-medium text-sm">{notification}</span>
+                        <button
+                            onClick={() => setNotification(null)}
+                            className="hover:opacity-70 transition"
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+                )}
+
                 {user.role === 'FREE_USER' && (
                     <div className="mb-8 relative overflow-hidden rounded-2xl text-white p-7 flex items-center justify-between" style={{background: 'linear-gradient(135deg, #6c63ff 0%, #9c8fff 50%, #ff6584 100%)', boxShadow: '0 8px 40px rgba(108,99,255,0.3)'}}>
                         <div className="absolute inset-0 opacity-20" style={{background: 'radial-gradient(ellipse at top left, rgba(255,255,255,0.3), transparent 60%)'}}></div>
@@ -340,6 +385,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
 
                 {activeTab === 'employer' && (
                     <EmployerTab user={user} />
+                )}
+
+                {activeTab === 'admin-logs' && (user.role === 'ADMIN' || user.role === 'SUPERADMIN') && (
+                    <AdminLogsTab />
                 )}
             </main>
         </div>

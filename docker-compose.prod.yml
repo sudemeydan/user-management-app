@@ -25,6 +25,7 @@ services:
       - rabbitmq_data_prod:/var/lib/rabbitmq
 
   backend:
+    image: user-management-app-backend-prod
     build:
       context: ./server
       dockerfile: Dockerfile.prod
@@ -43,6 +44,7 @@ services:
       - rabbitmq
 
   frontend:
+    image: user-management-app-frontend-prod
     build:
       context: ./client
       dockerfile: Dockerfile.prod

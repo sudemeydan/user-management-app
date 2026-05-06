@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import authService, { RegisterUserData } from '../services/authService';
 import jwt from 'jsonwebtoken';
+import logger from '../utils/logger';
 
 // 1. Kullanıcı Login isteklerinin tipleri
 export interface LoginRequestData {
@@ -48,6 +49,13 @@ const login = async (req: Request<{}, {}, LoginRequestData>, res: Response, next
       { expiresIn: '2h' }
     );
 
+    logger.info('User login successful', { 
+      action: 'LOGIN', 
+      userId: user.id, 
+      email: user.email, 
+      role: user.role 
+    });
+
     res.json({
       success: true,
       message: "Giriş Başarılı!",
@@ -55,7 +63,8 @@ const login = async (req: Request<{}, {}, LoginRequestData>, res: Response, next
       accessToken: accessToken,
       refreshToken: refreshToken
     });
-  } catch (error) {
+  } catch (error: any) {
+    logger.error('User login failed', { action: 'LOGIN_FAILED', error: error.message });
     next(error);
   }
 };
@@ -100,10 +109,28 @@ const refresh = async (req: Request<{}, {}, { refreshToken: string }>, res: Resp
   }
 };
 
+const logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    const email = req.user?.email;
+    const role = req.user?.role;
+    
+    if (userId) {
+      logger.info('User logout', { action: 'LOGOUT', userId, email, role });
+    }
+    
+    res.json({ success: true, message: "Çıkış başarılı." });
+  } catch (error: any) {
+    logger.error('User logout failed', { action: 'LOGOUT_FAILED', error: error.message });
+    next(error);
+  }
+};
+
 export default {
   registerUser,
   verifyEmail,
   login,
+  logout,
   forgotPassword,
   resetPassword,
   refresh

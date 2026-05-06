@@ -24,6 +24,29 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.2
+    container_name: elasticsearch-node
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.12.2
+    container_name: kibana-dashboard
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
   backend:
     build:
       context: ./server
@@ -44,6 +67,7 @@ services:
     depends_on:
       - db
       - rabbitmq
+      - elasticsearch
 
   frontend:
     build:
@@ -74,3 +98,4 @@ services:
 volumes:
   pgdata:
   rabbitmq_data:
+  elasticsearch_data:

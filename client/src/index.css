@@ -56,5 +56,11 @@ h1, h2, h3 { font-family: 'Syne', sans-serif; }
 .animate-fadeIn { animation: fadeIn 0.4s ease; }
 .animate-fadeUp { animation: fadeUp 0.4s ease; }
 
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-slideDown { animation: slideDown 0.4s ease-out; }
+
 /* Glow ring on focus */
 *:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

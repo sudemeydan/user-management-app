@@ -1,6 +1,7 @@
 import amqp, { Connection, Channel } from 'amqplib';
 import prisma from '../utils/prisma';
 import { parseCVText, analyzeATSCompatibility } from './geminiService';
+import { emitToUser } from './socketService';
 
 export interface RabbitMQMessagePayload {
   cvId: number | string;
@@ -75,6 +76,25 @@ const startResultConsumer = async (): Promise<void> => {
                     if (status === 'COMPLETED' && rawText) {
                         const employerService = require('./employerService').default;
                         await employerService.handleEmployerCVParseResult(parseInt(cvId as string), rawText);
+
+                        // Employer'a WebSocket bildirimi gönder
+                        // CandidateApplication -> EmployerJobPosting -> createdById (işverenin userId'si)
+                        const application = await prisma.candidateApplication.findUnique({
+                            where: { id: parseInt(cvId as string) },
+                            select: {
+                                jobPosting: {
+                                    select: { createdById: true }
+                                }
+                            }
+                        });
+                        if (application?.jobPosting?.createdById) {
+                            emitToUser(application.jobPosting.createdById, 'cv_analysis_completed', {
+                                cvId,
+                                status: 'COMPLETED',
+                                source: 'employer',
+                                message: 'Aday CV analizi tamamlandı!'
+                            });
+                        }
                     } else if (status === 'FAILED') {
                         await prisma.candidateApplication.update({
                             where: { id: parseInt(cvId as string) },
@@ -174,6 +194,14 @@ const startResultConsumer = async (): Promise<void> => {
                             });
                         }
                         console.log(`[OK] CV (ID: ${cvId}) kaydedildi!`);
+
+                        // Kullanıcıya WebSocket bildirimi gönder (CV sahibine)
+                        emitToUser(currentCV.userId, 'cv_analysis_completed', {
+                            cvId,
+                            status: 'COMPLETED',
+                            source: 'candidate',
+                            message: 'CV analiziniz tamamlandı!'
+                        });
                     }
                 }
 
