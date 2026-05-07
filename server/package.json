@@ -15,7 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "@apollo/server": "^4.13.0",
-    "@elastic/elasticsearch": "^9.3.4",
+    "@elastic/elasticsearch": "^8.19.1",
     "@google/generative-ai": "^0.24.1",
     "@prisma/client": "5.22.0",
     "amqplib": "^0.10.9",

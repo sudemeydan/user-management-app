@@ -1,5 +1,5 @@
 # 1. Altyapı
-FROM node:18-slim
+FROM node:20-slim
 
 # Puppeteer için gerekli sistem bağımlılıkları
 RUN apt-get update && apt-get install -y \

@@ -6,15 +6,15 @@ export interface AppErrorType extends Error {
 }
 
 const errorHandler = (err: AppErrorType, req: Request, res: Response, next: NextFunction): void => {
-  err.statusCode = err.statusCode || 500;
-  err.status = err.status || 'error';
+  const statusCode = err.statusCode || 500;
+  const status = err.status || 'error';
 
-  console.error(`[ERROR] ${err.statusCode} - ${err.message}`);
+  console.error(`[ERROR] ${statusCode} - ${err.message}`, err);
 
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.status(err.statusCode).json({
+  res.status(statusCode).json({
     success: false,
-    status: err.status,
+    status: status,
     message: err.message
   });
 };

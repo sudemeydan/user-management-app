@@ -39,7 +39,7 @@ const logger = winston.createLogger({
 });
 
 // Elasticsearch bağlantı hatalarını konsola basalım ki gözden kaçmasın
-esTransport.on('error', (error) => {
+esTransport.on('error', (error: any) => {
   console.error('Elasticsearch Logger Hatası:', error);
 });
 

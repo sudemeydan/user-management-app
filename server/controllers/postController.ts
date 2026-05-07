@@ -1,6 +1,7 @@
-﻿import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import postService from '../services/postService';
 import driveClient from '../utils/driveClient';
+import logger from '../utils/logger';
 
 const createPost = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -9,8 +10,18 @@ const createPost = async (req: Request, res: Response, next: NextFunction): Prom
     const files = req.files as Express.Multer.File[] || [];
 
     const newPost = await postService.createPostWithImages(userId, content, files);
+
+    logger.info('User created a post', {
+      action: 'CREATE_POST',
+      userId,
+      email: req.user?.email,
+      role: req.user?.role,
+      hasImages: files.length > 0,
+    });
+
     res.status(201).json({ success: true, message: "Gönderi paylaşıldı!", data: newPost });
-  } catch (error) {
+  } catch (error: any) {
+    logger.error('Failed to create post', { action: 'CREATE_POST_FAILED', error: error.message });
     next(error);
   }
 };
@@ -32,8 +43,18 @@ const deletePost = async (req: Request, res: Response, next: NextFunction): Prom
     const userRole = req.user?.role;
 
     await postService.deletePost(postId, userId, userRole);
+
+    logger.info('User deleted a post', {
+      action: 'DELETE_POST',
+      userId,
+      email: req.user?.email,
+      role: userRole,
+      postId,
+    });
+
     res.json({ success: true, message: "Gönderi silindi!" });
-  } catch (error) {
+  } catch (error: any) {
+    logger.error('Failed to delete post', { action: 'DELETE_POST_FAILED', error: error.message });
     next(error);
   }
 };
