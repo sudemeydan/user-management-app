@@ -18,6 +18,7 @@ import employerRoutes from './routes/employerRoutes';
 import logRoutes from './routes/logRoutes';
 import errorHandler from './middlewares/errorHandler';
 import { sendToQueue, connectRabbitMQ } from './services/rabbitmqService';
+import { setupSwagger } from './utils/swagger';
 
 const app = express();
 const PORT = 3001;
@@ -90,6 +91,8 @@ app.use('/connections', connectionRoutes);
 app.use('/posts', postRoutes);
 app.use('/employer', employerRoutes);
 app.use('/logs', logRoutes);
+
+setupSwagger(app);
 
 
 import { startApolloServer } from './graphql/apolloServer';

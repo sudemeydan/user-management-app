@@ -25,6 +25,21 @@ const cvUpload = multer({
   }
 });
 
+/**
+ * @swagger
+ * /users:
+ *   get:
+ *     summary: Tüm kullanıcıları listeler
+ *     tags: [Users]
+ *     description: Sistemdeki kullanıcıları listeler (Kimlik doğrulama gerektirir).
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Kullanıcı listesi başarıyla getirildi.
+ *       401:
+ *         description: Yetkisiz erişim.
+ */
 router.get('/', authMiddleware, userController.getUsers);
 router.post('/request-upgrade', authMiddleware, userController.requestUpgrade);
 router.patch('/:id/privacy', authMiddleware, userController.togglePrivacy);

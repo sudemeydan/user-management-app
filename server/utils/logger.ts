@@ -5,14 +5,13 @@ import { ElasticsearchTransport, ElasticsearchTransportOptions } from 'winston-e
 const esTransportOpts: ElasticsearchTransportOptions = {
   level: 'info',
   clientOpts: { node: 'http://localhost:9200' }, // Docker container adı kullanılıyorsa 'http://elasticsearch:9200' olarak değiştirilmeli, ancak geliştirme aşamasında localhost daha rahat olabilir veya docker içinde isek elasticsearch
-  // Docker compose içinde çalışırken 'elasticsearch', dışarıda çalışırken 'localhost'
   indexPrefix: 'admin-logs',
 };
 
 // Docker ortamında çalışıp çalışmadığımızı kontrol edelim
 const isDocker = process.env.DATABASE_URL?.includes('@db:5432');
 if (isDocker) {
-    esTransportOpts.clientOpts = { node: 'http://elasticsearch:9200' };
+  esTransportOpts.clientOpts = { node: 'http://elasticsearch:9200' };
 }
 
 const esTransport = new ElasticsearchTransport(esTransportOpts);
